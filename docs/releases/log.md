@@ -2,6 +2,7 @@
 
 ## 2026-08-22
 
+- **Added**: Chainlit 内蔵 MCP 接続 UI で Streamable HTTP / SSE サーバを追加接続でき、既定の knowledge-mcp が一覧に表示される（[UI 機能](/current/features/ui.md)、[ADR-0003](/decisions/ADR-0003-chainlit-traced-client.md)）
 - **Added**: `search_knowledge` と `get_document` ツールを持つ FastMCP ベクトル検索サーバー（[API 契約](/current/features/api.md)）
 - **Added**: traced FastMCP クライアント付き Chainlit チャット UI（[UI 機能](/current/features/ui.md)）
 - **Added**: アプリスタック用 Docker compose とピン留め Langfuse 公式 compose（[インフラ](/current/infrastructure.md)）

@@ -19,8 +19,9 @@ uv.lock
 .env
 .env.local
 
-# Chainlit
-.chainlit/
+# Chainlit (track config.toml so MCP UI settings ship with the repo)
+.chainlit/*
+!.chainlit/config.toml
 .files/
 
 # IDE
@@ -29,3 +30,6 @@ uv.lock
 
 # OS
 .DS_Store
+
+# Generated Chainlit assets
+public/mcp-autoload.js

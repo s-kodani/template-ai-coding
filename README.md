@@ -25,7 +25,7 @@ make -C infra up
 make -C infra seed
 ```
 
-5. Chainlit は http://localhost:8080、Langfuse は http://localhost:3000 を開きます。
+5. Chainlit は http://localhost:8080、Langfuse は http://localhost:3000 を開きます。MCP プラグインの一覧に knowledge-mcp が表示されます。追加の Streamable HTTP / SSE サーバもここから接続できます（stdio は無効）。
 
 6. Langfuse でサインアップ後、`LANGFUSE_PUBLIC_KEY` と `LANGFUSE_SECRET_KEY` を `.env` に追加し、アプリサービスを再起動します。
 

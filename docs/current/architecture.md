@@ -12,7 +12,7 @@ status: stable
 
 | コンポーネント | 役割 |
 |---|---|
-| Chainlit（`src/chat_ui/`） | チャット UI、Langfuse ルートスパン、FastMCP クライアント |
+| Chainlit（`src/chat_ui/`） | チャット UI、Langfuse ルートスパン、既定 FastMCP クライアント、追加 MCP 接続 UI |
 | FastMCP サーバー（`src/knowledge_mcp/`） | Streamable HTTP MCP、検索ツール、子スパン |
 | PostgreSQL + pgvector | アプリ用ベクトルストア（Langfuse DB とは分離） |
 | Langfuse（公式 compose） | トレース取り込みと UI |
@@ -41,9 +41,15 @@ flowchart TB
         Langfuse["Langfuse<br/>UI + trace ingest"]
     end
 
+    subgraph optional["任意接続"]
+        ExtraMCP[追加 MCP サーバ]
+    end
+
     User -->|HTTP :8080| Chainlit
+    User -->|"MCP 接続 UI（HTTP/SSE）"| Chainlit
     Inspector -->|"Streamable HTTP :8000/mcp"| MCP
-    Chainlit -->|"Streamable HTTP /mcp"| MCP
+    Chainlit -->|"Streamable HTTP /mcp（既定）"| MCP
+    Chainlit -->|追加 MCP tools/call + _meta| ExtraMCP
     Chainlit -->|chat completions| LLM
     MCP -->|vector search / get| PG
     MCP -->|embeddings| LLM
@@ -84,7 +90,8 @@ flowchart TD
 ```
 
 - Chainlit が `chat.turn` と `llm.generate` 観測を作成
-- FastMCP Client が W3C トレースコンテキストを MCP `_meta` に注入（native telemetry）
+- 既定の knowledge-mcp 呼び出しは FastMCP Client の native telemetry で `_meta` に W3C トレースコンテキストを注入
+- UI から接続した追加 MCP は公式 SDK の `ClientSession.call_tool(..., meta=...)` で同じ `_meta` を注入
 - FastMCP Server が `_meta` を extract し SERVER スパンを子として接続
 - カスタム OTel スパン: `search.embed`、`search.query`（MCP server span の子。Langfuse 独立トレースにはしない）
 - Postgres クライアントスパンは `opentelemetry-instrumentation-asyncpg`

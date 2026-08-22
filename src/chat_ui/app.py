@@ -2,12 +2,15 @@ from __future__ import annotations
 
 import json
 import os
+from pathlib import Path
 from typing import Any
 
 import chainlit as cl
 from langfuse import observe
 
 from chat_ui.mcp_bridge import GET_DOCUMENT_TOOL, SEARCH_TOOL, MCPBridge, build_openai_client
+from chat_ui.mcp_tools import call_session_tool, collect_openai_tools, resolve_tool_target
+from chat_ui.mcp_ui import write_mcp_autoload_script
 from knowledge_mcp.config import get_settings
 from knowledge_mcp.tracing import configure_langfuse_tracing, instrument_asyncpg
 
@@ -17,33 +20,73 @@ instrument_asyncpg()
 settings = get_settings()
 openai_client = build_openai_client(settings)
 mcp_bridge = MCPBridge(settings)
+write_mcp_autoload_script(Path.cwd() / "public", settings.mcp_server_url)
 
 SYSTEM_PROMPT = (
-    "You are a helpful assistant with access to a local knowledge base. "
+    "You are a helpful assistant with access to a local knowledge base "
+    "and any MCP tools the user has connected in this session. "
     "Use search_knowledge when the user asks about project documentation. "
-    "Cite document titles and ids from tool results."
+    "Use other connected tools when they match the request. "
+    "Cite document titles and ids from knowledge-base tool results."
 )
 
 
 @cl.on_chat_start
 async def on_chat_start() -> None:
     cl.user_session.set("messages", [{"role": "system", "content": SYSTEM_PROMPT}])
+    cl.user_session.set("mcp_tools", {})
+
+
+@cl.on_mcp_connect
+async def on_mcp_connect(connection: Any, session: Any) -> None:
+    result = await session.list_tools()
+    tools = [
+        {
+            "name": tool.name,
+            "description": tool.description,
+            "inputSchema": tool.inputSchema,
+        }
+        for tool in result.tools
+    ]
+    mcp_tools = cl.user_session.get("mcp_tools") or {}
+    mcp_tools[connection.name] = tools
+    cl.user_session.set("mcp_tools", mcp_tools)
+
+
+@cl.on_mcp_disconnect
+async def on_mcp_disconnect(name: str, _session: Any) -> None:
+    mcp_tools = cl.user_session.get("mcp_tools") or {}
+    mcp_tools.pop(name, None)
+    cl.user_session.set("mcp_tools", mcp_tools)
+
+
+def _llm_tools() -> list[dict[str, Any]]:
+    return collect_openai_tools(
+        [SEARCH_TOOL, GET_DOCUMENT_TOOL],
+        cl.user_session.get("mcp_tools") or {},
+    )
 
 
 async def _dispatch_tool(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
-    if name == "search_knowledge":
-        return await mcp_bridge.call_tool("search_knowledge", arguments)
-    if name == "get_document":
-        return await mcp_bridge.call_tool("get_document", arguments)
+    session_tools = cl.user_session.get("mcp_tools") or {}
+    kind, session_name = resolve_tool_target(name, session_tools)
+    if kind == "default":
+        return await mcp_bridge.call_tool(name, arguments)
+    if kind == "session" and session_name:
+        entry = cl.context.session.mcp_sessions.get(session_name)
+        if not entry:
+            return {"error": f"MCP session not found: {session_name}"}
+        mcp_session, _ = entry
+        return await call_session_tool(mcp_session, name, arguments)
     return {"error": f"Unknown tool: {name}"}
 
 
 @observe(name="llm.generate")
-async def _generate(messages: list[dict[str, Any]]) -> Any:
+async def _generate(messages: list[dict[str, Any]], tools: list[dict[str, Any]]) -> Any:
     return await openai_client.chat.completions.create(
         model=settings.chat_model,
         messages=messages,
-        tools=[SEARCH_TOOL, GET_DOCUMENT_TOOL],
+        tools=tools,
         tool_choice="auto",
     )
 
@@ -56,7 +99,8 @@ async def on_message(message: cl.Message) -> None:
 
     os.environ.setdefault("FASTMCP_TELEMETRY_MODE", "native")
 
-    response = await _generate(messages)
+    tools = _llm_tools()
+    response = await _generate(messages, tools)
     choice = response.choices[0].message
 
     while choice.tool_calls:
@@ -89,7 +133,7 @@ async def on_message(message: cl.Message) -> None:
                 }
             )
 
-        response = await _generate(messages)
+        response = await _generate(messages, tools)
         choice = response.choices[0].message
 
     assistant_text = choice.content or "I could not generate a response."

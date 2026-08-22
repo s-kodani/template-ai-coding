@@ -1,0 +1,26 @@
+[project]
+# Chainlit project config
+enable_telemetry = false
+
+[UI]
+name = "ナレッジ検索チャット"
+default_collapse_content = true
+custom_js = "/public/mcp-autoload.js"
+
+[features]
+prompt_playground = false
+
+[features.mcp]
+enabled = true
+
+[features.mcp.sse]
+enabled = true
+
+[features.mcp.streamable-http]
+enabled = true
+
+[features.mcp.stdio]
+enabled = false
+
+[meta]
+generated_by = "2.11.1"

@@ -13,7 +13,7 @@ status: stable
 以下を検証する **ローカル専用** の開発者向けスタックを提供する。
 
 1. PostgreSQL + pgvector 上の FastMCP ベクトル検索
-2. MCP ツールを呼び出し Langfuse ルートトレースを持つ Chainlit チャット UI
+2. MCP ツールを呼び出し Langfuse ルートトレースを持つ Chainlit チャット UI（追加 MCP サーバを UI から接続可能）
 3. Chainlit、MCP クライアント/サーバー、embedding、Postgres クライアントスパンにわたる end-to-end 親子トレース
 
 ## 利用者
