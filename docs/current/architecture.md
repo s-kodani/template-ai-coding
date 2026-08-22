@@ -83,17 +83,18 @@ flowchart TD
     chat --> llm
     chat --> tool
     tool --> client
-    client -->|"W3C traceparent in MCP _meta"| server
+    client -->|"W3C traceparent + baggage in MCP _meta"| server
     server --> embed
     server --> query
     query --> db
 ```
 
 - Chainlit が `chat.turn` と `llm.generate` 観測を作成
-- 既定の knowledge-mcp 呼び出しは FastMCP Client の native telemetry で `_meta` に W3C トレースコンテキストを注入
+- 既定の knowledge-mcp 呼び出しは FastMCP Client の native telemetry で `_meta` に W3C トレースコンテキストを注入する。Langfuse 向けに `baggage`（`langfuse_trace_id`）も載せる
 - UI から接続した追加 MCP は公式 SDK の `ClientSession.call_tool(..., meta=...)` で同じ `_meta` を注入
-- FastMCP Server が `_meta` を extract し SERVER スパンを子として接続
+- FastMCP Server が `_meta` を extract し SERVER スパンを子として接続する。baggage により Langfuse はこれらのスパンを追加ルートにしない
 - カスタム OTel スパン: `search.embed`、`search.query`（MCP server span の子。Langfuse 独立トレースにはしない）
 - Postgres クライアントスパンは `opentelemetry-instrumentation-asyncpg`
+- Langfuse への export は SDK デフォルト（Langfuse / gen_ai / 既知 LLM instrumentor）に加え `fastmcp` と `opentelemetry.instrumentation.asyncpg` を許可する
 
 compose 構成は [インフラ](/current/infrastructure.md) を参照。

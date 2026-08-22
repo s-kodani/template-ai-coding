@@ -3,9 +3,7 @@ from __future__ import annotations
 import json
 from typing import Any, Literal
 
-from fastmcp.telemetry import inject_trace_context
-
-from knowledge_mcp.tracing import tool_observation
+from knowledge_mcp.tracing import inject_langfuse_propagated_meta, tool_observation
 
 DEFAULT_TOOL_NAMES = frozenset({"search_knowledge", "get_document"})
 
@@ -83,6 +81,6 @@ async def call_session_tool(
 ) -> dict[str, Any]:
     with tool_observation(name, arguments):
         result = await session.call_tool(
-            name, arguments, meta=inject_trace_context({})
+            name, arguments, meta=inject_langfuse_propagated_meta({})
         )
     return parse_tool_result(result)

@@ -43,6 +43,10 @@ Langfuse スタック用の `infra/langfuse/.env` では、`ENCRYPTION_KEY` を 
 
 Chainlit と FastMCP の両方で、FastMCP を import する **前に** Langfuse Python SDK を初期化します。キーが未設定の場合はトレースは no-op となり、サービスは起動可能です。
 
+Langfuse SDK 4 はデフォルトで LLM / Langfuse スパン以外を落とすため、`should_export_span` で `fastmcp` と `opentelemetry.instrumentation.asyncpg` を追加許可します。httpx などの汎用クライアントスパンは送りません。
+
+MCP `_meta` には FastMCP 既定の `traceparent` に加え、Langfuse の `langfuse_trace_id` baggage を載せます。これがないと、mcp-server プロセス側の FastMCP スパンが同一 `traceId` でもトレース一覧の追加ルートになります。
+
 ## 手動検証
 
 1. **MCP Inspector**: `http://127.0.0.1:8000/mcp` に接続
@@ -53,8 +57,9 @@ Chainlit と FastMCP の両方で、FastMCP を import する **前に** Langfus
 
 | 確認項目 | 期待結果 |
 |---|---|
-| Langfuse トレース一覧 | `chat.turn` が **1 行** のみ |
+| Langfuse トレース一覧 | `chat.turn` が **1 行** のみ（同一 `traceId` の FastMCP / ツールスパンはルートに出ない） |
 | トレース詳細 | `llm.generate` が `chat.turn` の子 |
 | ツール呼び出し | `search_knowledge` / `get_document` の input が tool observation に記録 |
 | MCP サーバー | `tools/call …` SERVER span 配下に `search.embed` / `search.query` |
-| 自動テスト | `uv run pytest tests/test_trace_propagation.py`（in-memory OTel、Langfuse 不要） |
+| Postgres | `search.query` 近傍に asyncpg クライアントスパン（CONNECT / SELECT 等） |
+| 自動テスト | `uv run pytest tests/test_trace_propagation.py tests/test_langfuse_span_export.py` |

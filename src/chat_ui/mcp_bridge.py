@@ -3,7 +3,6 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from fastmcp import Client
 from openai import AsyncOpenAI
 
 from knowledge_mcp.config import Settings
@@ -12,6 +11,8 @@ from knowledge_mcp.tracing import configure_langfuse_tracing, instrument_asyncpg
 # Langfuse before FastMCP client import side effects.
 _langfuse = configure_langfuse_tracing()
 instrument_asyncpg()
+
+from fastmcp import Client
 
 SEARCH_TOOL = {
     "type": "function",

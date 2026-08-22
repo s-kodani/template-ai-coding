@@ -21,7 +21,7 @@ status: stable
 - Chainlit 内蔵 MCP 接続 UI で Streamable HTTP / SSE サーバを追加接続できる
 - 既定の knowledge-mcp（`MCP_SERVER_URL`）は MCP 一覧に表示され、ページ読み込み時に UI 経由でも接続する
 - 追加接続したサーバのツールはセッションに載り、LLM の function tools に動的追加される
-- 追加サーバへの `tools/call` では `inject_trace_context` により `_meta` へ traceparent を注入する
+- 追加サーバへの `tools/call` では `_meta` へ W3C `traceparent` と Langfuse `baggage` を注入する
 - ツール名が衝突した場合は knowledge-mcp、続いて先に接続したセッションを優先する
 - stdio MCP は無効（Chainlit サーバ上での任意コマンド実行を避ける）
 - Langfuse ルート観測 `chat.turn` とネストされた `llm.generate` を作成
