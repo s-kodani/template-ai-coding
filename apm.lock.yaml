@@ -1,0 +1,352 @@
+lockfile_version: '1'
+generated_at: '2026-08-22T08:03:26.613942+00:00'
+apm_version: 0.28.0
+dependencies:
+- repo_url: cli/cli
+  name: gh
+  host: github.com
+  resolved_commit: 5d3c4817f1619213951dbf15031bad04acb88392
+  version: unknown
+  virtual_path: skills/gh
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/gh
+  - .agents/skills/gh/SKILL.md
+  - .claude/skills/gh
+  - .claude/skills/gh/SKILL.md
+  deployed_file_hashes:
+    .agents/skills/gh/SKILL.md: sha256:cb3e3035ccade36b9e8a6c0a384f9d607c9954bd242d4c8097251b8b1e4c4985
+    .claude/skills/gh/SKILL.md: sha256:cb3e3035ccade36b9e8a6c0a384f9d607c9954bd242d4c8097251b8b1e4c4985
+  content_hash: sha256:1a427b5ebbee4133e4627d5b5eedb383ac57cc5e868cf209bb13e151959e4d67
+- repo_url: dietrichgebert/ponytail
+  materialization_repo_url: DietrichGebert/ponytail
+  name: ponytail
+  host: github.com
+  resolved_commit: 2ed6c52c9d7e5e56942508591085fd45dea277d3
+  version: unknown
+  virtual_path: skills/ponytail
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/ponytail
+  - .agents/skills/ponytail/SKILL.md
+  - .claude/skills/ponytail
+  - .claude/skills/ponytail/SKILL.md
+  deployed_file_hashes:
+    .agents/skills/ponytail/SKILL.md: sha256:1316a2f3f95741d2300b116fe0c2d81ce4a9568656ed0a62643f54aaf09957f2
+    .claude/skills/ponytail/SKILL.md: sha256:1316a2f3f95741d2300b116fe0c2d81ce4a9568656ed0a62643f54aaf09957f2
+  content_hash: sha256:210fa0831f649ce9f8a305f7b7c8cf2a0dd09ac4dd53067109941b96e7811d4e
+- repo_url: mattpocock/skills
+  name: grill-me
+  host: github.com
+  resolved_commit: 5b15a47f2d7150f545fbcacbfe381787fc0230dc
+  version: unknown
+  virtual_path: skills/productivity/grill-me
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/grill-me
+  - .agents/skills/grill-me/SKILL.md
+  - .agents/skills/grill-me/agents/openai.yaml
+  - .claude/skills/grill-me
+  - .claude/skills/grill-me/SKILL.md
+  - .claude/skills/grill-me/agents/openai.yaml
+  deployed_file_hashes:
+    .agents/skills/grill-me/SKILL.md: sha256:caaf8b8de1684f96e26b28f3c29189db5c89cce4b73e1c93d86164f66ef88637
+    .agents/skills/grill-me/agents/openai.yaml: sha256:c061e39c3e0f9d865fb1b97556d485704af2a8a58f4b8221a8917a5c2074a32b
+    .claude/skills/grill-me/SKILL.md: sha256:caaf8b8de1684f96e26b28f3c29189db5c89cce4b73e1c93d86164f66ef88637
+    .claude/skills/grill-me/agents/openai.yaml: sha256:c061e39c3e0f9d865fb1b97556d485704af2a8a58f4b8221a8917a5c2074a32b
+  content_hash: sha256:fe33aaa8e8dcd606107b1bfe3109f257b4a7e0f4907afd6506b62ccfb73cd1d3
+- repo_url: obra/superpowers
+  name: test-driven-development
+  host: github.com
+  resolved_commit: b36e0829c6d0140e93cfef2ca599b1b07d4a7797
+  version: unknown
+  virtual_path: skills/test-driven-development
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/test-driven-development
+  - .agents/skills/test-driven-development/SKILL.md
+  - .agents/skills/test-driven-development/writing-good-tests.md
+  - .claude/skills/test-driven-development
+  - .claude/skills/test-driven-development/SKILL.md
+  - .claude/skills/test-driven-development/writing-good-tests.md
+  deployed_file_hashes:
+    .agents/skills/test-driven-development/SKILL.md: sha256:bf1b8216e523851a411e91d429a7c1c2a173e79d88957bc78e348218d50edd54
+    .agents/skills/test-driven-development/writing-good-tests.md: sha256:51471c853306ff92ca8bb41dcaea05f31c0e46b03651f8f3c99754b7172f4ae1
+    .claude/skills/test-driven-development/SKILL.md: sha256:bf1b8216e523851a411e91d429a7c1c2a173e79d88957bc78e348218d50edd54
+    .claude/skills/test-driven-development/writing-good-tests.md: sha256:51471c853306ff92ca8bb41dcaea05f31c0e46b03651f8f3c99754b7172f4ae1
+  content_hash: sha256:a4126a9c5f17be3c228aa9e5755898ade283448b86099f56f40852e8c14532be
+deployments:
+- kind: project-relative
+  target: agents
+  value: .agents/skills/gh
+  runtime: null
+  scope: project
+  owners:
+  - cli/cli/skills/gh
+  active_owner: cli/cli/skills/gh
+  content_hash: null
+- kind: project-relative
+  target: agents
+  value: .agents/skills/gh/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - cli/cli/skills/gh
+  active_owner: cli/cli/skills/gh
+  content_hash: sha256:cb3e3035ccade36b9e8a6c0a384f9d607c9954bd242d4c8097251b8b1e4c4985
+- kind: project-relative
+  target: agents
+  value: .agents/skills/grill-me
+  runtime: null
+  scope: project
+  owners:
+  - mattpocock/skills/skills/productivity/grill-me
+  active_owner: mattpocock/skills/skills/productivity/grill-me
+  content_hash: null
+- kind: project-relative
+  target: agents
+  value: .agents/skills/grill-me/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - mattpocock/skills/skills/productivity/grill-me
+  active_owner: mattpocock/skills/skills/productivity/grill-me
+  content_hash: sha256:caaf8b8de1684f96e26b28f3c29189db5c89cce4b73e1c93d86164f66ef88637
+- kind: project-relative
+  target: agents
+  value: .agents/skills/grill-me/agents/openai.yaml
+  runtime: null
+  scope: project
+  owners:
+  - mattpocock/skills/skills/productivity/grill-me
+  active_owner: mattpocock/skills/skills/productivity/grill-me
+  content_hash: sha256:c061e39c3e0f9d865fb1b97556d485704af2a8a58f4b8221a8917a5c2074a32b
+- kind: project-relative
+  target: agents
+  value: .agents/skills/ponytail
+  runtime: null
+  scope: project
+  owners:
+  - dietrichgebert/ponytail/skills/ponytail
+  active_owner: dietrichgebert/ponytail/skills/ponytail
+  content_hash: null
+- kind: project-relative
+  target: agents
+  value: .agents/skills/ponytail/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - dietrichgebert/ponytail/skills/ponytail
+  active_owner: dietrichgebert/ponytail/skills/ponytail
+  content_hash: sha256:1316a2f3f95741d2300b116fe0c2d81ce4a9568656ed0a62643f54aaf09957f2
+- kind: project-relative
+  target: agents
+  value: .agents/skills/test-driven-development
+  runtime: null
+  scope: project
+  owners:
+  - obra/superpowers/skills/test-driven-development
+  active_owner: obra/superpowers/skills/test-driven-development
+  content_hash: null
+- kind: project-relative
+  target: agents
+  value: .agents/skills/test-driven-development/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - obra/superpowers/skills/test-driven-development
+  active_owner: obra/superpowers/skills/test-driven-development
+  content_hash: sha256:bf1b8216e523851a411e91d429a7c1c2a173e79d88957bc78e348218d50edd54
+- kind: project-relative
+  target: agents
+  value: .agents/skills/test-driven-development/writing-good-tests.md
+  runtime: null
+  scope: project
+  owners:
+  - obra/superpowers/skills/test-driven-development
+  active_owner: obra/superpowers/skills/test-driven-development
+  content_hash: sha256:51471c853306ff92ca8bb41dcaea05f31c0e46b03651f8f3c99754b7172f4ae1
+- kind: project-relative
+  target: claude
+  value: .claude/skills/gh
+  runtime: null
+  scope: project
+  owners:
+  - cli/cli/skills/gh
+  active_owner: cli/cli/skills/gh
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/gh/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - cli/cli/skills/gh
+  active_owner: cli/cli/skills/gh
+  content_hash: sha256:cb3e3035ccade36b9e8a6c0a384f9d607c9954bd242d4c8097251b8b1e4c4985
+- kind: project-relative
+  target: claude
+  value: .claude/skills/grill-me
+  runtime: null
+  scope: project
+  owners:
+  - mattpocock/skills/skills/productivity/grill-me
+  active_owner: mattpocock/skills/skills/productivity/grill-me
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/grill-me/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - mattpocock/skills/skills/productivity/grill-me
+  active_owner: mattpocock/skills/skills/productivity/grill-me
+  content_hash: sha256:caaf8b8de1684f96e26b28f3c29189db5c89cce4b73e1c93d86164f66ef88637
+- kind: project-relative
+  target: claude
+  value: .claude/skills/grill-me/agents/openai.yaml
+  runtime: null
+  scope: project
+  owners:
+  - mattpocock/skills/skills/productivity/grill-me
+  active_owner: mattpocock/skills/skills/productivity/grill-me
+  content_hash: sha256:c061e39c3e0f9d865fb1b97556d485704af2a8a58f4b8221a8917a5c2074a32b
+- kind: project-relative
+  target: claude
+  value: .claude/skills/ponytail
+  runtime: null
+  scope: project
+  owners:
+  - dietrichgebert/ponytail/skills/ponytail
+  active_owner: dietrichgebert/ponytail/skills/ponytail
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/ponytail/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - dietrichgebert/ponytail/skills/ponytail
+  active_owner: dietrichgebert/ponytail/skills/ponytail
+  content_hash: sha256:1316a2f3f95741d2300b116fe0c2d81ce4a9568656ed0a62643f54aaf09957f2
+- kind: project-relative
+  target: claude
+  value: .claude/skills/test-driven-development
+  runtime: null
+  scope: project
+  owners:
+  - obra/superpowers/skills/test-driven-development
+  active_owner: obra/superpowers/skills/test-driven-development
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/test-driven-development/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - obra/superpowers/skills/test-driven-development
+  active_owner: obra/superpowers/skills/test-driven-development
+  content_hash: sha256:bf1b8216e523851a411e91d429a7c1c2a173e79d88957bc78e348218d50edd54
+- kind: project-relative
+  target: claude
+  value: .claude/skills/test-driven-development/writing-good-tests.md
+  runtime: null
+  scope: project
+  owners:
+  - obra/superpowers/skills/test-driven-development
+  active_owner: obra/superpowers/skills/test-driven-development
+  content_hash: sha256:51471c853306ff92ca8bb41dcaea05f31c0e46b03651f8f3c99754b7172f4ae1
+- kind: uri
+  target: mcp
+  value: awslabs.aws-documentation-mcp-server
+  runtime: claude
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: null
+- kind: uri
+  target: mcp
+  value: terraform
+  runtime: claude
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: null
+- kind: uri
+  target: mcp
+  value: awslabs.aws-documentation-mcp-server
+  runtime: codex
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: null
+- kind: uri
+  target: mcp
+  value: terraform
+  runtime: codex
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: null
+- kind: uri
+  target: mcp
+  value: awslabs.aws-documentation-mcp-server
+  runtime: cursor
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: null
+- kind: uri
+  target: mcp
+  value: terraform
+  runtime: cursor
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: null
+mcp_servers:
+- awslabs.aws-documentation-mcp-server
+- terraform
+mcp_configs:
+  awslabs.aws-documentation-mcp-server:
+    name: awslabs.aws-documentation-mcp-server
+    transport: stdio
+    env:
+      FASTMCP_LOG_LEVEL: ERROR
+      AWS_DOCUMENTATION_PARTITION: aws
+      MCP_USER_AGENT: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36
+        (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36
+    args:
+    - awslabs.aws-documentation-mcp-server@latest
+    registry: false
+    command: uvx
+  terraform:
+    name: terraform
+    transport: stdio
+    args:
+    - run
+    - -i
+    - --rm
+    - hashicorp/terraform-mcp-server:1.2.0
+    registry: false
+    command: docker
+mcp_target_servers:
+  claude:
+  - awslabs.aws-documentation-mcp-server
+  - terraform
+  codex:
+  - awslabs.aws-documentation-mcp-server
+  - terraform
+  cursor:
+  - awslabs.aws-documentation-mcp-server
+  - terraform

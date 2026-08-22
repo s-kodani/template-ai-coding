@@ -1,0 +1,37 @@
+name: template-ai-coding
+version: 1.0.0
+description: APM project for template-ai-coding
+author: KODANI Shinnosuke
+targets:
+  - claude
+  - codex
+  - cursor
+dependencies:
+  apm:
+    - DietrichGebert/ponytail/skills/ponytail
+    - obra/superpowers/skills/test-driven-development
+    - mattpocock/skills/skills/productivity/grill-me
+    - cli/cli/skills/gh
+  mcp:
+    - name: terraform
+      registry: false
+      transport: stdio
+      command: docker
+      args:
+        - run
+        - -i
+        - --rm
+        - hashicorp/terraform-mcp-server:1.2.0
+    - name: awslabs.aws-documentation-mcp-server
+      registry: false
+      transport: stdio
+      command: uvx
+      args:
+        - awslabs.aws-documentation-mcp-server@latest
+      env:
+        FASTMCP_LOG_LEVEL: ERROR
+        AWS_DOCUMENTATION_PARTITION: aws
+        MCP_USER_AGENT: Mozilla/5.0 (Windows NT 10.0; Win64; x64) 
+          AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36
+includes: auto
+scripts: {}
