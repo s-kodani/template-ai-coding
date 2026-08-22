@@ -1,0 +1,60 @@
+---
+type: Infrastructure
+title: インフラ
+description: 共有ネットワーク上のアプリと Langfuse の Docker Compose スタック。
+tags: [docker, langfuse, postgres]
+status: stable
+---
+
+# インフラ
+
+## Compose スタック
+
+| スタック | パス | 用途 |
+|---|---|---|
+| Langfuse 公式 | `infra/langfuse/docker-compose.yml` + `network.yml` | トレース UI とストレージ |
+| アプリケーション | `infra/app/compose.yml` | FastMCP、pgvector Postgres、Chainlit |
+
+共有 Docker ネットワーク: `observability`
+
+アプリの Chainlit / MCP サーバーは、Langfuse Web が実際に待ち受ける `langfuse_default` ネットワークにも接続します（`langfuse-web:3000` への OTLP 送信用）。
+
+## ホストポート
+
+| サービス | ポート |
+|---|---|
+| Langfuse UI | 3000 |
+| Chainlit | 8080 |
+| FastMCP | 127.0.0.1:8000 |
+| アプリ Postgres | 5433 |
+
+## 起動
+
+```bash
+make -C infra up
+make -C infra seed
+```
+
+Langfuse API キーは初回サインアップ後に手動で作成し、リポジトリルートの `.env` にコピーします。
+
+Langfuse スタック用の `infra/langfuse/.env` では、`ENCRYPTION_KEY` を 64 文字 hex（例: `openssl rand -hex 32`）に設定してください。形式が不正だと http://localhost:3000 が 500 になります。
+
+## トレースエクスポート
+
+Chainlit と FastMCP の両方で、FastMCP を import する **前に** Langfuse Python SDK を初期化します。キーが未設定の場合はトレースは no-op となり、サービスは起動可能です。
+
+## 手動検証
+
+1. **MCP Inspector**: `http://127.0.0.1:8000/mcp` に接続
+2. **Chainlit**: `search_knowledge` が呼ばれる質問を送信
+3. **Langfuse**: チャット 1 ターンあたり 1 本のトレースに、クライアント/サーバーのツールスパンがネストされていることを確認
+
+### トレース検証チェックリスト（1 ターン = 1 trace）
+
+| 確認項目 | 期待結果 |
+|---|---|
+| Langfuse トレース一覧 | `chat.turn` が **1 行** のみ |
+| トレース詳細 | `llm.generate` が `chat.turn` の子 |
+| ツール呼び出し | `search_knowledge` / `get_document` の input が tool observation に記録 |
+| MCP サーバー | `tools/call …` SERVER span 配下に `search.embed` / `search.query` |
+| 自動テスト | `uv run pytest tests/test_trace_propagation.py`（in-memory OTel、Langfuse 不要） |

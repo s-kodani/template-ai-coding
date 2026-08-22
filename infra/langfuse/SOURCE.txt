@@ -1,0 +1,2 @@
+docker-compose.yml の取得元: https://github.com/langfuse/langfuse/blob/main/docker-compose.yml
+更新日: 2026-08-22
