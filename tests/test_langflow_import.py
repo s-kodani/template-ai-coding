@@ -2,7 +2,7 @@ import uuid
 
 from pgvector.vector import Vector
 
-from knowledge_mcp.langflow_import import LANGFLOW_UNREACHABLE, map_langflow_rows
+from knowledge_mcp.langflow_import import LANGFLOW_UNREACHABLE, map_langflow_rows, remap_sources
 
 
 def test_langflow_unreachable_message_mentions_recreate() -> None:
@@ -80,3 +80,40 @@ def test_map_langflow_rows_accepts_pgvector_vector() -> None:
     mapped = map_langflow_rows(rows)
 
     assert mapped[0].embedding == [0.25, 0.5]
+
+
+def test_remap_sources_matches_uploaded_path_not_just_filename() -> None:
+    langflow_source = "user-1/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee.md"
+    rows = [
+        {
+            "id": "e-1",
+            "document": "chunk",
+            "embedding": [0.1],
+            "cmetadata": {"source": langflow_source},
+        }
+    ]
+
+    mapped = map_langflow_rows(rows)
+    remapped = remap_sources(mapped, {langflow_source: "data/ingest/notes.md"})
+
+    assert remapped[0].source == "data/ingest/notes.md"
+    assert remapped[0].document_id == uuid.uuid5(uuid.NAMESPACE_URL, "data/ingest/notes.md")
+    assert remapped[0].title == "notes.md"
+
+
+def test_remap_sources_replaces_untitled_with_host_filename() -> None:
+    rows = [
+        {
+            "id": "orphan-1",
+            "document": "chunk",
+            "embedding": [0.1],
+            "cmetadata": {},
+        }
+    ]
+
+    mapped = map_langflow_rows(rows)
+    remapped = remap_sources(mapped, {"Untitled": "data/ingest/sample.md"})
+
+    assert mapped[0].title == "Untitled"
+    assert remapped[0].source == "data/ingest/sample.md"
+    assert remapped[0].title == "sample.md"

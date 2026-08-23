@@ -15,7 +15,7 @@ status: stable
 1. PostgreSQL + pgvector 上の FastMCP ベクトル検索
 2. MCP ツールを呼び出し Langfuse ルートトレースを持つ Chainlit チャット UI（追加 MCP サーバを UI から接続可能）
 3. Chainlit、MCP クライアント/サーバー、embedding、Postgres クライアントスパンにわたる end-to-end 親子トレース
-4. 任意の Langflow サイドカーによるファイル Ingest。専用 Collection から `documents` へ adapter で複製し、Chainlit / FastMCP から検索する
+4. 任意の Langflow サイドカーによるファイル Ingest。ホスト原本を Files / Flow API で投入し、専用 Collection から `documents` へ adapter で複製して Chainlit / FastMCP から検索する
 
 ## 利用者
 

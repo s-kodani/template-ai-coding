@@ -35,6 +35,6 @@ Langfuse では Chainlit 側の `chat.turn` 配下に tool observation として
 
 ## MCP では公開しないもの
 
-- 文書 ingest（`scripts/seed.py` と `scripts/import_langflow.py` を使用）
+- 文書 ingest（`scripts/seed.py`、`scripts/run_langflow_ingest.py`、`scripts/import_langflow.py` を使用）
 - 文書削除（`scripts/delete_document.py`。親 `document_id` 単位）
 - Resource と Prompt

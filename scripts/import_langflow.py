@@ -9,7 +9,7 @@ from pgvector.asyncpg import register_vector
 
 from knowledge_mcp.config import Settings
 from knowledge_mcp.ingest import ChunkDraft, sync_document
-from knowledge_mcp.langflow_import import LANGFLOW_UNREACHABLE, map_langflow_rows
+from knowledge_mcp.langflow_import import LANGFLOW_UNREACHABLE, map_langflow_rows, remap_sources
 from knowledge_mcp.repository import VectorRepository
 
 FETCH_SQL = """
@@ -57,9 +57,13 @@ async def fetch_langflow_rows(settings: Settings) -> list[dict[str, Any]]:
     return mapped_rows
 
 
-async def import_langflow(settings: Settings) -> int:
+async def import_langflow(
+    settings: Settings, source_overrides: dict[str, str] | None = None
+) -> int:
     rows = await fetch_langflow_rows(settings)
     chunks = map_langflow_rows(rows)
+    if source_overrides:
+        chunks = remap_sources(chunks, source_overrides)
     grouped: dict[Any, list] = {}
     for chunk in chunks:
         grouped.setdefault(chunk.document_id, []).append(chunk)

@@ -1,7 +1,7 @@
 ---
 type: Architecture
 title: アーキテクチャ
-description: FastMCP、Chainlit、pgvector、Langfuse のトレース構成と、Langflow Ingest から documents への adapter。
+description: FastMCP、Chainlit、pgvector、Langfuse のトレース構成と、ホスト原本から Langflow API 経由で documents へ載せる Ingest。
 tags: [architecture, mcp, tracing, langflow]
 status: stable
 ---
@@ -46,11 +46,13 @@ flowchart TB
         ExtraMCP[追加 MCP サーバ]
         Langflow["Langflow<br/>infra/langflow/"]
         LFPG[("Langflow Postgres<br/>metadata + Collection")]
-        Adapter["import_langflow.py"]
+        Adapter["run_langflow_ingest.py\nimport_langflow.py"]
     end
 
     User -->|HTTP :8080| Chainlit
     User -->|HTTP :7860| Langflow
+    User -->|"host files (data/ingest)"| Adapter
+    Adapter -->|"Files API + Flow API"| Langflow
     Langflow --> LFPG
     Langflow -->|embeddings| LLM
     Adapter -->|read Collection| LFPG

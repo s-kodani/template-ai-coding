@@ -44,12 +44,14 @@ Langflow Ingest PoC はデフォルト起動に含まれない。
 make -C infra langflow-up
 ```
 
-UI は http://localhost:7860 。Langflow の PGVector は専用 Postgres の `langflow_vectors`（ホスト `localhost:5434`）へ書く。アプリの `documents` へは `make -C infra import-langflow` が複製する。
+UI は http://localhost:7860 。Langflow の PGVector は専用 Postgres の `langflow_vectors`（ホスト `localhost:5434`）へ書く。ホスト原本からの API Ingest は `make -C infra ingest-langflow`（既定 `data/ingest/`）。Collection からアプリの `documents` へは同コマンドが複製する。複製だけなら `make -C infra import-langflow`。
 
 既存のアプリ volume を Chunk / ライフサイクル列へ更新するには、seed の前に migrate する（`make -C infra seed` は migrate を先に実行する）。
 
 ```bash
 make -C infra migrate
+make -C infra ingest-langflow
+make -C infra ingest-langflow FILES='data/ingest/notes.md'
 make -C infra import-langflow
 make -C infra delete-document DOCUMENT_ID=<parent-uuid>
 ```

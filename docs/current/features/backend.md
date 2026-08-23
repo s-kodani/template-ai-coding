@@ -25,7 +25,7 @@ status: stable
 - 行の識別: `document_id` が親、`id` が chunk_id（MCP ヒット行 UUID）。加えて `content_hash` / `ingested_at` / `embedding_model`
 - 既存 volume: `make -C infra migrate`（`init.sql` は初回のみ）
 - シード: `scripts/seed.py`（1 文書 = 1 chunk。未変更なら Skip。MCP ingest ではない）
-- Langflow: 専用 Collection を `scripts/import_langflow.py` が `documents` へ載せる。未変更なら Skip、変更時は親配下を削除して再投入。SearchService は Collection を読まない（[Ingest](/current/features/ingest.md)、[ADR-0006](/decisions/ADR-0006-documents-chunk-schema.md)、[ADR-0007](/decisions/ADR-0007-document-lifecycle.md)）
+- Langflow: `scripts/run_langflow_ingest.py` がホスト原本を Files / Flow API で投入し、`scripts/import_langflow.py` が Collection を `documents` へ載せる。未変更なら Skip、変更時は親配下を削除して再投入。SearchService は Collection を読まない（[Ingest](/current/features/ingest.md)、[ADR-0006](/decisions/ADR-0006-documents-chunk-schema.md)、[ADR-0007](/decisions/ADR-0007-document-lifecycle.md)、[ADR-0008](/decisions/ADR-0008-host-originals-langflow-api.md)）
 - 文書単位削除: `scripts/delete_document.py`（親 `document_id` 配下の全 chunk）
 
 ## エラー

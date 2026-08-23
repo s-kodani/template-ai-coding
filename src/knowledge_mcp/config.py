@@ -29,6 +29,12 @@ class Settings(BaseSettings):
     db_timeout: float = 10.0
     langflow_vectors_url: str = "postgresql://langflow:langflow@localhost:5434/langflow_vectors"
     langflow_collection_name: str = "knowledge_documents_v1"
+    langflow_url: str = "http://localhost:7860"
+    langflow_api_key: str = ""
+    langflow_flow_id: str = ""
+    langflow_flow_name: str = "Ingest"
+    langflow_timeout: float = 120.0
+    langflow_ingest_dir: str = "data/ingest"
 
     @property
     def langfuse_configured(self) -> bool:

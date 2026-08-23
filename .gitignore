@@ -33,3 +33,7 @@ uv.lock
 
 # Generated Chainlit assets
 public/mcp-autoload.js
+
+# Host originals for Langflow API ingest
+data/ingest/*
+!data/ingest/.gitkeep

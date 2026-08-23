@@ -1,4 +1,4 @@
-.PHONY: network langfuse-up langfuse-down app-up app-down langflow-up langflow-down up down migrate import-langflow seed delete-document test
+.PHONY: network langfuse-up langfuse-down app-up app-down langflow-up langflow-down up down migrate import-langflow ingest-langflow seed delete-document test
 
 # make -C infra から呼ばれる前提。パスは Makefile 基準で解決する。
 INFRA_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
@@ -34,6 +34,9 @@ migrate:
 
 import-langflow:
 	cd $(ROOT) && uv run python scripts/import_langflow.py
+
+ingest-langflow:
+	cd $(ROOT) && uv run python scripts/run_langflow_ingest.py $(FILES)
 
 seed: migrate
 	cd $(ROOT) && uv run python scripts/seed.py

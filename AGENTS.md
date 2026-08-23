@@ -379,7 +379,7 @@ Backend:
 Infrastructure:
 - Platform: Docker Compose
 - IaC: `infra/app/compose.yml`, `infra/langfuse/docker-compose.yml` + `network.yml`, `infra/langflow/compose.yml`
-- Orchestration: `make -C infra up|down|migrate|seed`。Langflow は `make -C infra langflow-up|langflow-down|import-langflow`（デフォルト `up` には含めない）
+- Orchestration: `make -C infra up|down|migrate|seed`。Langflow は `make -C infra langflow-up|langflow-down|ingest-langflow|import-langflow`（デフォルト `up` には含めない）
 
 Validation:
 - Test: `uv run pytest`
@@ -394,7 +394,7 @@ Coding conventions:
 - TDD for SearchService and trace propagation tests
 - Langfuse SDK initializes before FastMCP import in both Chainlit and MCP server processes
 - Do not log API keys, embeddings, or full document bodies in spans
-- MCP tools are read-only search; system ingest via `scripts/seed.py` and `scripts/import_langflow.py`
+- MCP tools are read-only search; system ingest via `scripts/seed.py`, `scripts/run_langflow_ingest.py`, and `scripts/import_langflow.py`
 - Langflow is an optional ingest sidecar; it writes to its own Collection. A host adapter copies chunks into app `documents`. SearchService does not read LangChain / Langflow Collection tables
 
 Human approval:
