@@ -378,8 +378,8 @@ Backend:
 
 Infrastructure:
 - Platform: Docker Compose
-- IaC: `infra/app/compose.yml`, `infra/langfuse/docker-compose.yml` + `network.yml`
-- Orchestration: `make -C infra up|down|seed`
+- IaC: `infra/app/compose.yml`, `infra/langfuse/docker-compose.yml` + `network.yml`, `infra/langflow/compose.yml`
+- Orchestration: `make -C infra up|down|seed`。Langflow は `make -C infra langflow-up|langflow-down`（デフォルト `up` には含めない）
 
 Validation:
 - Test: `uv run pytest`
@@ -394,11 +394,12 @@ Coding conventions:
 - TDD for SearchService and trace propagation tests
 - Langfuse SDK initializes before FastMCP import in both Chainlit and MCP server processes
 - Do not log API keys, embeddings, or full document bodies in spans
-- MCP tools are read-only search; ingest via `scripts/seed.py` only
+- MCP tools are read-only search; system ingest via `scripts/seed.py` only
+- Langflow is an optional ingest sidecar; it must not write to app `documents` until a later Issue evolves that schema
 
 Human approval:
 
-- Level 1 architecture ADRs (0001–0004) were accepted with the implementation plan; confirm before production use outside local verification
+- Level 1 architecture ADRs (0001–0005) were accepted with the implementation plan; confirm before production use outside local verification
 
 ---
 

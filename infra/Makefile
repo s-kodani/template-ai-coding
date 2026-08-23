@@ -1,4 +1,4 @@
-.PHONY: network langfuse-up langfuse-down app-up app-down up down seed test
+.PHONY: network langfuse-up langfuse-down app-up app-down langflow-up langflow-down up down seed test
 
 # make -C infra から呼ばれる前提。パスは Makefile 基準で解決する。
 INFRA_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
@@ -18,6 +18,12 @@ app-up: network
 
 app-down:
 	docker compose -f $(INFRA_DIR)app/compose.yml down
+
+langflow-up:
+	docker compose -f $(INFRA_DIR)langflow/compose.yml --env-file $(ROOT)/.env up -d
+
+langflow-down:
+	docker compose -f $(INFRA_DIR)langflow/compose.yml down
 
 up: langfuse-up app-up
 

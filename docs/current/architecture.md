@@ -1,8 +1,8 @@
 ---
 type: Architecture
 title: アーキテクチャ
-description: FastMCP、Chainlit、pgvector、Langfuse のトレース構成。
-tags: [architecture, mcp, tracing]
+description: FastMCP、Chainlit、pgvector、Langfuse のトレース構成と任意の Langflow Ingest。
+tags: [architecture, mcp, tracing, langflow]
 status: stable
 ---
 
@@ -14,8 +14,9 @@ status: stable
 |---|---|
 | Chainlit（`src/chat_ui/`） | チャット UI、Langfuse ルートスパン、既定 FastMCP クライアント、追加 MCP 接続 UI |
 | FastMCP サーバー（`src/knowledge_mcp/`） | Streamable HTTP MCP、検索ツール、子スパン |
-| PostgreSQL + pgvector | アプリ用ベクトルストア（Langfuse DB とは分離） |
+| PostgreSQL + pgvector | アプリ用ベクトルストア（Langfuse DB・Langflow DB とは分離） |
 | Langfuse（公式 compose） | トレース取り込みと UI |
+| Langflow（任意サイドカー） | ファイル Ingest PoC。システム検索には接続しない |
 | MCP Inspector | FastMCP へのプロトコル検証 |
 
 ## アーキテクチャ図
@@ -41,11 +42,16 @@ flowchart TB
         Langfuse["Langfuse<br/>UI + trace ingest"]
     end
 
-    subgraph optional["任意接続"]
+    subgraph optional["任意"]
         ExtraMCP[追加 MCP サーバ]
+        Langflow["Langflow<br/>infra/langflow/"]
+        LFPG[("Langflow Postgres<br/>metadata + PoC vectors")]
     end
 
     User -->|HTTP :8080| Chainlit
+    User -->|HTTP :7860| Langflow
+    Langflow --> LFPG
+    Langflow -->|embeddings（PoC）| LLM
     User -->|"MCP 接続 UI（HTTP/SSE）"| Chainlit
     Inspector -->|"Streamable HTTP :8000/mcp"| MCP
     Chainlit -->|"Streamable HTTP /mcp（既定）"| MCP

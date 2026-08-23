@@ -21,8 +21,9 @@ status: stable
 
 ## データ投入
 
-- スキーマ: `infra/app/init.sql`
+- スキーマ: `infra/app/init.sql`（`documents`。システム検索インデックスの SoT）
 - シード: `scripts/seed.py`（fixture 文書。MCP ingest ではない）
+- Langflow: 任意の Ingest PoC。書き込み先は Langflow 専用 DB であり、`documents` には入らない（[Ingest](/current/features/ingest.md)、[ADR-0005](/decisions/ADR-0005-langflow-ingest-sidecar.md)）
 
 ## エラー
 

@@ -37,6 +37,7 @@ make -C infra seed
 | FastMCP | http://127.0.0.1:8000/mcp |
 | Langfuse | http://localhost:3000 |
 | アプリ Postgres | localhost:5433 |
+| Langflow（任意） | http://localhost:7860 |
 
 ## 開発
 
@@ -52,3 +53,13 @@ npx @modelcontextprotocol/inspector
 ```
 
 `http://127.0.0.1:8000/mcp`（Streamable HTTP）に接続します。
+
+## Langflow Ingest PoC（任意）
+
+既存検索スタックとは独立して起動します。
+
+```bash
+make -C infra langflow-up
+```
+
+http://localhost:7860 で Read File → Split Text → OpenAI Embeddings → PGVector を組む。書き込み先は Langflow 専用 DB であり、Chainlit 検索には出ない。停止は `make -C infra langflow-down`。

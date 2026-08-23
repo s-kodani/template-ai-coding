@@ -1,8 +1,8 @@
 ---
 type: Infrastructure
 title: インフラ
-description: 共有ネットワーク上のアプリと Langfuse の Docker Compose スタック。
-tags: [docker, langfuse, postgres]
+description: アプリ、Langfuse、任意 Langflow の Docker Compose スタック。
+tags: [docker, langfuse, langflow, postgres]
 status: stable
 ---
 
@@ -14,8 +14,9 @@ status: stable
 |---|---|---|
 | Langfuse 公式 | `infra/langfuse/docker-compose.yml` + `network.yml` | トレース UI とストレージ |
 | アプリケーション | `infra/app/compose.yml` | FastMCP、pgvector Postgres、Chainlit |
+| Langflow（任意） | `infra/langflow/compose.yml` | Ingest PoC。`make -C infra langflow-up` |
 
-共有 Docker ネットワーク: `observability`
+アプリと Langfuse の共有 Docker ネットワーク: `observability`。Langflow スタックは独立ネットワークであり、このネットワークには参加しない。
 
 アプリの Chainlit / MCP サーバーは、Langfuse Web が実際に待ち受ける `langfuse_default` ネットワークにも接続します（`langfuse-web:3000` への OTLP 送信用）。
 
@@ -27,6 +28,7 @@ status: stable
 | Chainlit | 8080 |
 | FastMCP | 127.0.0.1:8000 |
 | アプリ Postgres | 5433 |
+| Langflow UI | 7860 |
 
 ## 起動
 
@@ -34,6 +36,14 @@ status: stable
 make -C infra up
 make -C infra seed
 ```
+
+Langflow Ingest PoC はデフォルト起動に含まれない。
+
+```bash
+make -C infra langflow-up
+```
+
+UI は http://localhost:7860 。PoC 用 PGVector は Langflow 専用 Postgres の `langflow_vectors` であり、アプリの `documents` テーブルには書き込まない。
 
 Langfuse API キーは初回サインアップ後に手動で作成し、リポジトリルートの `.env` にコピーします。
 
