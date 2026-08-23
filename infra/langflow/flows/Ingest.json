@@ -90,34 +90,6 @@
         "sourceHandle": "{œdataTypeœ:œFileœ,œidœ:œFile-ifAAuœ,œnameœ:œmessageœ,œoutput_typesœ:[œMessageœ]}",
         "target": "SplitText-jNY11",
         "targetHandle": "{œfieldNameœ:œdata_inputsœ,œidœ:œSplitText-jNY11œ,œinputTypesœ:[œDataœ,œJSONœ,œDataFrameœ,œTableœ,œMessageœ],œtypeœ:œotherœ}"
-      },
-      {
-        "animated": false,
-        "className": "",
-        "data": {
-          "sourceHandle": {
-            "dataType": "EmbeddingModel",
-            "id": "EmbeddingModel-iV9eM",
-            "name": "embeddings",
-            "output_types": [
-              "Embeddings"
-            ]
-          },
-          "targetHandle": {
-            "fieldName": "embedding",
-            "id": "ext:pgvector:PGVectorStoreComponent@official-JGTq0",
-            "inputTypes": [
-              "Embeddings"
-            ],
-            "type": "other"
-          }
-        },
-        "id": "xy-edge__EmbeddingModel-iV9eM{œdataTypeœ:œEmbeddingModelœ,œidœ:œEmbeddingModel-iV9eMœ,œnameœ:œembeddingsœ,œoutput_typesœ:[œEmbeddingsœ]}-ext:pgvector:PGVectorStoreComponent@official-JGTq0{œfieldNameœ:œembeddingœ,œidœ:œext:pgvector:PGVectorStoreComponent@official-JGTq0œ,œinputTypesœ:[œEmbeddingsœ],œtypeœ:œotherœ}",
-        "selected": false,
-        "source": "EmbeddingModel-iV9eM",
-        "sourceHandle": "{œdataTypeœ:œEmbeddingModelœ,œidœ:œEmbeddingModel-iV9eMœ,œnameœ:œembeddingsœ,œoutput_typesœ:[œEmbeddingsœ]}",
-        "target": "ext:pgvector:PGVectorStoreComponent@official-JGTq0",
-        "targetHandle": "{œfieldNameœ:œembeddingœ,œidœ:œext:pgvector:PGVectorStoreComponent@official-JGTq0œ,œinputTypesœ:[œEmbeddingsœ],œtypeœ:œotherœ}"
       }
     ],
     "nodes": [
@@ -164,7 +136,7 @@
             ],
             "frozen": false,
             "icon": "file-text",
-            "last_updated": "2026-08-23T06:11:57.056Z",
+            "last_updated": "2026-08-23T08:49:19.669Z",
             "legacy": false,
             "lf_version": "1.11.4",
             "metadata": {
@@ -896,10 +868,6 @@
         },
         "dragging": false,
         "id": "File-ifAAu",
-        "measured": {
-          "height": 280,
-          "width": 320
-        },
         "position": {
           "x": 234.31943527218567,
           "y": 421.91495433458033
@@ -1171,10 +1139,6 @@
         },
         "dragging": false,
         "id": "SplitText-jNY11",
-        "measured": {
-          "height": 415,
-          "width": 320
-        },
         "position": {
           "x": 759.9872108558807,
           "y": 102.77661539826197
@@ -1216,7 +1180,7 @@
             ],
             "frozen": false,
             "icon": "binary",
-            "last_updated": "2026-08-23T06:11:57.059Z",
+            "last_updated": "2026-08-23T08:49:19.672Z",
             "legacy": false,
             "lf_version": "1.11.4",
             "metadata": {
@@ -1756,13 +1720,9 @@
         },
         "dragging": false,
         "id": "EmbeddingModel-iV9eM",
-        "measured": {
-          "height": 207,
-          "width": 320
-        },
         "position": {
-          "x": 628.9208395294231,
-          "y": 875.526028219403
+          "x": 662.0017609346759,
+          "y": 868.34398607221
         },
         "selected": false,
         "type": "genericNode"
@@ -2045,303 +2005,18 @@
         },
         "dragging": false,
         "id": "ext:pgvector:PGVectorStoreComponent@official-mB2mI",
-        "measured": {
-          "height": 459,
-          "width": 320
-        },
         "position": {
           "x": 1162.6863701165423,
           "y": 384.9254582342838
         },
         "selected": false,
         "type": "genericNode"
-      },
-      {
-        "data": {
-          "id": "ext:pgvector:PGVectorStoreComponent@official-JGTq0",
-          "node": {
-            "base_classes": [
-              "JSON",
-              "Table"
-            ],
-            "beta": false,
-            "bundle": "pgvector",
-            "conditional_paths": [],
-            "custom_fields": {},
-            "description": "PGVector Vector Store with search capabilities",
-            "display_name": "PGVector",
-            "documentation": "",
-            "edited": false,
-            "extension": "lfx-bundles",
-            "extension_version": "1.1.1",
-            "field_order": [
-              "pg_server_url",
-              "collection_name",
-              "ingest_data",
-              "search_query",
-              "should_cache_vector_store",
-              "embedding",
-              "number_of_results"
-            ],
-            "frozen": false,
-            "icon": "cpu",
-            "legacy": false,
-            "lf_version": "1.11.4",
-            "metadata": {
-              "code_hash": "1031a4ba98ef",
-              "dependencies": {
-                "dependencies": [
-                  {
-                    "name": "langchain_community",
-                    "version": "0.4.2"
-                  },
-                  {
-                    "name": "lfx",
-                    "version": "1.11.4"
-                  }
-                ],
-                "total_dependencies": 2
-              },
-              "module": "_lfx_ext.official.pgvector.pgvector"
-            },
-            "minimized": false,
-            "name": "pgvector",
-            "namespaced_id": "ext:pgvector:PGVectorStoreComponent@official",
-            "output_types": [],
-            "outputs": [
-              {
-                "allows_loop": false,
-                "cache": true,
-                "display_name": "Search Results",
-                "group_outputs": false,
-                "method": "search_documents",
-                "name": "search_results",
-                "selected": "JSON",
-                "tool_mode": true,
-                "types": [
-                  "JSON"
-                ],
-                "value": "__UNDEFINED__"
-              },
-              {
-                "allows_loop": false,
-                "cache": true,
-                "display_name": "Table",
-                "group_outputs": false,
-                "method": "as_dataframe",
-                "name": "dataframe",
-                "tool_mode": true,
-                "types": [
-                  "Table"
-                ],
-                "value": "__UNDEFINED__"
-              }
-            ],
-            "pinned": false,
-            "template": {
-              "_type": "Component",
-              "code": {
-                "advanced": true,
-                "api_editable": false,
-                "dynamic": true,
-                "fileTypes": [],
-                "file_path": "",
-                "info": "",
-                "list": false,
-                "load_from_db": false,
-                "multiline": true,
-                "name": "code",
-                "password": false,
-                "placeholder": "",
-                "required": true,
-                "show": true,
-                "title_case": false,
-                "type": "code",
-                "value": "from langchain_community.vectorstores import PGVector\nfrom lfx.base.vectorstores.model import LCVectorStoreComponent, check_cached_vector_store\nfrom lfx.helpers.data import docs_to_data\nfrom lfx.io import HandleInput, IntInput, SecretStrInput, StrInput\nfrom lfx.schema.data import Data\nfrom lfx.utils.connection_string_parser import transform_connection_string\n\n\nclass PGVectorStoreComponent(LCVectorStoreComponent):\n    display_name = \"PGVector\"\n    description = \"PGVector Vector Store with search capabilities\"\n    name = \"pgvector\"\n    icon = \"cpu\"\n\n    inputs = [\n        SecretStrInput(name=\"pg_server_url\", display_name=\"PostgreSQL Server Connection String\", required=True),\n        StrInput(name=\"collection_name\", display_name=\"Table\", required=True),\n        *LCVectorStoreComponent.inputs,\n        HandleInput(name=\"embedding\", display_name=\"Embedding\", input_types=[\"Embeddings\"], required=True),\n        IntInput(\n            name=\"number_of_results\",\n            display_name=\"Number of Results\",\n            info=\"Number of results to return.\",\n            value=4,\n            advanced=True,\n        ),\n    ]\n\n    @check_cached_vector_store\n    def build_vector_store(self) -> PGVector:\n        # Convert DataFrame to Data if needed using parent's method\n        self.ingest_data = self._prepare_ingest_data()\n\n        documents = []\n        for _input in self.ingest_data or []:\n            if isinstance(_input, Data):\n                documents.append(_input.to_lc_document())\n            else:\n                documents.append(_input)\n\n        connection_string_parsed = transform_connection_string(self.pg_server_url)\n\n        if documents:\n            pgvector = PGVector.from_documents(\n                embedding=self.embedding,\n                documents=documents,\n                collection_name=self.collection_name,\n                connection_string=connection_string_parsed,\n            )\n        else:\n            pgvector = PGVector.from_existing_index(\n                embedding=self.embedding,\n                collection_name=self.collection_name,\n                connection_string=connection_string_parsed,\n            )\n\n        return pgvector\n\n    def search_documents(self) -> list[Data]:\n        vector_store = self.build_vector_store()\n\n        if self.search_query and isinstance(self.search_query, str) and self.search_query.strip():\n            docs = vector_store.similarity_search(\n                query=self.search_query,\n                k=self.number_of_results,\n            )\n\n            data = docs_to_data(docs)\n            self.status = data\n            return data\n        return []\n"
-              },
-              "collection_name": {
-                "_input_type": "StrInput",
-                "advanced": false,
-                "api_editable": false,
-                "display_name": "Table",
-                "dynamic": false,
-                "info": "",
-                "list": false,
-                "list_add_label": "Add More",
-                "load_from_db": false,
-                "name": "collection_name",
-                "override_skip": false,
-                "placeholder": "",
-                "required": true,
-                "show": true,
-                "title_case": false,
-                "tool_mode": false,
-                "trace_as_metadata": true,
-                "track_in_telemetry": false,
-                "type": "str",
-                "value": "knowledge_documents_v1"
-              },
-              "embedding": {
-                "_input_type": "HandleInput",
-                "advanced": false,
-                "api_editable": false,
-                "display_name": "Embedding",
-                "dynamic": false,
-                "info": "",
-                "input_types": [
-                  "Embeddings"
-                ],
-                "list": false,
-                "list_add_label": "Add More",
-                "name": "embedding",
-                "override_skip": false,
-                "placeholder": "",
-                "required": true,
-                "show": true,
-                "title_case": false,
-                "trace_as_metadata": true,
-                "track_in_telemetry": false,
-                "type": "other",
-                "value": ""
-              },
-              "ingest_data": {
-                "_input_type": "HandleInput",
-                "advanced": false,
-                "api_editable": false,
-                "display_name": "Ingest Data",
-                "dynamic": false,
-                "info": "",
-                "input_types": [
-                  "Data",
-                  "DataFrame",
-                  "Table"
-                ],
-                "list": true,
-                "list_add_label": "Add More",
-                "name": "ingest_data",
-                "override_skip": false,
-                "placeholder": "",
-                "required": false,
-                "show": true,
-                "title_case": false,
-                "trace_as_metadata": true,
-                "track_in_telemetry": false,
-                "type": "other",
-                "value": ""
-              },
-              "number_of_results": {
-                "_input_type": "IntInput",
-                "advanced": true,
-                "api_editable": false,
-                "display_name": "Number of Results",
-                "dynamic": false,
-                "info": "Number of results to return.",
-                "list": false,
-                "list_add_label": "Add More",
-                "name": "number_of_results",
-                "override_skip": false,
-                "placeholder": "",
-                "required": false,
-                "show": true,
-                "title_case": false,
-                "tool_mode": false,
-                "trace_as_metadata": true,
-                "track_in_telemetry": true,
-                "type": "int",
-                "value": 4
-              },
-              "pg_server_url": {
-                "_input_type": "SecretStrInput",
-                "advanced": false,
-                "api_editable": false,
-                "display_name": "PostgreSQL Server Connection String",
-                "dynamic": false,
-                "info": "",
-                "input_types": [],
-                "load_from_db": false,
-                "name": "pg_server_url",
-                "override_skip": false,
-                "password": true,
-                "placeholder": "",
-                "required": true,
-                "show": true,
-                "title_case": false,
-                "track_in_telemetry": false,
-                "type": "str",
-                "value": ""
-              },
-              "search_query": {
-                "_input_type": "QueryInput",
-                "advanced": false,
-                "api_editable": false,
-                "display_name": "Search Query",
-                "dynamic": false,
-                "info": "Enter a query to run a similarity search.",
-                "input_types": [
-                  "Message"
-                ],
-                "list": false,
-                "list_add_label": "Add More",
-                "load_from_db": false,
-                "name": "search_query",
-                "override_skip": false,
-                "placeholder": "Enter a query...",
-                "required": false,
-                "show": true,
-                "title_case": false,
-                "tool_mode": true,
-                "trace_as_input": true,
-                "trace_as_metadata": true,
-                "track_in_telemetry": false,
-                "type": "query",
-                "value": "Tell me About your Architecture."
-              },
-              "should_cache_vector_store": {
-                "_input_type": "BoolInput",
-                "advanced": true,
-                "api_editable": false,
-                "display_name": "Cache Vector Store",
-                "dynamic": false,
-                "info": "If True, the vector store will be cached for the current build of the component. This is useful for components that have multiple output methods and want to share the same vector store.",
-                "list": false,
-                "list_add_label": "Add More",
-                "name": "should_cache_vector_store",
-                "override_skip": false,
-                "placeholder": "",
-                "required": false,
-                "show": true,
-                "title_case": false,
-                "tool_mode": false,
-                "trace_as_metadata": true,
-                "track_in_telemetry": true,
-                "type": "bool",
-                "value": true
-              }
-            },
-            "tool_mode": false
-          },
-          "selected_output": "search_results",
-          "showNode": true,
-          "type": "ext:pgvector:PGVectorStoreComponent@official"
-        },
-        "dragging": false,
-        "id": "ext:pgvector:PGVectorStoreComponent@official-JGTq0",
-        "measured": {
-          "height": 459,
-          "width": 320
-        },
-        "position": {
-          "x": 1994.1006292700363,
-          "y": 532.3912451761579
-        },
-        "selected": false,
-        "type": "genericNode"
       }
     ],
     "viewport": {
-      "x": -69.74860482534075,
-      "y": 46.921691589915554,
-      "zoom": 0.5409222870399523
+      "x": 274.783385083849,
+      "y": 12.792660565033316,
+      "zoom": 0.659753955386447
     }
   },
   "description": "Chain the Words, Master Language!",

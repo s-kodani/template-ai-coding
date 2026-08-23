@@ -35,9 +35,11 @@ status: stable
 - Langflow コンテナはアプリ Postgres に接続しない
 - `scripts/import_langflow.py` が Collection を読み、アプリの `documents` へ [ライフサイクル](/decisions/ADR-0007-document-lifecycle.md) で載せる
 - SearchService / FastMCP / Chainlit は `documents` だけを検索する。Collection は直読みしない
-- 確認済み Flow は `infra/langflow/flows/Ingest.json`（name `Ingest`）。API キーと DB URL は空（環境変数 / UI Credential を使う）
-- API 実行には UI 上に同名 Flow があること。無ければ `Ingest.json` を import するか `LANGFLOW_FLOW_ID` を設定する
-- `/api/v1/run` は Ingest 用 PGVector（`ext:pgvector:PGVectorStoreComponent@official-mB2mI`）だけを出力対象にする。検索用 PGVector は走らせない。`output_type=debug` は Embedding の `httpx.Client` をシリアライズできずタイムアウトするため使わない
+- 確認済み Flow は UI から Export した次の 2 本。API キーと DB URL は空（環境変数 / UI Credential を使う）
+  - `infra/langflow/flows/Ingest.json`（name `Ingest`）— 書き込み。PGVector は `ext:pgvector:PGVectorStoreComponent@official-mB2mI` 1 つ
+  - `infra/langflow/flows/QueryPgVector.json`（name `QueryPgVector`）— Collection の類似検索確認。Embedding Model → PGVector（`official-JGTq0`）。アプリの SearchService は使わない
+- API Ingest は `Ingest` だけを実行する。UI 上に同名 Flow が無ければ `Ingest.json` を import するか `LANGFLOW_FLOW_ID` を設定する。`QueryPgVector` は UI 確認用で、`ingest-langflow` からは呼ばない
+- `/api/v1/run` は書き込み用 PGVector を出力対象にする。`output_type=debug` は Embedding の `httpx.Client` をシリアライズできずタイムアウトするため使わない
 - `LANGFLOW_API_KEY` はルート `.env` のみ。未設定時は `auto_login` を試す。Git / Flow / compose には置かない
 
 ## 接続例

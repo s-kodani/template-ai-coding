@@ -28,6 +28,9 @@ MAKEFILE = (ROOT / "infra" / "Makefile").read_text(encoding="utf-8")
 ENV_EXAMPLE = (ROOT / ".env.example").read_text(encoding="utf-8")
 COMPOSE = (ROOT / "infra" / "langflow" / "compose.yml").read_text(encoding="utf-8")
 FLOW = (ROOT / "infra" / "langflow" / "flows" / "Ingest.json").read_text(encoding="utf-8")
+QUERY_FLOW = (ROOT / "infra" / "langflow" / "flows" / "QueryPgVector.json").read_text(
+    encoding="utf-8"
+)
 SCRIPT = (ROOT / "scripts" / "run_langflow_ingest.py").read_text(encoding="utf-8")
 
 
@@ -234,6 +237,13 @@ def test_makefile_and_env_expose_api_ingest_without_secrets() -> None:
     assert '"id": "File-ifAAu"' in FLOW
     assert '"name": "Ingest"' in FLOW
     assert INGEST_OUTPUT_COMPONENT in FLOW
+    assert FLOW.count("PGVectorStoreComponent@") == FLOW.count(INGEST_OUTPUT_COMPONENT)
+    assert "official-JGTq0" not in FLOW
+    assert '"name": "QueryPgVector"' in QUERY_FLOW
+    assert "official-JGTq0" in QUERY_FLOW
+    assert "File-ifAAu" not in QUERY_FLOW
+    assert '"sk-' not in QUERY_FLOW
+    assert "knowledge_documents_v1" in QUERY_FLOW
 
 
 class FakeLangflowClient:

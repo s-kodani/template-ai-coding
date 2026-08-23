@@ -2,6 +2,7 @@
 
 ## 2026-08-23
 
+- **Changed**: Langflow の書き込みと Collection 確認を分離する。`Ingest.json` は書き込みのみ、類似検索は `QueryPgVector.json`（[Ingest](/current/features/ingest.md)）
 - **Added**: ホスト原本（`data/ingest/`）を Langflow Files API / Flow API から順次 Ingest し、`documents` へ載せる（[Ingest](/current/features/ingest.md)、[ADR-0008](/decisions/ADR-0008-host-originals-langflow-api.md)）
 - **Changed**: 同一文書の再投入を `content_hash` で検出し、未変更は Skip、変更時は親 `document_id` の旧 chunk を削除してから再 Ingest する（[検索バックエンド](/current/features/backend.md)、[Ingest](/current/features/ingest.md)、[ADR-0007](/decisions/ADR-0007-document-lifecycle.md)）
 - **Changed**: `documents` を 1 行 = 1 chunk にし、Langflow Collection からシステム検索インデックスへ複製できるようにする（[検索バックエンド](/current/features/backend.md)、[Ingest](/current/features/ingest.md)、[ADR-0006](/decisions/ADR-0006-documents-chunk-schema.md)）
