@@ -5,6 +5,7 @@ import asyncio
 from knowledge_mcp.chunk_ids import parent_document_id
 from knowledge_mcp.config import Settings
 from knowledge_mcp.embedding import EmbeddingClient
+from knowledge_mcp.ingest import ChunkDraft, fingerprint_matches, replace_document
 from knowledge_mcp.repository import VectorRepository
 
 FIXTURES: list[dict[str, str]] = [
@@ -42,19 +43,36 @@ async def seed(settings: Settings) -> None:
     await repository.connect()
 
     try:
+        replaced = 0
+        skipped = 0
         for fixture in FIXTURES:
+            document_id = parent_document_id(fixture["source"])
+            if await fingerprint_matches(
+                repository,
+                document_id,
+                [fixture["content"]],
+                embedding_model=settings.embedding_model,
+            ):
+                skipped += 1
+                continue
             vector = await embedding_client.embed(fixture["content"])
-            await repository.upsert_document(
-                title=fixture["title"],
-                content=fixture["content"],
-                source=fixture["source"],
-                embedding=vector,
-                document_id=parent_document_id(fixture["source"]),
-                chunk_index=0,
-                metadata={},
+            await replace_document(
+                repository,
+                [
+                    ChunkDraft(
+                        document_id=document_id,
+                        chunk_index=0,
+                        title=fixture["title"],
+                        content=fixture["content"],
+                        source=fixture["source"],
+                        embedding=vector,
+                    )
+                ],
+                embedding_model=settings.embedding_model,
             )
+            replaced += 1
         count = await repository.count_documents()
-        print(f"Seeded {count} documents.")
+        print(f"Seeded {count} documents ({replaced} replaced, {skipped} skipped).")
     finally:
         await repository.close()
         await embedding_client.aclose()

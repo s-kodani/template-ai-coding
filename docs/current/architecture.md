@@ -54,7 +54,7 @@ flowchart TB
     Langflow --> LFPG
     Langflow -->|embeddings| LLM
     Adapter -->|read Collection| LFPG
-    Adapter -->|upsert chunks| PG
+    Adapter -->|lifecycle sync| PG
     User -->|"MCP 接続 UI（HTTP/SSE）"| Chainlit
     Inspector -->|"Streamable HTTP :8000/mcp"| MCP
     Chainlit -->|"Streamable HTTP /mcp（既定）"| MCP

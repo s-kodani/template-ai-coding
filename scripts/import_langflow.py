@@ -8,6 +8,7 @@ import asyncpg
 from pgvector.asyncpg import register_vector
 
 from knowledge_mcp.config import Settings
+from knowledge_mcp.ingest import ChunkDraft, sync_document
 from knowledge_mcp.langflow_import import LANGFLOW_UNREACHABLE, map_langflow_rows
 from knowledge_mcp.repository import VectorRepository
 
@@ -59,18 +60,29 @@ async def fetch_langflow_rows(settings: Settings) -> list[dict[str, Any]]:
 async def import_langflow(settings: Settings) -> int:
     rows = await fetch_langflow_rows(settings)
     chunks = map_langflow_rows(rows)
+    grouped: dict[Any, list] = {}
+    for chunk in chunks:
+        grouped.setdefault(chunk.document_id, []).append(chunk)
+
     repository = VectorRepository(settings.host_database_url, settings.db_timeout)
     await repository.connect()
     try:
-        for chunk in chunks:
-            await repository.upsert_document(
-                title=chunk.title,
-                content=chunk.content,
-                source=chunk.source,
-                embedding=chunk.embedding,
-                document_id=chunk.document_id,
-                chunk_index=chunk.chunk_index,
-                metadata=chunk.metadata,
+        for group in grouped.values():
+            await sync_document(
+                repository,
+                [
+                    ChunkDraft(
+                        document_id=chunk.document_id,
+                        chunk_index=chunk.chunk_index,
+                        title=chunk.title,
+                        content=chunk.content,
+                        source=chunk.source,
+                        embedding=chunk.embedding,
+                        metadata=chunk.metadata,
+                    )
+                    for chunk in group
+                ],
+                embedding_model=settings.embedding_model,
             )
     finally:
         await repository.close()

@@ -36,4 +36,4 @@ decision_status: accepted
 - 同一親の複数 chunk を格納できる
 - 既存 fixture は `chunk_index = 0` の 1 文書 = 1 chunk として互換維持できる
 - 既存 volume は `init.sql` 再実行では更新されないため、明示的な migrate が必要
-- chunk 数減少時のゴミ行削除は対象外（後続 Issue）
+- chunk 数減少時のゴミ行削除は [ADR-0007](/decisions/ADR-0007-document-lifecycle.md) で、未変更 Skip と `document_id` 単位の削除・再投入として実装する

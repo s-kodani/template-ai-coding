@@ -104,6 +104,34 @@ class VectorRepository:
         pool = self._require_pool()
         return int(await pool.fetchval("SELECT COUNT(*) FROM documents"))
 
+    async def list_chunk_fingerprints(self, document_id: UUID) -> list[dict]:
+        pool = self._require_pool()
+        rows = await pool.fetch(
+            """
+            SELECT chunk_index, content_hash, embedding_model
+            FROM documents
+            WHERE document_id = $1::uuid
+            ORDER BY chunk_index
+            """,
+            str(document_id),
+        )
+        return [
+            {
+                "chunk_index": row["chunk_index"],
+                "content_hash": row["content_hash"],
+                "embedding_model": row["embedding_model"],
+            }
+            for row in rows
+        ]
+
+    async def delete_by_document_id(self, document_id: UUID) -> int:
+        pool = self._require_pool()
+        result = await pool.execute(
+            "DELETE FROM documents WHERE document_id = $1::uuid",
+            str(document_id),
+        )
+        return int(result.split()[-1])
+
     async def upsert_document(
         self,
         *,
@@ -114,20 +142,26 @@ class VectorRepository:
         document_id: UUID | None = None,
         chunk_index: int = 0,
         metadata: dict | None = None,
+        content_hash: str | None = None,
+        embedding_model: str | None = None,
     ) -> str:
         pool = self._require_pool()
         parent_id = document_id or parent_document_id(source)
         row = await pool.fetchrow(
             """
             INSERT INTO documents (
-                document_id, chunk_index, title, content, source, metadata, embedding
+                document_id, chunk_index, title, content, source, metadata,
+                content_hash, embedding_model, embedding
             )
-            VALUES ($1::uuid, $2, $3, $4, $5, $6::jsonb, $7::vector)
+            VALUES ($1::uuid, $2, $3, $4, $5, $6::jsonb, $7, $8, $9::vector)
             ON CONFLICT (document_id, chunk_index) DO UPDATE
             SET title = EXCLUDED.title,
                 content = EXCLUDED.content,
                 source = EXCLUDED.source,
                 metadata = EXCLUDED.metadata,
+                content_hash = EXCLUDED.content_hash,
+                embedding_model = EXCLUDED.embedding_model,
+                ingested_at = now(),
                 embedding = EXCLUDED.embedding
             RETURNING id::text
             """,
@@ -137,6 +171,8 @@ class VectorRepository:
             content,
             source,
             json.dumps(metadata or {}),
+            content_hash,
+            embedding_model,
             embedding,
         )
         return row["id"]

@@ -63,4 +63,4 @@ npx @modelcontextprotocol/inspector
 make -C infra langflow-up
 ```
 
-http://localhost:7860 で Read File → Split Text → OpenAI Embeddings → PGVector を組む。書き込み先は Langflow 専用 DB。システム検索へ載せるには `make -C infra import-langflow`。停止は `make -C infra langflow-down`。既存アプリ volume は `make -C infra migrate`（`seed` が先に実行する）。
+http://localhost:7860 で Read File → Split Text → OpenAI Embeddings → PGVector を組む。書き込み先は Langflow 専用 DB。システム検索へ載せるには `make -C infra import-langflow`。未変更の再投入は Skip。停止は `make -C infra langflow-down`。既存アプリ volume は `make -C infra migrate`（`seed` が先に実行する）。文書単位削除は `make -C infra delete-document DOCUMENT_ID=<uuid>`。

@@ -9,6 +9,9 @@ CREATE TABLE IF NOT EXISTS documents (
     content TEXT NOT NULL,
     source TEXT,
     metadata JSONB NOT NULL DEFAULT '{}',
+    content_hash TEXT,
+    ingested_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    embedding_model TEXT,
     embedding vector(1536),
     UNIQUE (document_id, chunk_index)
 );

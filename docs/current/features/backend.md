@@ -22,9 +22,11 @@ status: stable
 ## データ投入
 
 - スキーマ: `infra/app/init.sql`（`documents`。1 行 = 1 chunk。システム検索インデックスの SoT）
+- 行の識別: `document_id` が親、`id` が chunk_id（MCP ヒット行 UUID）。加えて `content_hash` / `ingested_at` / `embedding_model`
 - 既存 volume: `make -C infra migrate`（`init.sql` は初回のみ）
-- シード: `scripts/seed.py`（1 文書 = 1 chunk。MCP ingest ではない）
-- Langflow: 専用 Collection を `scripts/import_langflow.py` が `documents` へ upsert する。SearchService は Collection を読まない（[Ingest](/current/features/ingest.md)、[ADR-0006](/decisions/ADR-0006-documents-chunk-schema.md)）
+- シード: `scripts/seed.py`（1 文書 = 1 chunk。未変更なら Skip。MCP ingest ではない）
+- Langflow: 専用 Collection を `scripts/import_langflow.py` が `documents` へ載せる。未変更なら Skip、変更時は親配下を削除して再投入。SearchService は Collection を読まない（[Ingest](/current/features/ingest.md)、[ADR-0006](/decisions/ADR-0006-documents-chunk-schema.md)、[ADR-0007](/decisions/ADR-0007-document-lifecycle.md)）
+- 文書単位削除: `scripts/delete_document.py`（親 `document_id` 配下の全 chunk）
 
 ## エラー
 

@@ -23,7 +23,7 @@ status: stable
 - 初期 Flow: Read File → Split Text（size 1000 / overlap 200）→ OpenAI Embeddings（`text-embedding-3-small`）→ PGVector
 - PGVector の接続先は Langflow 専用 DB の `langflow_vectors`（collection `knowledge_documents_v1`）
 - Langflow コンテナはアプリ Postgres に接続しない
-- `scripts/import_langflow.py` が Collection を読み、アプリの `documents` へ chunk として upsert する
+- `scripts/import_langflow.py` が Collection を読み、アプリの `documents` へ [ライフサイクル](/decisions/ADR-0007-document-lifecycle.md) で載せる
 - SearchService / FastMCP / Chainlit は `documents` だけを検索する。Collection は直読みしない
 - 確認済み Flow は `infra/langflow/flows/Ingest.json`。API キーと DB URL は空（環境変数 / UI Credential を使う）
 
@@ -43,7 +43,7 @@ postgresql://langflow:langflow@localhost:5434/langflow_vectors
 
 OpenAI API キーはルート `.env` の `OPENAI_API_KEY` をコンテナへ渡す。Flow へ埋め込まない。
 
-再 Ingest で chunk 数が減った場合のゴミ行削除は行わない。
+同一 `document_id` の本文 hash 列と embedding モデルが変わっていなければ Skip する。変わっていれば当該親の旧 chunk を削除してから再投入する。文書単位削除は `make -C infra delete-document DOCUMENT_ID=<uuid>`（`scripts/delete_document.py`）。
 
 ## 既知の制約: PGVector metadata の JSON 化
 

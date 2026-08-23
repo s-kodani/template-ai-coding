@@ -22,3 +22,15 @@ ALTER TABLE documents DROP CONSTRAINT IF EXISTS documents_source_key;
 
 CREATE UNIQUE INDEX IF NOT EXISTS documents_document_id_chunk_index_key
     ON documents (document_id, chunk_index);
+
+ALTER TABLE documents ADD COLUMN IF NOT EXISTS content_hash TEXT;
+ALTER TABLE documents ADD COLUMN IF NOT EXISTS ingested_at TIMESTAMPTZ NOT NULL DEFAULT now();
+ALTER TABLE documents ADD COLUMN IF NOT EXISTS embedding_model TEXT;
+
+UPDATE documents
+SET content_hash = encode(sha256(convert_to(content, 'UTF8')), 'hex')
+WHERE content_hash IS NULL;
+
+UPDATE documents
+SET embedding_model = 'text-embedding-3-small'
+WHERE embedding_model IS NULL;

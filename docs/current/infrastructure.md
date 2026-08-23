@@ -46,11 +46,12 @@ make -C infra langflow-up
 
 UI は http://localhost:7860 。Langflow の PGVector は専用 Postgres の `langflow_vectors`（ホスト `localhost:5434`）へ書く。アプリの `documents` へは `make -C infra import-langflow` が複製する。
 
-既存のアプリ volume を Chunk スキーマへ更新するには、seed の前に migrate する（`make -C infra seed` は migrate を先に実行する）。
+既存のアプリ volume を Chunk / ライフサイクル列へ更新するには、seed の前に migrate する（`make -C infra seed` は migrate を先に実行する）。
 
 ```bash
 make -C infra migrate
 make -C infra import-langflow
+make -C infra delete-document DOCUMENT_ID=<parent-uuid>
 ```
 
 Langfuse API キーは初回サインアップ後に手動で作成し、リポジトリルートの `.env` にコピーします。
