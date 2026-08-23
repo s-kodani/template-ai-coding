@@ -27,6 +27,8 @@ class Settings(BaseSettings):
 
     embedding_timeout: float = 30.0
     db_timeout: float = 10.0
+    langflow_vectors_url: str = "postgresql://langflow:langflow@localhost:5434/langflow_vectors"
+    langflow_collection_name: str = "knowledge_documents_v1"
 
     @property
     def langfuse_configured(self) -> bool:

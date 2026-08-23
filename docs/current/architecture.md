@@ -1,7 +1,7 @@
 ---
 type: Architecture
 title: アーキテクチャ
-description: FastMCP、Chainlit、pgvector、Langfuse のトレース構成と任意の Langflow Ingest。
+description: FastMCP、Chainlit、pgvector、Langfuse のトレース構成と、Langflow Ingest から documents への adapter。
 tags: [architecture, mcp, tracing, langflow]
 status: stable
 ---
@@ -16,7 +16,7 @@ status: stable
 | FastMCP サーバー（`src/knowledge_mcp/`） | Streamable HTTP MCP、検索ツール、子スパン |
 | PostgreSQL + pgvector | アプリ用ベクトルストア（Langfuse DB・Langflow DB とは分離） |
 | Langfuse（公式 compose） | トレース取り込みと UI |
-| Langflow（任意サイドカー） | ファイル Ingest PoC。システム検索には接続しない |
+| Langflow（任意サイドカー） | ファイル Ingest。専用 DB へ書き、ホスト adapter が `documents` へ複製する |
 | MCP Inspector | FastMCP へのプロトコル検証 |
 
 ## アーキテクチャ図
@@ -45,13 +45,16 @@ flowchart TB
     subgraph optional["任意"]
         ExtraMCP[追加 MCP サーバ]
         Langflow["Langflow<br/>infra/langflow/"]
-        LFPG[("Langflow Postgres<br/>metadata + PoC vectors")]
+        LFPG[("Langflow Postgres<br/>metadata + Collection")]
+        Adapter["import_langflow.py"]
     end
 
     User -->|HTTP :8080| Chainlit
     User -->|HTTP :7860| Langflow
     Langflow --> LFPG
-    Langflow -->|embeddings（PoC）| LLM
+    Langflow -->|embeddings| LLM
+    Adapter -->|read Collection| LFPG
+    Adapter -->|upsert chunks| PG
     User -->|"MCP 接続 UI（HTTP/SSE）"| Chainlit
     Inspector -->|"Streamable HTTP :8000/mcp"| MCP
     Chainlit -->|"Streamable HTTP /mcp（既定）"| MCP

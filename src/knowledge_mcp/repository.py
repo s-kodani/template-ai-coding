@@ -1,8 +1,12 @@
 from __future__ import annotations
 
+import json
+from uuid import UUID
+
 import asyncpg
 from pgvector.asyncpg import register_vector
 
+from knowledge_mcp.chunk_ids import parent_document_id
 from knowledge_mcp.models import DocumentDetail, SearchHit
 
 
@@ -107,21 +111,32 @@ class VectorRepository:
         content: str,
         source: str | None,
         embedding: list[float],
+        document_id: UUID | None = None,
+        chunk_index: int = 0,
+        metadata: dict | None = None,
     ) -> str:
         pool = self._require_pool()
+        parent_id = document_id or parent_document_id(source)
         row = await pool.fetchrow(
             """
-            INSERT INTO documents (title, content, source, embedding)
-            VALUES ($1, $2, $3, $4::vector)
-            ON CONFLICT (source) DO UPDATE
+            INSERT INTO documents (
+                document_id, chunk_index, title, content, source, metadata, embedding
+            )
+            VALUES ($1::uuid, $2, $3, $4, $5, $6::jsonb, $7::vector)
+            ON CONFLICT (document_id, chunk_index) DO UPDATE
             SET title = EXCLUDED.title,
                 content = EXCLUDED.content,
+                source = EXCLUDED.source,
+                metadata = EXCLUDED.metadata,
                 embedding = EXCLUDED.embedding
             RETURNING id::text
             """,
+            str(parent_id),
+            chunk_index,
             title,
             content,
             source,
+            json.dumps(metadata or {}),
             embedding,
         )
         return row["id"]

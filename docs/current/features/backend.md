@@ -21,9 +21,10 @@ status: stable
 
 ## データ投入
 
-- スキーマ: `infra/app/init.sql`（`documents`。システム検索インデックスの SoT）
-- シード: `scripts/seed.py`（fixture 文書。MCP ingest ではない）
-- Langflow: 任意の Ingest PoC。書き込み先は Langflow 専用 DB であり、`documents` には入らない（[Ingest](/current/features/ingest.md)、[ADR-0005](/decisions/ADR-0005-langflow-ingest-sidecar.md)）
+- スキーマ: `infra/app/init.sql`（`documents`。1 行 = 1 chunk。システム検索インデックスの SoT）
+- 既存 volume: `make -C infra migrate`（`init.sql` は初回のみ）
+- シード: `scripts/seed.py`（1 文書 = 1 chunk。MCP ingest ではない）
+- Langflow: 専用 Collection を `scripts/import_langflow.py` が `documents` へ upsert する。SearchService は Collection を読まない（[Ingest](/current/features/ingest.md)、[ADR-0006](/decisions/ADR-0006-documents-chunk-schema.md)）
 
 ## エラー
 

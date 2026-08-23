@@ -21,7 +21,7 @@ Langflow の `PGVector` コンポーネントは LangChain Collection スキー�
 2. システムの Retrieval / Chat は **Chainlit + FastMCP** のままとする。Langflow 上の Similarity Search は Ingest 評価専用。
 3. システム検索インデックスの Source of Truth は **`documents` テーブル** とする。LangChain / Langflow Collection はシステムインデックスにしない。
 4. Phase 1（本実装）では Langflow 専用 Postgres にメタデータと PoC 用 Vector Store を置き、`app-postgres` には接続しない。
-5. 将来 SearchService へつなぐ場合は `documents` を Chunk 対応へ進化させ、Langflow ネイティブ Collection を直読みしない。
+5. SearchService へつなぐ場合は `documents` を Chunk 対応へ進化させ、Langflow ネイティブ Collection を直読みしない。実装は [ADR-0006](/decisions/ADR-0006-documents-chunk-schema.md)。
 
 ## 検討した代替
 

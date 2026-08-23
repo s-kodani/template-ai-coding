@@ -38,6 +38,7 @@ make -C infra seed
 | Langfuse | http://localhost:3000 |
 | アプリ Postgres | localhost:5433 |
 | Langflow（任意） | http://localhost:7860 |
+| Langflow Postgres | localhost:5434 |
 
 ## 開発
 
@@ -62,4 +63,4 @@ npx @modelcontextprotocol/inspector
 make -C infra langflow-up
 ```
 
-http://localhost:7860 で Read File → Split Text → OpenAI Embeddings → PGVector を組む。書き込み先は Langflow 専用 DB であり、Chainlit 検索には出ない。停止は `make -C infra langflow-down`。
+http://localhost:7860 で Read File → Split Text → OpenAI Embeddings → PGVector を組む。書き込み先は Langflow 専用 DB。システム検索へ載せるには `make -C infra import-langflow`。停止は `make -C infra langflow-down`。既存アプリ volume は `make -C infra migrate`（`seed` が先に実行する）。

@@ -29,6 +29,7 @@ status: stable
 | FastMCP | 127.0.0.1:8000 |
 | アプリ Postgres | 5433 |
 | Langflow UI | 7860 |
+| Langflow Postgres | 5434 |
 
 ## 起動
 
@@ -43,7 +44,14 @@ Langflow Ingest PoC はデフォルト起動に含まれない。
 make -C infra langflow-up
 ```
 
-UI は http://localhost:7860 。PoC 用 PGVector は Langflow 専用 Postgres の `langflow_vectors` であり、アプリの `documents` テーブルには書き込まない。
+UI は http://localhost:7860 。Langflow の PGVector は専用 Postgres の `langflow_vectors`（ホスト `localhost:5434`）へ書く。アプリの `documents` へは `make -C infra import-langflow` が複製する。
+
+既存のアプリ volume を Chunk スキーマへ更新するには、seed の前に migrate する（`make -C infra seed` は migrate を先に実行する）。
+
+```bash
+make -C infra migrate
+make -C infra import-langflow
+```
 
 Langfuse API キーは初回サインアップ後に手動で作成し、リポジトリルートの `.env` にコピーします。
 

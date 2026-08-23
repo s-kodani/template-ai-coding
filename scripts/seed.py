@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 
+from knowledge_mcp.chunk_ids import parent_document_id
 from knowledge_mcp.config import Settings
 from knowledge_mcp.embedding import EmbeddingClient
 from knowledge_mcp.repository import VectorRepository
@@ -48,6 +49,9 @@ async def seed(settings: Settings) -> None:
                 content=fixture["content"],
                 source=fixture["source"],
                 embedding=vector,
+                document_id=parent_document_id(fixture["source"]),
+                chunk_index=0,
+                metadata={},
             )
         count = await repository.count_documents()
         print(f"Seeded {count} documents.")

@@ -2,6 +2,7 @@
 
 ## 2026-08-23
 
+- **Changed**: `documents` を 1 行 = 1 chunk にし、Langflow Collection からシステム検索インデックスへ複製できるようにする（[検索バックエンド](/current/features/backend.md)、[Ingest](/current/features/ingest.md)、[ADR-0006](/decisions/ADR-0006-documents-chunk-schema.md)）
 - **Added**: Langflow を任意サイドカーとして追加し、ファイル Ingest PoC を既存検索経路から分離する（[Ingest](/current/features/ingest.md)、[ADR-0005](/decisions/ADR-0005-langflow-ingest-sidecar.md)）
 - **Fixed**: MCP `_meta` に Langfuse `langfuse_trace_id` baggage を載せ、同一トレースの FastMCP スパンが Langfuse 一覧の追加ルートにならないようにする（[インフラ](/current/infrastructure.md)、[ADR-0004](/decisions/ADR-0004-langfuse-mcp-meta-tracing.md)）
 

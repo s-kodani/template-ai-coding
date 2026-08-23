@@ -1,7 +1,7 @@
 ---
 type: Business Requirements
 title: ビジネス要件
-description: トレース付きチャット UI による MCP ベクトル検索と、任意の Langflow Ingest PoC。
+description: トレース付きチャット UI による MCP ベクトル検索と、Langflow から documents への Ingest。
 tags: [requirements, local]
 status: stable
 ---
@@ -15,7 +15,7 @@ status: stable
 1. PostgreSQL + pgvector 上の FastMCP ベクトル検索
 2. MCP ツールを呼び出し Langfuse ルートトレースを持つ Chainlit チャット UI（追加 MCP サーバを UI から接続可能）
 3. Chainlit、MCP クライアント/サーバー、embedding、Postgres クライアントスパンにわたる end-to-end 親子トレース
-4. 任意の Langflow サイドカーによるファイル Ingest PoC（システム検索インデックスには接続しない）
+4. 任意の Langflow サイドカーによるファイル Ingest。専用 Collection から `documents` へ adapter で複製し、Chainlit / FastMCP から検索する
 
 ## 利用者
 
