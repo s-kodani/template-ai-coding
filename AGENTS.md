@@ -366,30 +366,40 @@ Conceptを追加・移動・削除・deprecated化した場合は、同じ変更
 
 ## リポジトリ固有の技術ルール
 
-プロジェクト固有の技術スタック、コーディング規約、テストコマンド、Buildコマンド、Deploymentルール、OKF validation commandなどがある場合は、このセクションへ追記します。
-
-例:
-
 ```text
 Frontend:
-- Framework:
-- Package manager:
+- Framework: Chainlit 2.x (`src/chat_ui/`)
+- Package manager: uv
 
 Backend:
-- Runtime:
-- Framework:
+- Runtime: Python 3.12
+- Framework: FastMCP 3.x (Streamable HTTP), SearchService in `src/knowledge_mcp/`
+- Database: PostgreSQL 17 + pgvector (app compose)
 
 Infrastructure:
-- Platform:
-- IaC:
+- Platform: Docker Compose
+- IaC: `infra/app/compose.yml`, `infra/langfuse/docker-compose.yml` + `network.yml`, `infra/langflow/compose.yml`
+- Orchestration: `make -C infra up|down|migrate|seed`。Langflow は `make -C infra langflow-up|langflow-down|ingest-langflow|import-langflow`（デフォルト `up` には含めない）
 
 Validation:
-- Test:
-- Typecheck:
-- Lint:
-- Build:
-- OKF:
+- Test: `uv run pytest`
+- Lint: `uv run ruff check src tests scripts`
+- Build: `docker compose -f infra/app/compose.yml build`
+- OKF: `uv run python scripts/validate_okf.py`
+- Local stack: `make -C infra up && make -C infra seed`
 ```
+
+Coding conventions:
+
+- TDD for SearchService and trace propagation tests
+- Langfuse SDK initializes before FastMCP import in both Chainlit and MCP server processes
+- Do not log API keys, embeddings, or full document bodies in spans
+- MCP tools are read-only search; system ingest via `scripts/seed.py`, `scripts/run_langflow_ingest.py`, and `scripts/import_langflow.py`
+- Langflow is an optional ingest sidecar; it writes to its own Collection. A host adapter copies chunks into app `documents`. SearchService does not read LangChain / Langflow Collection tables
+
+Human approval:
+
+- Level 1 architecture ADRs (0001–0005) were accepted with the implementation plan; confirm before production use outside local verification
 
 ---
 

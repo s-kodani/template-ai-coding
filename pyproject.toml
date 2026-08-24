@@ -1,0 +1,46 @@
+[project]
+name = "template-ai-coding"
+version = "0.1.0"
+description = "FastMCP ベクトル検索、Chainlit、Langfuse トレーシング"
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "asyncpg>=0.30.0",
+    "chainlit>=2.7.0",
+    "fastmcp>=2.14.0",
+    "httpx>=0.28.0",
+    "langfuse>=3.0.0",
+    "openai>=1.60.0",
+    "opentelemetry-api>=1.29.0",
+    "opentelemetry-instrumentation-asyncpg>=0.50b0",
+    "opentelemetry-sdk>=1.29.0",
+    "pgvector>=0.3.6",
+    "pydantic>=2.10.0",
+    "pydantic-settings>=2.7.0",
+    "uvicorn>=0.34.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3.0",
+    "pytest-asyncio>=0.25.0",
+    "ruff>=0.9.0",
+]
+
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/knowledge_mcp", "src/chat_ui", "scripts"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"

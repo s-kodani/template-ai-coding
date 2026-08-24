@@ -1,0 +1,47 @@
+name: knowledge-langflow
+
+# アプリスタック（infra/app）とは独立。デフォルトの make up には含めない。
+# ベクトル検証は langflow-postgres の langflow_vectors DB のみ。アプリ用 Postgres には接続しない。
+
+services:
+  langflow-postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: ${LANGFLOW_POSTGRES_USER:-langflow}
+      POSTGRES_PASSWORD: ${LANGFLOW_POSTGRES_PASSWORD:-langflow}
+      POSTGRES_DB: ${LANGFLOW_POSTGRES_DB:-langflow}
+    ports:
+      - "5434:5432"
+    volumes:
+      - langflow_postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${LANGFLOW_POSTGRES_USER:-langflow} -d ${LANGFLOW_POSTGRES_DB:-langflow}",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  langflow:
+    image: langflowai/langflow:1.11.4
+    ports:
+      - "7860:7860"
+    depends_on:
+      langflow-postgres:
+        condition: service_healthy
+    environment:
+      LANGFLOW_DATABASE_URL: postgresql://${LANGFLOW_POSTGRES_USER:-langflow}:${LANGFLOW_POSTGRES_PASSWORD:-langflow}@langflow-postgres:5432/${LANGFLOW_POSTGRES_DB:-langflow}
+      LANGFLOW_CONFIG_DIR: /app/langflow
+      LANGFLOW_HOST: 0.0.0.0
+      LANGFLOW_AUTO_LOGIN: ${LANGFLOW_AUTO_LOGIN:-true}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://api.openai.com/v1}
+    volumes:
+      - langflow_data:/app/langflow
+
+volumes:
+  langflow_postgres_data:
+  langflow_data:

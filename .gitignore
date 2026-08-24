@@ -1,3 +1,39 @@
 
 # APM dependencies
 apm_modules/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+dist/
+build/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+uv.lock
+
+# Environment
+.env
+.env.local
+
+# Chainlit (track config.toml so MCP UI settings ship with the repo)
+.chainlit/*
+!.chainlit/config.toml
+.files/
+
+# IDE
+.idea/
+.vscode/
+
+# OS
+.DS_Store
+
+# Generated Chainlit assets
+public/mcp-autoload.js
+
+# Host originals for Langflow API ingest
+data/ingest/*
+!data/ingest/.gitkeep

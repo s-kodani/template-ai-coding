@@ -1,0 +1,10 @@
+networks:
+  observability:
+    external: true
+    name: observability
+
+services:
+  langfuse-web:
+    networks:
+      - default
+      - observability

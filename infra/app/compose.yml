@@ -1,0 +1,83 @@
+name: knowledge-app
+
+networks:
+  observability:
+    external: true
+    name: observability
+  langfuse_internal:
+    external: true
+    name: langfuse_default
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg17
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-knowledge}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me}
+      POSTGRES_DB: ${POSTGRES_DB:-knowledge}
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-knowledge} -d ${POSTGRES_DB:-knowledge}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      observability:
+        aliases:
+          - app-postgres
+
+  mcp-server:
+    build:
+      context: ../..
+      dockerfile: infra/app/Dockerfile.mcp
+    env_file:
+      - ../../.env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-knowledge}:${POSTGRES_PASSWORD:-change-me}@app-postgres:5432/${POSTGRES_DB:-knowledge}
+      MCP_HOST: 0.0.0.0
+      MCP_PORT: 8000
+      MCP_PATH: /mcp
+      FASTMCP_STATELESS_HTTP: "true"
+      FASTMCP_TELEMETRY_MODE: native
+      LANGFUSE_HOST: http://langfuse-web:3000
+    ports:
+      - "127.0.0.1:8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      # Streamable HTTP の /mcp は GET を許可しない（405）。TCP で待受を確認する。
+      test: ["CMD-SHELL", "python -c \"import socket; socket.create_connection(('127.0.0.1',8000),3).close()\""]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    networks:
+      - observability
+      - langfuse_internal
+
+  chainlit:
+    build:
+      context: ../..
+      dockerfile: infra/app/Dockerfile.chainlit
+    env_file:
+      - ../../.env
+    environment:
+      MCP_SERVER_URL: http://mcp-server:8000/mcp
+      FASTMCP_TELEMETRY_MODE: native
+      LANGFUSE_HOST: http://langfuse-web:3000
+    ports:
+      - "8080:8080"
+    depends_on:
+      mcp-server:
+        condition: service_healthy
+    networks:
+      - observability
+      - langfuse_internal
+
+volumes:
+  postgres_data:
