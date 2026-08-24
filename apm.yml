@@ -12,6 +12,7 @@ dependencies:
     - obra/superpowers/skills/test-driven-development
     - mattpocock/skills/skills/productivity/grill-me
     - cli/cli/skills/gh
+    - mattpocock/skills/skills/productivity/grilling
   mcp:
     - name: terraform
       registry: false

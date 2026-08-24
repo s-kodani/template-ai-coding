@@ -58,6 +58,27 @@ dependencies:
     .claude/skills/grill-me/SKILL.md: sha256:caaf8b8de1684f96e26b28f3c29189db5c89cce4b73e1c93d86164f66ef88637
     .claude/skills/grill-me/agents/openai.yaml: sha256:c061e39c3e0f9d865fb1b97556d485704af2a8a58f4b8221a8917a5c2074a32b
   content_hash: sha256:fe33aaa8e8dcd606107b1bfe3109f257b4a7e0f4907afd6506b62ccfb73cd1d3
+- repo_url: mattpocock/skills
+  name: grilling
+  host: github.com
+  resolved_commit: 5b15a47f2d7150f545fbcacbfe381787fc0230dc
+  version: unknown
+  virtual_path: skills/productivity/grilling
+  is_virtual: true
+  package_type: claude_skill
+  deployed_files:
+  - .agents/skills/grilling
+  - .agents/skills/grilling/SKILL.md
+  - .agents/skills/grilling/agents/openai.yaml
+  - .claude/skills/grilling
+  - .claude/skills/grilling/SKILL.md
+  - .claude/skills/grilling/agents/openai.yaml
+  deployed_file_hashes:
+    .agents/skills/grilling/SKILL.md: sha256:10ff989e7498b23b5acb49d5048f11dcd906757d2f79c5cdf8a00001381296f2
+    .agents/skills/grilling/agents/openai.yaml: sha256:1411d7df7d99b7e621a1ff8283c8133cc2464be63d064e52d8ce169c6800ee9b
+    .claude/skills/grilling/SKILL.md: sha256:10ff989e7498b23b5acb49d5048f11dcd906757d2f79c5cdf8a00001381296f2
+    .claude/skills/grilling/agents/openai.yaml: sha256:1411d7df7d99b7e621a1ff8283c8133cc2464be63d064e52d8ce169c6800ee9b
+  content_hash: sha256:e98f109bca3d8889f673d9f32bf84086f85a70ff9e241f8a34a4560a07ab5a39
 - repo_url: obra/superpowers
   name: test-driven-development
   host: github.com
@@ -125,6 +146,33 @@ deployments:
   - mattpocock/skills/skills/productivity/grill-me
   active_owner: mattpocock/skills/skills/productivity/grill-me
   content_hash: sha256:c061e39c3e0f9d865fb1b97556d485704af2a8a58f4b8221a8917a5c2074a32b
+- kind: project-relative
+  target: agents
+  value: .agents/skills/grilling
+  runtime: null
+  scope: project
+  owners:
+  - mattpocock/skills/skills/productivity/grilling
+  active_owner: mattpocock/skills/skills/productivity/grilling
+  content_hash: null
+- kind: project-relative
+  target: agents
+  value: .agents/skills/grilling/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - mattpocock/skills/skills/productivity/grilling
+  active_owner: mattpocock/skills/skills/productivity/grilling
+  content_hash: sha256:10ff989e7498b23b5acb49d5048f11dcd906757d2f79c5cdf8a00001381296f2
+- kind: project-relative
+  target: agents
+  value: .agents/skills/grilling/agents/openai.yaml
+  runtime: null
+  scope: project
+  owners:
+  - mattpocock/skills/skills/productivity/grilling
+  active_owner: mattpocock/skills/skills/productivity/grilling
+  content_hash: sha256:1411d7df7d99b7e621a1ff8283c8133cc2464be63d064e52d8ce169c6800ee9b
 - kind: project-relative
   target: agents
   value: .agents/skills/ponytail
@@ -215,6 +263,33 @@ deployments:
   - mattpocock/skills/skills/productivity/grill-me
   active_owner: mattpocock/skills/skills/productivity/grill-me
   content_hash: sha256:c061e39c3e0f9d865fb1b97556d485704af2a8a58f4b8221a8917a5c2074a32b
+- kind: project-relative
+  target: claude
+  value: .claude/skills/grilling
+  runtime: null
+  scope: project
+  owners:
+  - mattpocock/skills/skills/productivity/grilling
+  active_owner: mattpocock/skills/skills/productivity/grilling
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/grilling/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - mattpocock/skills/skills/productivity/grilling
+  active_owner: mattpocock/skills/skills/productivity/grilling
+  content_hash: sha256:10ff989e7498b23b5acb49d5048f11dcd906757d2f79c5cdf8a00001381296f2
+- kind: project-relative
+  target: claude
+  value: .claude/skills/grilling/agents/openai.yaml
+  runtime: null
+  scope: project
+  owners:
+  - mattpocock/skills/skills/productivity/grilling
+  active_owner: mattpocock/skills/skills/productivity/grilling
+  content_hash: sha256:1411d7df7d99b7e621a1ff8283c8133cc2464be63d064e52d8ce169c6800ee9b
 - kind: project-relative
   target: claude
   value: .claude/skills/ponytail

@@ -25,7 +25,7 @@ AI Coding Agentによる実装を、**高速に進めながら品質・設計判
 | Repository / Code | 実装状態 | Git |
 | Current-state Documentation | 現在何が正しいか | OKF |
 | Decision Record / ADR | なぜその設計を選んだか | OKF |
-| Release Log | 何が変わったか | OKF |
+| Release Log | 何が変わったか（バージョンタグ単位、前回タグからの差分） | OKF |
 
 重要な原則は次のとおりです。
 
@@ -45,7 +45,7 @@ AI Codingでは、実装前に計画を作成しても、コード調査・テ�
 
 そのため、このSkillではImplementation Planを必須としつつ、**恒久成果物にはしません**。
 
-Implementation Planはそのセッションの実装を安全に進めるための一時的なWorking Artifactとして扱い、最終的に価値のある情報だけをCurrent-state Documentation、ADR、Release Logへ昇格させます。
+Implementation Planはそのセッションの実装を安全に進めるための一時的なWorking Artifactとして扱い、最終的に価値のある情報だけをCurrent-state Documentation、ADRへ昇格させます。Release Logはバージョンタグ作成時に前回タグからの差分として記録します。
 
 ### セッションを跨いだ作業再開
 
@@ -127,6 +127,8 @@ Understand
         ↓
 Implementation Plan
         ↓
+grill-me / grilling（Plan Refinement）
+        ↓
 Decision Check
         ↓
 Implement
@@ -141,7 +143,7 @@ Implement
         │        ↓
         │   Resume Protocol
         │        ↓
-        │   Plan再生成
+        │   Plan再生成 + grill-me / grilling
         │
         ↓
 Verify
@@ -149,12 +151,15 @@ Verify
 Documentation Reconciliation
         │
         ├── Current-state Documentation
-        ├── ADR
-        └── Release Log
+        └── ADR
         ↓
 Completion Report
         ↓
 Issue Close
+
+（別途）バージョンタグ作成時
+        ↓
+Release Log（前回タグからの差分）
 ```
 
 ---
@@ -233,7 +238,7 @@ Checkpointには機械的に検索しやすいmarkerを付けます。
 
 Checkpointと現在のRepository Stateが異なる場合は、Repository Stateを優先して再調査します。
 
-再開時は古いImplementation Planを復元するのではなく、**現在状態をもとに新しいImplementation Planを作成**します。
+再開時は古いImplementation Planを復元するのではなく、**現在状態をもとに新しいImplementation Planを作成**し、`grill-me` / `grilling` による Plan Refinement を行います。
 
 ---
 
@@ -336,7 +341,7 @@ docs/
 
 ### Release Log
 
-「何が変わったか」を記録します。
+「どのバージョンで何が変わったか」を記録します。バージョンタグ作成時に、前回タグからの差分として追記します。初回タグ作成時は空（無）からの差分として記載します。
 
 Implementation PlanやSession CheckpointはOKF Knowledge Bundleへ保存しません。
 
@@ -372,8 +377,10 @@ cross-linkされたConcept
 |---|---|
 | 現在何が正しいか？ | Current-state Documentation |
 | なぜこの設計を選んだか？ | ADR |
-| 何が変わったか？ | Release Log |
+| 何が変わったか？ | Release Log（バージョンタグ作成時） |
 | どのような過程で実装したか？ | 原則保存しない |
+
+通常の実装完了では Release Log を更新せず、Current-state Documentation と ADR を整合させます。
 
 このステップによって、Implementation PlanやIssueコメントが恒久仕様書化することを防ぎます。
 
@@ -389,6 +396,7 @@ cross-linkされたConcept
 
 - GitHub Issue workflow
 - Implementation Plan
+- Implementation Plan の grill-me / grilling による refinement
 - Decision Check
 - Session Handoff / Resume
 - Verification

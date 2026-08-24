@@ -1,6 +1,6 @@
 ---
 name: implementation-workflow
-description: コードの実装・変更・リファクタリング・機能追加を行う際に、GitHub Issueによる作業トラッキングとSession Checkpoint、Implementation Planの作成、ADR候補の検出、実装・検証、OKFベースのCurrent-state Documentation・Decision Record・Release Noteへの整合までを一貫して進めるためのワークフロー。実装スピードを維持しながら、セッションを跨いだ再開可能性、設計上の意思決定の追跡可能性、AIが利用しやすい知識構造、恒久ドキュメントの正確性を確保したい場合に使用する。
+description: コードの実装・変更・リファクタリング・機能追加を行う際に、GitHub Issueによる作業トラッキングとSession Checkpoint、Implementation Planの作成（grill-me / grilling による計画 refinement を含む）、ADR候補の検出、実装・検証、OKFベースのCurrent-state Documentation・Decision Record・Release Note（バージョンタグ単位）への整合までを一貫して進めるためのワークフロー。実装スピードを維持しながら、セッションを跨いだ再開可能性、設計上の意思決定の追跡可能性、AIが利用しやすい知識構造、恒久ドキュメントの正確性を確保したい場合に使用する。
 ---
 
 # 実装ワークフロー Skill
@@ -46,7 +46,7 @@ Implementation Plan（実装計画）は一時的な作業成果物です。
    - Implementation Planは「どのように実装する予定か」を示す。
    - Current-state Documentationは「現在何が正しいか」を示す。
    - Decision Recordは「なぜ重要な設計判断をそのように決めたか」を示す。
-   - Release Noteは「何が変わったか」を示す。
+   - Release Noteは「どのバージョンで何が変わったか」を示す（前回バージョンタグからの差分）。
 
 4. **Current-state Documentationを現在状態のSource of Truthとする**
    - Decision RecordやRelease Noteだけから現在状態を推測しない。
@@ -249,7 +249,7 @@ ADRが必要になる可能性のある設計判断。
 
 ### Documentation Impact
 
-最終実装によって更新が必要になる可能性のあるOKF Concept、`index.md`、Decision Record、Release Logを列挙する。
+最終実装によって更新が必要になる可能性のあるOKF Concept、`index.md`、Decision Recordを列挙する。Release Logは通常の実装完了では更新せず、次のバージョンタグ作成時に含める観測可能な変更候補として記録する。
 
 この時点では更新予定であり、最終的な更新対象は実装後に再判定します。
 
@@ -260,6 +260,21 @@ ADRが必要になる可能性のある設計判断。
 ### Verification
 
 Test、Type Check、Lint、Build、Migration、Infrastructure、手動確認など。
+
+### Plan Refinement — grill-me / grilling による計画の練り上げ
+
+下書きの Implementation Plan を Phase 3 Decision Check または実装へ進める前に、必ず `grill-me` スキルを使って計画をストレステストします。
+
+1. 上記の Implementation Plan 項目で下書きを作成する。
+2. `grill-me` スキルを読む。shim の指示どおり `grilling` スキルを読み、そのインタビュー手法に従う。
+3. `grilling` のルールどおり、design tree の **frontier** を **rounds** で問い、各問いに推奨案を付ける。事実の調査は Agent の責務、判断はユーザーの責務とする。
+4. frontier が空になり、ユーザーが共有理解を確認するまで Phase 3 / 実装へ進まない。ユーザーが打ち切った場合のみ、その時点の合意で進む。
+5. grill セッション後、確定した内容を反映して Implementation Plan を更新する。
+6. 軽微な変更でも省略しない。単純な計画なら frontier が早く空になる想定でよい。
+
+`grill-me` の `disable-model-invocation: true` は、ユーザーが明示しない限り Agent が勝手に発火しないための制約です。`implementation-workflow` が Phase 2 で `grill-me` を呼び出すことは、この Skill からの正規の呼び出しです。`grilling` は `grill-me` からの委譲先として使用します。
+
+`grilling` の rounds / frontier 手順を本 Skill へ複製してはいけません。入口は `grill-me`、手法は `grilling` に任せます。
 
 ---
 
@@ -466,7 +481,7 @@ Implementation PlanをCheckpointへそのままコピーしてはいけません
 7. Changed Files / Completed / In Progress / Remainingが実コードと整合しているか確認する。
 8. Pending Decisionsが未解決のままか確認する。
 9. External Stateが現在も有効か、確認可能な範囲で検証する。
-10. 現在状態を基準に新しいImplementation Planを作成する。
+10. 現在状態を基準に新しいImplementation Planを作成し、`grill-me` / `grilling` による Plan Refinement を行う。
 11. 必要に応じて短いResumeコメントをIssueへ残してから実装を再開する。
 
 ### Source of Truth
@@ -554,8 +569,10 @@ Implementation Planをそのままコピーしてはいけません。
 |---|---|
 | 現在何が正しいか？ | Current-state Documentation / OKF Concept |
 | なぜこの設計を選んだか？ | Decision Record / OKF Concept |
-| 何が変わったか？ | Release Note / OKF `log.md` |
+| 何が変わったか？ | Release Note / OKF `log.md`（バージョンタグ作成時） |
 | どのような過程で実装したか？ | 原則破棄 |
+
+通常の実装完了（Phase 6）では Release Note を更新しません。Current-state Documentation と ADR を最終実装と整合させ、観測可能な変更は次のバージョンタグ作成時の Release Note 候補として保持します。
 
 ---
 
@@ -665,8 +682,10 @@ OKF Bundle内では、移動への耐性を高めるためbundle-relative link�
 
 OKFの`log.md`をRelease Noteとして使用するリポジトリでは、以下を守ります。
 
-- 日付見出しは`YYYY-MM-DD`
-- 新しい日付を上にする
+- 見出しはバージョンタグ名（例: `## v0.2.0`）。新しいバージョンを上にする
+- 日付見出しは新規に使わない（レガシー日付見出しが残るリポジトリでは、`AGENTS.md`とvalidatorの規則に従う）
+- 各エントリは前回バージョンタグから当該タグまでの差分を記録する
+- 初回タグ作成時は、バージョンタグが存在しない場合は空（無）からの差分として記載する
 - ユーザー・運用者・外部連携先から見て観測可能な変更を記録する
 - 実装手順や一時的なImplementation Planは記録しない
 - 関連ConceptやDecision RecordへMarkdown linkを張る
@@ -751,9 +770,34 @@ ADR固有の状態は`decision_status`で管理し、OKF lifecycleの`status`と
 
 ## Release Note
 
-実装によって、プロダクト・運用・システム上の観測可能な振る舞いが変わった場合、Release Noteを更新します。
+Release Noteは**バージョンタグ作成時**に更新します。通常の実装完了（Phase 6）では更新しません。
 
-通常Release Noteが必要な例:
+### 作成タイミング
+
+- ユーザーがリリース、バージョンタグ作成、または Release Note 作成を依頼したとき
+- ユーザー依頼がない限り、Agent が勝手に `git tag` を切ったり Release Note を追記したりしてはいけない
+
+### 差分の取り方
+
+- 前回バージョンタグ..今回タグ（または HEAD）の差分を `git log` と `git diff` で確認する
+- 観測可能な **Added** / **Changed** / **Fixed** / **Deprecated** だけを要約する
+- 実装手順や Implementation Plan は記録しない
+
+### 初回タグ
+
+- バージョンタグが1つもない場合は、空（無）からの差分として現時点の観測可能な変更を記載する
+- 存在しない旧バージョンを捏造しない
+- レガシーの日付見出しエントリがある場合、初回タグ作成時に無からの差分として畳み込んでよい
+
+### 見出し形式
+
+- 見出しはそのバージョンタグ名（例: `## v0.2.0`）
+- 新しいバージョンを上にする
+- SemVer や `v` 接頭辞はリポジトリの既存タグ規約に従い、不明ならユーザーに確認する
+
+### 記載要否
+
+通常Release Noteに含める例:
 
 - 新しいユーザー向け機能
 - ビジネス上の振る舞い変更
@@ -763,12 +807,14 @@ ADR固有の状態は`decision_status`で管理し、OKF lifecycleの`status`と
 - 互換性変更
 - 運用影響のあるMigration
 
-通常Release Noteが不要な例:
+通常Release Noteに含めない例:
 
 - 外部影響のない内部リファクタリング
 - 命名変更
 - ローカルなコード整理
 - テストのみの変更
+
+対象期間は「今回の実装」ではなく、前回バージョンタグから当該タグまでの差分全体です。
 
 ---
 
@@ -794,7 +840,8 @@ GitHub Issueを使用している場合は、最終コメントとして以下�
 
 - 実際に完了したChanges
 - Verification結果
-- 作成・更新したADR / OKF Concept / Release Log
+- 作成・更新したADR / OKF Concept
+- Release Log（バージョンタグ作成時のみ更新した場合）
 - 残課題がある場合はそのIssueへの分離状況
 - 関連PR / commit
 
@@ -809,7 +856,7 @@ Documentation
 - UI/backend concepts: updated
 - Infrastructure: no change
 - ADR: ADR-0014 added
-- Release log: updated
+- Release log: not updated (version-tag release pending)
 - OKF index: updated
 - OKF validation: passed
 ```
@@ -839,7 +886,9 @@ GitHub IssueのCheckpointコメントは作業履歴として残して構いま�
 
 **Issueで作業契約を明確にする。  
 コードを書く前に計画する。  
+計画は grill-me / grilling で練る。  
 セッションを跨ぐときはCheckpointを残す。  
 恒久的な意思決定を検出する。  
 実装して検証する。  
-最終状態をOKFで構造化された恒久知識へ整合させる。**
+最終状態をOKFで構造化された恒久知識へ整合させる。  
+Release Noteはバージョンタグ作成時に前回タグからの差分で記録する。**
