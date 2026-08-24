@@ -10,6 +10,63 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 DOCS = ROOT / "docs"
 
+DATE_HEADING_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+HEADING_RE = re.compile(r"^## (.+)$", re.MULTILINE)
+
+
+def parse_version(tag: str) -> tuple[int, ...]:
+    normalized = tag.lstrip("vV")
+    parts: list[int] = []
+    for segment in normalized.split("."):
+        numeric = segment.split("-", 1)[0].split("+", 1)[0]
+        if not numeric.isdigit():
+            raise ValueError(f"invalid version tag heading: {tag!r}")
+        parts.append(int(numeric))
+    return tuple(parts)
+
+
+def validate_log_md(text: str) -> list[str]:
+    errors: list[str] = []
+    headings = HEADING_RE.findall(text)
+    if not headings:
+        return errors
+
+    version_entries: list[tuple[int, str]] = []
+    date_entries: list[tuple[int, str]] = []
+
+    for index, heading in enumerate(headings):
+        if DATE_HEADING_RE.match(heading):
+            date_entries.append((index, heading))
+        else:
+            version_entries.append((index, heading))
+
+    if version_entries:
+        version_tags = [tag for _, tag in version_entries]
+        try:
+            parsed = [(tag, parse_version(tag)) for tag in version_tags]
+        except ValueError as exc:
+            errors.append(str(exc))
+            return errors
+
+        sorted_tags = [tag for tag, _ in sorted(parsed, key=lambda item: item[1], reverse=True)]
+        if version_tags != sorted_tags:
+            errors.append("docs/releases/log.md version tag headings must be descending (newest first)")
+
+    if date_entries:
+        date_strings = [date for _, date in date_entries]
+        if date_strings != sorted(date_strings, reverse=True):
+            errors.append("docs/releases/log.md legacy date headings must be descending")
+
+    if version_entries and date_entries:
+        last_version_index = max(index for index, _ in version_entries)
+        first_date_index = min(index for index, _ in date_entries)
+        if last_version_index > first_date_index:
+            errors.append(
+                "docs/releases/log.md version tag headings must appear above legacy date headings"
+            )
+
+    return errors
+
 
 def main() -> int:
     errors: list[str] = []
@@ -44,9 +101,7 @@ def main() -> int:
 
     log = DOCS / "releases" / "log.md"
     if log.exists():
-        dates = re.findall(r"^## (\d{4}-\d{2}-\d{2})", log.read_text(encoding="utf-8"), re.MULTILINE)
-        if dates != sorted(dates, reverse=True):
-            errors.append("docs/releases/log.md dates must be descending")
+        errors.extend(validate_log_md(log.read_text(encoding="utf-8")))
 
     if errors:
         print("OKF validation failed:")

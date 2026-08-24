@@ -316,7 +316,7 @@ docs/releases/log.md
 ```markdown
 # Release Log
 
-## YYYY-MM-DD
+## v1.0.0
 
 - **Added**: ...
 - **Changed**: ...
@@ -324,10 +324,11 @@ docs/releases/log.md
 - **Deprecated**: ...
 ```
 
-新しい日付を上に追加します。
+見出しは Semantic Versioning のバージョンタグ名（例: `## v1.0.0`）とし、新しいバージョンを上に追加します。git タグ名と同じ文字列を使います。
+作成タイミング・差分の取り方・SemVer の採番・初回タグの扱いは`implementation-workflow` Skillに従います。
 関連するCurrent-state ConceptやADRがある場合はMarkdown linkを付けます。
 
-記載要否は`implementation-workflow` Skillに従います。
+既存の日付見出し（`## YYYY-MM-DD`）は、初回バージョンタグ作成まで残してよい。初回タグ作成時に無からの差分として畳み込む。
 
 ---
 
@@ -356,7 +357,7 @@ Conceptを追加・移動・削除・deprecated化した場合は、同じ変更
 - `docs/`配下の非予約`.md`にparse可能なYAML frontmatterがある
 - `type`が存在し空でない
 - root以外の`index.md`にfrontmatterがない
-- `log.md`が日付降順の履歴として成立している
+- `log.md`の見出しがバージョンタグ降順（新しいバージョンが上）として成立している。レガシー日付見出しがある場合は validator の規則に従う
 - 主要cross-linkのリンク切れがない
 - indexとConceptの不整合がない
 
