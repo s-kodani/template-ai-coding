@@ -316,7 +316,7 @@ docs/releases/log.md
 ```markdown
 # Release Log
 
-## v0.2.0
+## v1.0.0
 
 - **Added**: ...
 - **Changed**: ...
@@ -324,8 +324,8 @@ docs/releases/log.md
 - **Deprecated**: ...
 ```
 
-見出しはバージョンタグ名とし、新しいバージョンを上に追加します。
-作成タイミング・差分の取り方・初回タグの扱いは`implementation-workflow` Skillに従います。
+見出しは Semantic Versioning のバージョンタグ名（例: `## v1.0.0`）とし、新しいバージョンを上に追加します。git タグ名と同じ文字列を使います。
+作成タイミング・差分の取り方・SemVer の採番・初回タグの扱いは`implementation-workflow` Skillに従います。
 関連するCurrent-state ConceptやADRがある場合はMarkdown linkを付けます。
 
 既存の日付見出し（`## YYYY-MM-DD`）は、初回バージョンタグ作成まで残してよい。初回タグ作成時に無からの差分として畳み込む。

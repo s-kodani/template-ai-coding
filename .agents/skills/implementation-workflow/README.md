@@ -341,7 +341,7 @@ docs/
 
 ### Release Log
 
-「どのバージョンで何が変わったか」を記録します。バージョンタグ作成時に、前回タグからの差分として追記します。初回タグ作成時は空（無）からの差分として記載します。
+「どのバージョンで何が変わったか」を記録します。バージョンタグは Semantic Versioning（SemVer、`vMAJOR.MINOR.PATCH`）に従い、バージョンタグ作成時に前回タグからの差分として追記します。初回タグ作成時は空（無）からの差分として記載します。
 
 Implementation PlanやSession CheckpointはOKF Knowledge Bundleへ保存しません。
 
