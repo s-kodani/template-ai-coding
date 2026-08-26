@@ -19,10 +19,10 @@ end-to-end トレーシングには、ツール呼び出し時の MCP `_meta` �
 
 - 検証用チャット UI として **Chainlit** を採用する
 - knowledge-mcp（`MCP_SERVER_URL`）は **アプリケーションコード** から FastMCP Client で呼び出す（native telemetry）
-- 追加サーバは Chainlit 内蔵 MCP 接続 UI（Streamable HTTP / SSE）で接続する
+- 追加サーバは Chainlit 内蔵 MCP 接続 UI（Streamable HTTP / SSE）で接続する。接続先 URL は [ADR-0009](/decisions/ADR-0009-chainlit-mcp-user-servers-allowlist.md) の allowlist に従う
 - 既定 knowledge-mcp は `mcp_storage_key` へシードし、UI 一覧に表示する（接続自体は FastMCP Client でも維持する）
 - 追加サーバへの `tools/call` では `inject_trace_context` により `_meta` を明示注入する
-- stdio MCP は無効化する
+- stdio MCP は無効化する（named server も宣言しない）
 - 同一プロセス内で FastMCP import より前に Langfuse を初期化する
 
 ## 結果
@@ -30,4 +30,4 @@ end-to-end トレーシングには、ツール呼び出し時の MCP `_meta` �
 - 開発者向け UI でローカル検証に十分
 - 起動直後から knowledge-mcp を使え、追加 MCP は画面から接続できる
 - プロセスが分離された環境（Docker compose）では、ツール呼び出しをまたいだ親子トレース結合が機能する
-- 追加 MCP 接続は Chainlit サーバから行われるため、Docker 内ではコンテナから到達できる URL が必要
+- 追加 MCP 接続は Chainlit サーバから行われるため、Docker 内ではコンテナから到達でき、かつ allowlist に含まれる URL が必要（[ADR-0009](/decisions/ADR-0009-chainlit-mcp-user-servers-allowlist.md)）

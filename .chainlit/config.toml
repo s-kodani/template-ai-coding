@@ -13,14 +13,14 @@ prompt_playground = false
 [features.mcp]
 enabled = true
 
-[features.mcp.sse]
+[features.mcp.user_servers]
 enabled = true
-
-[features.mcp.streamable-http]
-enabled = true
-
-[features.mcp.stdio]
-enabled = false
+allowed_urls = [
+    "http://mcp-server:8000",
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+    "http://host.docker.internal:8000",
+]
 
 [meta]
-generated_by = "2.11.1"
+generated_by = "2.12.0"
