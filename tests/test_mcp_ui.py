@@ -11,18 +11,19 @@ from chat_ui.mcp_ui import (
 )
 
 
-def test_default_mcp_ui_entry_is_streamable_http() -> None:
+def test_default_mcp_ui_entry_is_user_provided_streamable_http() -> None:
     entry = default_mcp_ui_entry("http://mcp-server:8000/mcp")
 
     assert entry == {
         "name": DEFAULT_MCP_NAME,
         "tools": [],
         "clientType": "streamable-http",
-        "command": None,
         "url": "http://mcp-server:8000/mcp",
-        "headers": None,
         "status": "disconnected",
+        "isUserProvided": True,
     }
+    assert "command" not in entry
+    assert "headers" not in entry
 
 
 def test_upsert_mcp_ui_entry_prepends_when_missing() -> None:
@@ -46,6 +47,7 @@ def test_upsert_mcp_ui_entry_updates_url_and_keeps_other_fields() -> None:
             "tools": [{"name": "search_knowledge"}],
             "clientType": "sse",
             "url": "http://localhost:8000/mcp",
+            "headers": None,
             "status": "connected",
         }
     ]
@@ -55,8 +57,10 @@ def test_upsert_mcp_ui_entry_updates_url_and_keeps_other_fields() -> None:
     assert len(merged) == 1
     assert merged[0]["url"] == "http://mcp-server:8000/mcp"
     assert merged[0]["clientType"] == "streamable-http"
+    assert merged[0]["isUserProvided"] is True
     assert merged[0]["tools"] == [{"name": "search_knowledge"}]
     assert merged[0]["status"] == "connected"
+    assert "headers" not in merged[0]
 
 
 def test_render_mcp_autoload_js_embeds_server_url() -> None:
@@ -66,6 +70,9 @@ def test_render_mcp_autoload_js_embeds_server_url() -> None:
     assert "knowledge-mcp" in script
     assert "http://mcp-server:8000/mcp" in script
     assert "streamable-http" in script
+    assert '"isUserProvided": true' in script
+    assert "command" not in script
+    assert '"headers"' not in script
 
 
 def test_write_mcp_autoload_script_creates_public_js(tmp_path: Path) -> None:

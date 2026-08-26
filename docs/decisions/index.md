@@ -8,3 +8,4 @@
 - [ADR-0006: documents を Chunk 行として進化させる](/decisions/ADR-0006-documents-chunk-schema.md) — 1 行 = 1 chunk、親 ID は `uuid5(source)`
 - [ADR-0007: document_id / content_hash による冪等な再 Ingest](/decisions/ADR-0007-document-lifecycle.md) — 未変更は Skip、変更時は親 ID 配下を削除して再投入
 - [ADR-0008: 原本はホスト、Langflow Files API は一時転送](/decisions/ADR-0008-host-originals-langflow-api.md) — My Files に依存せず API で Ingest Flow を実行する
+- [ADR-0009: Chainlit 2.12 の MCP user_servers allowlist](/decisions/ADR-0009-chainlit-mcp-user-servers-allowlist.md) — 追加 MCP の静的 URL allowlist と stdio 無効

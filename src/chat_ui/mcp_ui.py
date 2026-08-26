@@ -13,10 +13,9 @@ def default_mcp_ui_entry(url: str) -> dict[str, Any]:
         "name": DEFAULT_MCP_NAME,
         "tools": [],
         "clientType": "streamable-http",
-        "command": None,
         "url": url,
-        "headers": None,
         "status": "disconnected",
+        "isUserProvided": True,
     }
 
 
@@ -28,6 +27,10 @@ def upsert_mcp_ui_entry(
         if item.get("name") == entry["name"]:
             item["url"] = entry["url"]
             item["clientType"] = entry["clientType"]
+            item["isUserProvided"] = entry["isUserProvided"]
+            item.pop("command", None)
+            if item.get("headers") is None:
+                item.pop("headers", None)
             return merged
     return [entry, *merged]
 
@@ -44,6 +47,11 @@ def render_mcp_autoload_js(url: str) -> str:
   }} catch (_error) {{
     stored = [];
   }}
+  stored.forEach((item) => {{
+    if (item && item.headers == null) {{
+      delete item.headers;
+    }}
+  }});
   const index = stored.findIndex((item) => item && item.name === DEFAULT_MCP.name);
   if (index === -1) {{
     stored.unshift(DEFAULT_MCP);
@@ -52,7 +60,11 @@ def render_mcp_autoload_js(url: str) -> str:
       ...stored[index],
       url: DEFAULT_MCP.url,
       clientType: DEFAULT_MCP.clientType,
+      isUserProvided: DEFAULT_MCP.isUserProvided,
     }};
+    if (stored[index].headers == null) {{
+      delete stored[index].headers;
+    }}
   }}
   localStorage.setItem(KEY, JSON.stringify(stored));
 }})();
