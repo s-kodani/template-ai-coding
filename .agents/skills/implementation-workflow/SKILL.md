@@ -209,6 +209,8 @@ OKF Knowledge Bundleでは、可能な限り以下の順序で必要な知識だ
 
 全ドキュメントを無条件に読み込むのではなく、`index.md`によるProgressive Disclosureを優先します。
 
+git bundle では Concept 本文の cross-link を辿って関連知識を取得できます。Knowledge Catalog 経由では `LookupContext` がリンクを辿らないため、参照先 Concept を明示的に指定する必要があります。構造化シグナル（frontmatter 相当）は `entries.get` で別途取得します。
+
 ADRは判断理由の履歴であり、現在状態はCurrent-state Documentationを優先します。
 
 ---
@@ -556,6 +558,7 @@ OKFを採用している場合、実装検証に加えてDocumentation Validatio
 - Current-state Documentationが最終実装と一致している
 - `verified`を実際の確認なしに追加していない
 - `generated` / `sources` / `stale_after`等を使用する場合、その内容を捏造していない
+- producer-defined field（`decision_status` 等）が Catalog 往復時に `extra` へ格納される点を理解している（本リポジトリは git bundle を Source of Truth とする）
 
 ---
 
@@ -627,7 +630,7 @@ generated:
 verified:
   - by: <actor>
     at: <ISO 8601 datetime>
-stale_after: <YYYY-MM-DD>
+stale_after: <RFC3339 datetime with offset>  # 例: 2026-12-31T00:00:00+09:00。Catalog 検索では YYYY-MM-DD も可
 sources:
   - id: <stable-source-id>
     resource: <URI or path>
@@ -637,11 +640,14 @@ sources:
 ルール:
 
 - `status`はOKF lifecycleとして`draft` / `stable` / `deprecated`を使用する。
-- `generated`は現在の内容を誰・何が生成または最後に意味のある変更をしたかを表す。実際のactorや時刻を特定できない場合は捏造しない。
+- frontmatter の `type` は Knowledge Catalog 連携時に `okf_type` へマップされる。サーバー側で絞り込みたい分類は `type` / `status` / `tags` 等のスカラーに置く（`verified` / `sources` 配列はクライアント側フィルタのみ）。
+- `generated`は現在の内容を誰・何が生成または最後に意味のある変更をしたかを表す。実際のactorや時刻を特定できない場合は捏造しない。AI が Concept を更新した場合は `generated` を更新し、`verified` は人間確認まで付けない。
 - `verified`は実際に内容を確認したactorだけを記録する。AIが人間による確認を推測してはいけない。
-- `stale_after`は実際の見直し期限・鮮度要件がある場合のみ設定する。便宜的な期限を作らない。
+- `stale_after`は実際の見直し期限・鮮度要件がある場合のみ設定する。便宜的な期限を作らない。形式は RFC3339（タイムゾーン付き）を推奨する。
 - `sources`は外部・内部の根拠資料から知識を導出した場合に使用する。
 - 特定の記述を特定sourceへ帰属させる必要がある場合は、`sources[].id`とMarkdown footnoteを対応させる。
+- producer-defined field（例: `decision_status`, `superseded_by`）は Catalog 往復時に `extra` へ格納される。本リポジトリでは ADR 用に `decision_status` を使用する。
+- Attested Computation 用フィールド（`runtime`, `parameters`, `computation`, `executor`, `attester`, `usage_window`）は本リポジトリでは使用しない。
 
 ### 4. Actor Convention
 
