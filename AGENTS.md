@@ -331,6 +331,11 @@ docs/releases/log.md
 ```markdown
 # Release Log
 
+## v?.?.? (未確定)
+
+- **Added**: ...
+- **Changed**: ...
+
 ## v1.0.0
 
 - **Added**: ...
@@ -339,7 +344,7 @@ docs/releases/log.md
 - **Deprecated**: ...
 ```
 
-見出しは Semantic Versioning のバージョンタグ名（例: `## v1.0.0`）とし、新しいバージョンを上に追加します。git タグ名と同じ文字列を使います。
+未リリース変更は `## v?.?.? (未確定)` 見出し下へ追記します。確定済み見出しは Semantic Versioning のバージョンタグ名（例: `## v1.0.0`）とし、新しいバージョンを上に追加します。git タグ名と同じ文字列を使います。
 作成タイミング・差分の取り方・SemVer の採番・初回タグの扱いは`implementation-workflow` Skillに従います。
 関連するCurrent-state ConceptやADRがある場合はMarkdown linkを付けます。
 

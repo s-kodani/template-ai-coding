@@ -4,7 +4,12 @@ from pathlib import Path
 
 import pytest
 
-from scripts.validate_okf import validate_bundle
+from scripts.validate_okf import (
+    PENDING_VERSION_HEADING,
+    ValidationResult,
+    validate_bundle,
+    validate_log_md,
+)
 
 
 def write_concept(path: Path, body: str = "# Example\n") -> None:
@@ -51,6 +56,56 @@ okf_version: "0.2"
     (docs_root / "current" / "features").mkdir(parents=True)
     (docs_root / "current" / "features" / "index.md").write_text("# Features\n", encoding="utf-8")
     write_concept(docs_root / "current" / "architecture.md")
+
+
+def test_validate_log_md_accepts_pending_heading_first() -> None:
+    text = f"""# Release Log
+
+## {PENDING_VERSION_HEADING}
+
+- **Added**: example
+
+## v1.0.0
+
+- **Added**: initial
+"""
+    result = ValidationResult()
+    validate_log_md(text, result)
+    assert result.ok, result.errors
+
+
+def test_validate_log_md_rejects_pending_heading_not_first() -> None:
+    text = f"""# Release Log
+
+## v1.0.0
+
+- **Added**: initial
+
+## {PENDING_VERSION_HEADING}
+
+- **Added**: example
+"""
+    result = ValidationResult()
+    validate_log_md(text, result)
+    assert not result.ok
+    assert any("must appear first" in error for error in result.errors)
+
+
+def test_validate_log_md_rejects_multiple_pending_headings() -> None:
+    text = f"""# Release Log
+
+## {PENDING_VERSION_HEADING}
+
+- **Added**: one
+
+## {PENDING_VERSION_HEADING}
+
+- **Added**: two
+"""
+    result = ValidationResult()
+    validate_log_md(text, result)
+    assert not result.ok
+    assert any("at most one pending version heading" in error for error in result.errors)
 
 
 def test_validate_bundle_passes_for_minimal_bundle(tmp_path: Path) -> None:

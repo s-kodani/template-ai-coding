@@ -17,6 +17,7 @@ DOCS = ROOT / "docs"
 
 DATE_HEADING_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 HEADING_RE = re.compile(r"^## (.+)$", re.MULTILINE)
+PENDING_VERSION_HEADING = "v?.?.? (未確定)"
 LINK_RE = re.compile(r"\]\((/[^)#]+\.md)\)")
 ACTOR_RE = re.compile(r"^(human:[^\s/]+|process:[^\s/]+|[^/\s]+/[^\s/]+)$")
 RFC3339_RE = re.compile(
@@ -43,6 +44,10 @@ class ValidationResult:
     @property
     def ok(self) -> bool:
         return not self.errors
+
+
+def is_pending_version_heading(heading: str) -> bool:
+    return heading == PENDING_VERSION_HEADING
 
 
 def parse_version(tag: str) -> tuple[int, ...]:
@@ -161,14 +166,25 @@ def validate_log_md(text: str, result: ValidationResult) -> None:
 
     if version_entries:
         version_tags = [tag for _, tag in version_entries]
+        pending_tags = [tag for tag in version_tags if is_pending_version_heading(tag)]
+        if len(pending_tags) > 1:
+            result.add(
+                f"docs/releases/log.md must have at most one pending version heading: {PENDING_VERSION_HEADING!r}"
+            )
+        if pending_tags and version_tags[0] != PENDING_VERSION_HEADING:
+            result.add(
+                f"docs/releases/log.md pending version heading {PENDING_VERSION_HEADING!r} must appear first"
+            )
+
+        released_tags = [tag for tag in version_tags if not is_pending_version_heading(tag)]
         try:
-            parsed = [(tag, parse_version(tag)) for tag in version_tags]
+            parsed = [(tag, parse_version(tag)) for tag in released_tags]
         except ValueError as exc:
             result.add(str(exc))
             return
 
         sorted_tags = [tag for tag, _ in sorted(parsed, key=lambda item: item[1], reverse=True)]
-        if version_tags != sorted_tags:
+        if released_tags != sorted_tags:
             result.add("docs/releases/log.md version tag headings must be descending (newest first)")
 
     if date_entries:
