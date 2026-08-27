@@ -1,5 +1,10 @@
 # リリースログ
 
+## v?.?.? (未確定)
+
+- **Changed**: Release Log を Phase 6 から `## v?.?.? (未確定)` 見出し下へ追記する運用に変更。タグ確定はユーザー依頼時のみ（`implementation-workflow` Skill、Issue #19 / PR #18）
+- **Changed**: OKF validator が未確定リリース見出し（先頭・最大 1 件）を許容（`scripts/validate_okf.py`）
+
 ## v1.0.0
 
 - **Changed**: リリースログをバージョンタグ単位（前回タグからの差分）で記録する運用に変更。`implementation-workflow` Skill に `grill-me` / `grilling` による計画 refinement を追加
