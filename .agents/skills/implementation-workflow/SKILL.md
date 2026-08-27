@@ -1,6 +1,6 @@
 ---
 name: implementation-workflow
-description: コードの実装・変更・リファクタリング・機能追加を行う際に、GitHub Issueによる作業トラッキングとSession Checkpoint、Implementation Planの作成（grill-me / grilling による計画 refinement を含む）、ADR候補の検出、実装・検証、OKFベースのCurrent-state Documentation・Decision Record・Release Note（バージョンタグ単位）への整合までを一貫して進めるためのワークフロー。実装スピードを維持しながら、セッションを跨いだ再開可能性、設計上の意思決定の追跡可能性、AIが利用しやすい知識構造、恒久ドキュメントの正確性を確保したい場合に使用する。
+description: コードの実装・変更・リファクタリング・機能追加を行う際に、GitHub Issueによる作業トラッキングとSession Checkpoint、Implementation Planの作成（grill-me / grilling による計画 refinement を含む）、ADR候補の検出、実装・検証、OKFベースのCurrent-state Documentation・Decision Record・Release Note（未確定 `## v?.?.? (未確定)` および SemVer 確定見出し）への整合までを一貫して進めるためのワークフロー。実装スピードを維持しながら、セッションを跨いだ再開可能性、設計上の意思決定の追跡可能性、AIが利用しやすい知識構造、恒久ドキュメントの正確性を確保したい場合に使用する。
 ---
 
 # 実装ワークフロー Skill
@@ -46,7 +46,7 @@ Implementation Plan（実装計画）は一時的な作業成果物です。
    - Implementation Planは「どのように実装する予定か」を示す。
    - Current-state Documentationは「現在何が正しいか」を示す。
    - Decision Recordは「なぜ重要な設計判断をそのように決めたか」を示す。
-   - Release Noteは「どのバージョンで何が変わったか」を示す（前回バージョンタグからの差分）。
+   - Release Noteは「どのバージョンで何が変わったか」を示す。実装完了時点では `## v?.?.? (未確定)` 見出し下へ追記し、バージョンタグ確定時に見出しを確定版 SemVer へ置き換える。
 
 4. **Current-state Documentationを現在状態のSource of Truthとする**
    - Decision RecordやRelease Noteだけから現在状態を推測しない。
@@ -249,7 +249,7 @@ ADRが必要になる可能性のある設計判断。
 
 ### Documentation Impact
 
-最終実装によって更新が必要になる可能性のあるOKF Concept、`index.md`、Decision Recordを列挙する。Release Logは通常の実装完了では更新せず、次のバージョンタグ作成時に含める観測可能な変更候補として記録する。
+最終実装によって更新が必要になる可能性のあるOKF Concept、`index.md`、Decision Record、Release Log（`## v?.?.? (未確定)` セクション）を列挙する。
 
 この時点では更新予定であり、最終的な更新対象は実装後に再判定します。
 
@@ -569,10 +569,10 @@ Implementation Planをそのままコピーしてはいけません。
 |---|---|
 | 現在何が正しいか？ | Current-state Documentation / OKF Concept |
 | なぜこの設計を選んだか？ | Decision Record / OKF Concept |
-| 何が変わったか？ | Release Note / OKF `log.md`（バージョンタグ作成時） |
+| 何が変わったか？ | Release Note / OKF `log.md`（`## v?.?.? (未確定)` セクション） |
 | どのような過程で実装したか？ | 原則破棄 |
 
-通常の実装完了（Phase 6）では Release Note を更新しません。Current-state Documentation と ADR を最終実装と整合させ、観測可能な変更は次のバージョンタグ作成時の Release Note 候補として保持します。
+Phase 6 では Current-state Documentation、ADR、Release Log を最終実装と整合させます。Release Log には観測可能な変更を `## v?.?.? (未確定)` 見出し下へ追記します。`git tag` の作成や見出しの SemVer 確定は、ユーザーがリリースまたはバージョンタグ作成を依頼したときのみ行います。
 
 ---
 
@@ -682,11 +682,13 @@ OKF Bundle内では、移動への耐性を高めるためbundle-relative link�
 
 OKFの`log.md`をRelease Noteとして使用するリポジトリでは、以下を守ります。
 
-- 見出しはバージョンタグ名（Semantic Versioning、例: `## v1.0.0`）。新しいバージョンを上にする
-- git タグ名と `log.md` 見出しは同じ SemVer 文字列を使う（例: タグ `v1.0.0`、見出し `## v1.0.0`）
+- 先頭（または最新位置）に、未リリース変更用の **`## v?.?.? (未確定)`** 見出しを置く。確定済みバージョン見出しはその下に並べ、新しいバージョンを上にする
+- 確定済み見出しはバージョンタグ名（Semantic Versioning、例: `## v1.0.0`）。git タグ名と `log.md` 見出しは同じ SemVer 文字列を使う（例: タグ `v1.0.0`、見出し `## v1.0.0`）
+- `## v?.?.? (未確定)` は git タグではなく、次回リリース候補の変更を蓄積するプレースホルダー見出しである
 - 日付見出しは新規に使わない（レガシー日付見出しが残るリポジトリでは、`AGENTS.md`とvalidatorの規則に従う）
-- 各エントリは前回バージョンタグから当該タグまでの差分を記録する
-- 初回タグ作成時は、バージョンタグが存在しない場合は空（無）からの差分として記載する
+- 未確定セクションには、前回確定タグ（または初回リリース前であれば空）以降に観測可能な変更を追記する
+- バージョンタグ確定時は、`## v?.?.? (未確定)` を確定 SemVer 見出しへ置き換え、必要なら新しい空の `## v?.?.? (未確定)` を先頭へ追加する
+- 初回タグ確定時は、未確定セクションの内容を空（無）からの差分として扱ってよい
 - ユーザー・運用者・外部連携先から見て観測可能な変更を記録する
 - 実装手順や一時的なImplementation Planは記録しない
 - 関連ConceptやDecision RecordへMarkdown linkを張る
@@ -771,29 +773,69 @@ ADR固有の状態は`decision_status`で管理し、OKF lifecycleの`status`と
 
 ## Release Note
 
-Release Noteは**バージョンタグ作成時**に更新します。通常の実装完了（Phase 6）では更新しません。
+Release Note は Phase 6（Documentation Reconciliation）で更新します。観測可能な変更は `## v?.?.? (未確定)` 見出し下へ追記します。`git tag` の作成と見出しの SemVer 確定は、ユーザーがリリースまたはバージョンタグ作成を依頼したときのみ行います。
+
+### 未確定見出し — `## v?.?.? (未確定)`
+
+- `log.md` 先頭（確定済みバージョンより上）に置くプレースホルダー見出し
+- git タグはまだ存在しない。文字列 `v?.?.?` は SemVer 未確定を表す
+- 実装完了ごとに、当該作業の観測可能な変更をこのセクションへ追記する
+- 同時に存在する未確定見出しは 1 つだけ
+- 確定済みバージョン見出し（例: `## v1.0.0`）より上に置く
+
+例:
+
+```markdown
+# Release Log
+
+## v?.?.? (未確定)
+
+- **Added**: ...
+- **Changed**: ...
+
+## v1.0.0
+
+- **Added**: ...
+```
+
+`log.md` が存在しない、または未確定見出しがない場合は、Phase 6 で `# Release Log` と `## v?.?.? (未確定)` を作成してから追記します。
 
 ### 作成タイミング
 
-- ユーザーがリリース、バージョンタグ作成、または Release Note 作成を依頼したとき
-- ユーザー依頼がない限り、Agent が勝手に `git tag` を切ったり Release Note を追記したりしてはいけない
+| タイミング | 操作 |
+|---|---|
+| Phase 6（通常の実装完了） | 観測可能な変更を `## v?.?.? (未確定)` へ追記 |
+| ユーザーがリリース / バージョンタグ作成を依頼 | 未確定見出しを確定 SemVer へ置換、`git tag` 作成、必要なら新しい未確定見出しを先頭へ追加 |
+
+- ユーザー依頼がない限り、Agent が勝手に `git tag` を切ったり、未確定見出しを確定 SemVer へ置き換えたりしてはいけない
+- 観測可能な変更がない実装では Release Log を更新しない
 
 ### 差分の取り方
 
-- 前回バージョンタグ..今回タグ（または HEAD）の差分を `git log` と `git diff` で確認する
-- 観測可能な **Added** / **Changed** / **Fixed** / **Deprecated** だけを要約する
+**Phase 6（未確定セクションへの追記）**
+
+- 当該実装で観測可能な **Added** / **Changed** / **Fixed** / **Deprecated** だけを要約する
 - 実装手順や Implementation Plan は記録しない
+- 既存の未確定エントリと重複しないよう、同じ変更を二重に書かない
+
+**バージョンタグ確定時**
+
+- 未確定セクションの内容を確定 SemVer 見出しへ移す（見出しを置換）
+- 必要に応じて、前回確定タグ..HEAD の差分を `git log` と `git diff` で照合し、未確定セクションの記載漏れを補う
+- 確定後、次の変更蓄積用に新しい `## v?.?.? (未確定)` を先頭へ追加してよい
 
 ### 初回タグ
 
-- バージョンタグが1つもない場合は、空（無）からの差分として現時点の観測可能な変更を記載する
+- バージョンタグが1つもない場合でも、Phase 6 から `## v?.?.? (未確定)` へ変更を蓄積する
+- 初回タグ確定時は、未確定セクションの内容を空（無）からの差分として扱う
 - 存在しない旧バージョンを捏造しない
-- レガシーの日付見出しエントリがある場合、初回タグ作成時に無からの差分として畳み込んでよい
+- レガシーの日付見出しエントリがある場合、初回タグ確定時に未確定セクションの内容とあわせて整理してよい
 
 ### 見出し形式
 
-- 見出しはそのバージョンタグ名（Semantic Versioning、例: `## v1.0.0`）
-- 新しいバージョンを上にする
+- 未確定: `## v?.?.? (未確定)`（固定。バリエーションを増やさない）
+- 確定済み: そのバージョンタグ名（Semantic Versioning、例: `## v1.0.0`）
+- 新しいバージョン（未確定または確定済み）を上にする
 
 ### バージョンタグ — Semantic Versioning
 
@@ -831,7 +873,7 @@ Release Noteは**バージョンタグ作成時**に更新します。通常の�
 - ローカルなコード整理
 - テストのみの変更
 
-対象期間は「今回の実装」ではなく、前回バージョンタグから当該タグまでの差分全体です。
+対象期間は「今回の実装」単位で未確定セクションへ追記し、タグ確定時は未確定セクション全体を1つの確定バージョンとして扱います。
 
 ---
 
@@ -858,7 +900,7 @@ GitHub Issueを使用している場合は、最終コメントとして以下�
 - 実際に完了したChanges
 - Verification結果
 - 作成・更新したADR / OKF Concept
-- Release Log（バージョンタグ作成時のみ更新した場合）
+- Release Log（`## v?.?.? (未確定)` への追記、またはタグ確定時の見出し置換）
 - 残課題がある場合はそのIssueへの分離状況
 - 関連PR / commit
 
@@ -873,7 +915,7 @@ Documentation
 - UI/backend concepts: updated
 - Infrastructure: no change
 - ADR: ADR-0014 added
-- Release log: not updated (version-tag release pending)
+- Release log: updated under `## v?.?.? (未確定)`（または tag finalized to `vX.Y.Z`）
 - OKF index: updated
 - OKF validation: passed
 ```
@@ -908,4 +950,4 @@ GitHub IssueのCheckpointコメントは作業履歴として残して構いま�
 恒久的な意思決定を検出する。  
 実装して検証する。  
 最終状態をOKFで構造化された恒久知識へ整合させる。  
-Release Noteはバージョンタグ作成時に前回タグからの差分で記録する（SemVer）。**
+Release Noteは Phase 6 で `## v?.?.? (未確定)` へ追記し、タグ確定時に SemVer 見出しへ置き換える（SemVer）。**
