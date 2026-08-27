@@ -214,12 +214,27 @@ OKF lifecycleの`status`は以下のみを使用します。
 - `generated`
 - `verified`
 - `sources`
-- `stale_after`
+- `stale_after`（RFC3339 日時＋タイムゾーン、または `YYYY-MM-DD`）
 
 AI Agentは、人間による確認、source、actor、時刻、staleness期限を推測・捏造してはいけません。
 
 このリポジトリでは、AI AgentがConceptを意味のある形で変更した場合、既存のhuman verificationがその変更後の内容を確認したと誤解されないように扱います。
 必要に応じて再レビュー対象としてCompletion Reportへ明示してください。
+
+信頼シグナルの付与タイミング:
+
+- AI が Current-state Concept を意味ある形で更新した → `generated` を更新し、`verified` は人間確認まで付けない
+- 外部仕様・API ドキュメント等を根拠にした → `sources` を付与する
+- 定期見直しや鮮度要件がある → `stale_after` を付与する
+
+### Knowledge Catalog 連携（オプション）
+
+本リポジトリの Source of Truth は git 上の `docs/` bundle（ポータブル層）です。組織横断の検索・IAM・データカタログとの同居が必要になった場合のみ、Google Cloud Knowledge Catalog + `kcmd`（エンタープライズ層）を検討します。
+
+- frontmatter の `type` は Catalog の `okf_type` にマップされる。サーバー側検索で絞り込みたい属性は `type` / `status` / `tags` 等のスカラーに置く
+- producer-defined field（例: `decision_status`, `superseded_by`）は Catalog 往復時に `extra` に格納される
+- git bundle では cross-link を辿って探索できるが、Catalog の `LookupContext` はリンクを辿らない。参照先 Concept は明示的に指定する
+- Attested Computation 用フィールド（`runtime`, `executor`, `attester` 等）は本リポジトリでは使用しない
 
 ---
 
@@ -355,13 +370,14 @@ Conceptを追加・移動・削除・deprecated化した場合は、同じ変更
 最低限、以下を検証対象とします。
 
 - `docs/`配下の非予約`.md`にparse可能なYAML frontmatterがある
-- `type`が存在し空でない
+- Concept Documentの`type`が空でない
+- `status` / `stale_after` / actor（`generated.by`, `verified[].by`）が指定されている場合、形式が妥当である
 - root以外の`index.md`にfrontmatterがない
 - `log.md`の見出しがバージョンタグ降順（新しいバージョンが上）として成立している。レガシー日付見出しがある場合は validator の規則に従う
-- 主要cross-linkのリンク切れがない
-- indexとConceptの不整合がない
+- bundle-relative cross-link のリンク切れがない
+- 維持対象 `index.md` と Concept の不整合がない（Concept が index から辿れること）
 
-具体的なコマンドは「リポジトリ固有の技術ルール」に定義します。
+CI でも同コマンドを実行します（`.github/workflows/okf.yml`）。
 
 ---
 

@@ -1,0 +1,25 @@
+name: OKF Validation
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  okf:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync --extra dev
+
+      - name: Validate OKF bundle
+        run: uv run python scripts/validate_okf.py
+
+      - name: Run OKF validator tests
+        run: uv run pytest tests/test_validate_okf.py
