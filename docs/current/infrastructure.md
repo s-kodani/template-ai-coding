@@ -80,7 +80,7 @@ MCP `_meta` には FastMCP 既定の `traceparent` に加え、Langfuse の `lan
 |---|---|
 | Langfuse トレース一覧 | `chat.turn` が **1 行** のみ（同一 `traceId` の FastMCP / ツールスパンはルートに出ない） |
 | トレース詳細 | `llm.generate` が `chat.turn` の子 |
-| ツール呼び出し | `search_knowledge` / `get_document` の input が tool observation に記録 |
+| ツール呼び出し | `search_knowledge` / `get_document` の input / output が tool observation に記録（`get_document` の output 本文は先頭 500 文字） |
 | MCP サーバー | `tools/call …` SERVER span 配下に `search.embed` / `search.query` |
 | Postgres | `search.query` 近傍に asyncpg クライアントスパン（CONNECT / SELECT 等） |
 | 自動テスト | `uv run pytest tests/test_trace_propagation.py tests/test_langfuse_span_export.py` |
