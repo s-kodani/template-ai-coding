@@ -45,3 +45,9 @@ pythonpath = ["src"]
 [tool.ruff]
 line-length = 100
 target-version = "py312"
+
+[dependency-groups]
+dev = [
+    "bandit[toml]>=1.9.4",
+    "pre-commit>=4.6.2",
+]

@@ -24,10 +24,55 @@ jobs:
       - name: Pytest
         run: uv run pytest
 
-  build:
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync --frozen --extra dev
+
+      - name: Bandit
+        run: uv run bandit -r src scripts -c pyproject.toml
+
+      - name: uv audit
+        run: uv audit --preview-features audit-command
+
+      - name: Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build-and-scan:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
       - name: Build app images
         run: docker compose -f infra/app/compose.yml build
+
+      - name: Trivy scan mcp-server image
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: image
+          image-ref: knowledge-app-mcp-server
+          format: table
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: 1
+
+      - name: Trivy scan chainlit image
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: image
+          image-ref: knowledge-app-chainlit
+          format: table
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: 1
