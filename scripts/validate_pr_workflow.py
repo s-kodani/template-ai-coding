@@ -15,6 +15,14 @@ ISSUE_REF_RE = re.compile(
     r"(?:^|\b)(?:refs?|close[sd]?|fix(?:e[sd])?|resolve[sd]?)\s*#\d+",
     re.IGNORECASE,
 )
+RELEASE_NOTE_DECL_RE = re.compile(
+    r"^Release-Note:\s*(required|not-required)\s*$",
+    re.IGNORECASE | re.MULTILINE,
+)
+RELEASE_NOTE_REASON_RE = re.compile(
+    r"^Reason:\s*(.+)\s*$",
+    re.IGNORECASE | re.MULTILINE,
+)
 
 
 @dataclass
@@ -43,6 +51,21 @@ def has_issue_reference(pr_body: str | None) -> bool:
     return ISSUE_REF_RE.search(pr_body) is not None
 
 
+def parse_release_note_declaration(pr_body: str | None) -> tuple[str | None, str | None]:
+    """Return (status, reason) where status is 'required' | 'not-required' | None."""
+    if not pr_body:
+        return None, None
+
+    match = RELEASE_NOTE_DECL_RE.search(pr_body)
+    if not match:
+        return None, None
+
+    status = match.group(1).lower()
+    reason_match = RELEASE_NOTE_REASON_RE.search(pr_body)
+    reason = reason_match.group(1).strip() if reason_match else None
+    return status, reason
+
+
 def validate_pr_workflow(
     changed_files: list[str],
     pr_body: str | None,
@@ -55,14 +78,22 @@ def validate_pr_workflow(
             "'Refs #123' or 'Closes #123' when src/ files change."
         )
 
-    if (
-        has_prefix(changed_files, RELEASE_LOG_TRIGGER_PREFIXES)
-        and RELEASE_LOG_PATH not in changed_files
-    ):
-        result.add(
-            f"Changes under src/ or infra/ require an update to {RELEASE_LOG_PATH} "
-            "(add an entry under `## v?.?.? (未確定)`)."
-        )
+    if has_prefix(changed_files, RELEASE_LOG_TRIGGER_PREFIXES):
+        status, reason = parse_release_note_declaration(pr_body)
+        if status is None:
+            result.add(
+                "Changes under src/ or infra/ require a Release Note declaration in the PR body: "
+                "'Release-Note: required' or 'Release-Note: not-required' with 'Reason: ...'."
+            )
+        elif status == "required" and RELEASE_LOG_PATH not in changed_files:
+            result.add(
+                f"Release-Note: required but {RELEASE_LOG_PATH} was not updated "
+                "(add an entry under `## v?.?.? (未確定)`)."
+            )
+        elif status == "not-required" and not reason:
+            result.add(
+                "Release-Note: not-required requires a non-empty 'Reason:' line in the PR body."
+            )
 
     return result
 
