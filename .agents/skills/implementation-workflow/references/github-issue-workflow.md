@@ -2,6 +2,8 @@
 
 Phase 0 の詳細。本リポジトリでは `AGENTS.md` の GitHub Work Item Policy で Issue 紐付けを必須とする。
 
+Phase 0 の前に、`SKILL.md` の「作業開始前: 最新 default branch の取り込み」を完了する。
+
 ## 既存 Issue の確認（必須）
 
 新しい Issue を起票する前に、**すでにユーザーが手動で作成した Issue が存在する可能性を必ず確認**する。

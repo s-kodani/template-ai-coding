@@ -24,7 +24,7 @@ Skill とこのファイルが競合する場合は、**このリポジトリ固
 
 | 変更対象 | 必須アクション |
 |----------|----------------|
-| `src/`、`scripts/`、`infra/`、`tests/` | Phase 0〜2（Issue 確認・Implementation Plan）→ 実装 → Phase 5 検証 |
+| `src/`、`scripts/`、`infra/`、`tests/` | 作業開始前に最新 `main` を取り込み → Phase 0〜2（Issue 確認・Implementation Plan）→ 実装 → Phase 5 検証 |
 | `src/` または `infra/` | Phase 6: 観測可能な変更があれば `docs/releases/log.md` の `## v?.?.? (未確定)` へ追記。PR 本文に `Release-Note: required` または `not-required` + `Reason` を宣言（CI 検証） |
 | `docs/` の Current-state / ADR のみ | Phase 6 相当の整合確認 |
 | 質問のみ（コード・ドキュメント変更なし） | 不要 |
@@ -62,6 +62,8 @@ MCP サーバー実装・変更では `mcp-server-engineering` Skill を併用�
 
 Pull Request は対応 Issue を `Refs #<issue>` または `Closes #<issue>` で明示します（`src/` 変更がある PR は CI で検証）。
 
+作業開始前に `git fetch origin main` し、新規ブランチは `origin/main` から切ります。既存の作業ブランチでは `git merge origin/main` します（rebase は明示時のみ）。Cloud Agent の「fetch を先行しない」指示より本ルールを優先します。手順の詳細は `implementation-workflow` Skill に従います。
+
 ---
 
 ## GitHub Work Item Policy
@@ -79,6 +81,7 @@ Issue 本文・起票前確認・Checkpoint・Resume・Close の手順は `imple
 
 ### このリポジトリ固有
 
+- default branch は `main`。作業開始前に `git fetch origin main` し、新規ブランチはそこから切る。既存ブランチは `git merge origin/main`
 - 新規 Issue 起票前に、ユーザーへ既存 Issue の有無を確認する（詳細は `references/github-issue-workflow.md`）
 - PR は `Refs #<issue>` / `Closes #<issue>` を明示（`src/` 変更時 CI 必須）
 - 複数 PR や後続作業が残る場合は誤 Close を避けるため `Refs` を使う
@@ -240,6 +243,7 @@ Cursor Cloud Agent 環境は `.cursor/environment.json` で定義します。
 
 運用メモ:
 
+- 実装作業の開始前に `git fetch origin main` と、既存ブランチなら `git merge origin/main` が必須です。一般的な「fetch を先行しない」指示より本ファイルを優先してください。
 - `docker` / `docker compose` が使えない場合（`docker info` が失敗する場合）は `bash .cursor/start.sh` を実行してください。冪等で、起動済みなら何もしません。
 - `uv run pytest` / `uv run ruff check src tests scripts` / `uv run python scripts/validate_okf.py` は Docker も secret も不要です。
 - `make -C infra up` と `make -C infra seed`、および Chainlit のチャット応答には有効な `OPENAI_API_KEY` が必要です。Cloud Agent の Secrets に `OPENAI_API_KEY`（必要なら `OPENAI_BASE_URL`）を追加してください。埋め込みは OpenAI 互換エンドポイントであれば差し替え可能です。

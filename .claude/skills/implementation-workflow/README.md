@@ -121,6 +121,8 @@ ScopeやAcceptance Criteriaが変わった場合は、Issue本文を現在状態
 ## ワークフロー
 
 ```text
+最新 default branch を取り込み（fetch + merge）
+        ↓
 GitHub Issue確認 / 起票
         ↓
 Understand
@@ -143,7 +145,7 @@ Implement
         │        ↓
         │   Resume Protocol
         │        ↓
-        │   Plan再生成 + grill-me / grilling
+        │   Plan再生成 + grill-me / grilling（その前に最新 default branch を取り込み）
         │
         ↓
 Verify
@@ -239,7 +241,7 @@ Checkpointには機械的に検索しやすいmarkerを付けます。
 
 Checkpointと現在のRepository Stateが異なる場合は、Repository Stateを優先して再調査します。
 
-再開時は古いImplementation Planを復元するのではなく、**現在状態をもとに新しいImplementation Planを作成**し、`grill-me` / `grilling` による Plan Refinement を行います。
+再開時は古いImplementation Planを復元するのではなく、**最新 default branch を取り込んだうえで現在状態をもとに新しいImplementation Planを作成**し、`grill-me` / `grilling` による Plan Refinement を行います。
 
 ---
 
@@ -414,6 +416,7 @@ Phase 6 では Current-state Documentation、ADR、Release Log を最終実装�
 例:
 
 - GitHub Issue workflow
+- 作業開始前の最新 default branch 取り込み
 - Implementation Plan
 - Implementation Plan の grill-me / grilling による refinement
 - Decision Check
