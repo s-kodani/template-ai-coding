@@ -2,6 +2,7 @@
 
 ## v?.?.? (未確定)
 
+- **Added**: Agent Skill 構成整理 — テスト方針統一（`test-strategy` 正本）、workflow 3 段階簡略化、`project-verification` Skill、`.agents` → `.claude` Skill 同期（`scripts/sync_skills.py`）、PR Release Note 要否宣言（`validate_pr_workflow.py`）、Git/PR `delivery-reference.md`
 - **Added**: PR workflow CI（`src/` 変更時の Issue 紐付け、`src/` / `infra/` 変更時の Release Log 更新チェック）、`.cursor/rules/implementation-workflow.mdc`、PR テンプレート（`scripts/validate_pr_workflow.py`、`.github/workflows/pr-workflow.yml`）
 - **Changed**: `mcp-server-engineering` の workflow reference を MCP 固有の `mcp-completion-checklist.md` に改名・縮小し、共通ワークフローは `implementation-workflow` Skill を正本と明記（`AGENTS.md`）
 - **Added**: MCP ツール実行の output を Langfuse トレースへ記録（`record_tool_output`、`get_document` 本文は先頭 500 文字に truncate）（[API 契約](/current/features/api.md)、[インフラ](/current/infrastructure.md)）

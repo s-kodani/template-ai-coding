@@ -11,7 +11,7 @@ from scripts.validate_pr_workflow import (
 def test_requires_issue_reference_for_src_changes() -> None:
     result = validate_pr_workflow(
         changed_files=["src/knowledge_mcp/server.py"],
-        pr_body="Summary only",
+        pr_body="Summary only\n\nRelease-Note: required",
     )
     assert not result.ok
     assert any("issue reference" in error for error in result.errors)
@@ -20,7 +20,7 @@ def test_requires_issue_reference_for_src_changes() -> None:
 def test_accepts_issue_reference_for_src_changes() -> None:
     result = validate_pr_workflow(
         changed_files=["src/knowledge_mcp/server.py", RELEASE_LOG_PATH],
-        pr_body="Refs #42\n\n## Summary",
+        pr_body="Refs #42\n\nRelease-Note: required",
     )
     assert result.ok, result.errors
 
@@ -33,19 +33,28 @@ def test_issue_reference_not_required_without_src_changes() -> None:
     assert result.ok, result.errors
 
 
-def test_requires_release_log_for_src_changes() -> None:
+def test_requires_release_note_declaration_for_src_changes() -> None:
     result = validate_pr_workflow(
         changed_files=["src/knowledge_mcp/server.py"],
         pr_body="Refs #1",
     )
     assert not result.ok
+    assert any("Release Note declaration" in error for error in result.errors)
+
+
+def test_requires_release_log_when_declared_required() -> None:
+    result = validate_pr_workflow(
+        changed_files=["src/knowledge_mcp/server.py"],
+        pr_body="Refs #1\n\nRelease-Note: required",
+    )
+    assert not result.ok
     assert any(RELEASE_LOG_PATH in error for error in result.errors)
 
 
-def test_requires_release_log_for_infra_changes() -> None:
+def test_requires_release_log_for_infra_changes_when_required() -> None:
     result = validate_pr_workflow(
         changed_files=["infra/app/compose.yml"],
-        pr_body="Refs #1",
+        pr_body="Refs #1\n\nRelease-Note: required",
     )
     assert not result.ok
     assert any(RELEASE_LOG_PATH in error for error in result.errors)
@@ -54,15 +63,36 @@ def test_requires_release_log_for_infra_changes() -> None:
 def test_passes_when_src_and_release_log_change() -> None:
     result = validate_pr_workflow(
         changed_files=["src/knowledge_mcp/server.py", RELEASE_LOG_PATH],
-        pr_body="Closes #7",
+        pr_body="Closes #7\n\nRelease-Note: required",
     )
     assert result.ok, result.errors
+
+
+def test_not_required_with_reason_skips_release_log() -> None:
+    result = validate_pr_workflow(
+        changed_files=["src/knowledge_mcp/server.py"],
+        pr_body=(
+            "Refs #1\n\n"
+            "Release-Note: not-required\n"
+            "Reason: Internal refactor with no observable behavior change."
+        ),
+    )
+    assert result.ok, result.errors
+
+
+def test_not_required_without_reason_fails() -> None:
+    result = validate_pr_workflow(
+        changed_files=["src/knowledge_mcp/server.py"],
+        pr_body="Refs #1\n\nRelease-Note: not-required",
+    )
+    assert not result.ok
+    assert any("Reason:" in error for error in result.errors)
 
 
 def test_closes_keyword_is_accepted() -> None:
     result = validate_pr_workflow(
         changed_files=["src/foo.py", RELEASE_LOG_PATH],
-        pr_body="This closes #99",
+        pr_body="This closes #99\n\nRelease-Note: required",
     )
     assert result.ok, result.errors
 

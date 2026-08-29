@@ -11,7 +11,7 @@ Use this skill when committing local changes and pushing the current branch.
 
 - There are modified files.
 - Remote `origin` is configured.
-- Commit messages follow `reference.md`.
+- Commit messages follow `reference.md` and `../commit-push-pr/delivery-reference.md`.
 
 ## Workflow
 
@@ -22,7 +22,7 @@ Use this skill when committing local changes and pushing the current branch.
 5. Commit with a message generated from the actual diff.
 6. Push with `git push -u origin <current-branch>`.
 
-Read `reference.md` when generating the commit message.
+Read `reference.md` when generating the commit message. See `../commit-push-pr/delivery-reference.md` for branch, PR, and quality-check rules.
 
 ## Example
 

@@ -17,9 +17,25 @@
 | 変更対象 | 必須アクション |
 |----------|----------------|
 | `src/`、`scripts/`、`infra/`、`tests/` | Phase 0〜2（Issue 確認・Implementation Plan）→ 実装 → Phase 5 検証 |
-| `src/` または `infra/` | Phase 6: `docs/releases/log.md` の `## v?.?.? (未確定)` へ追記 |
+| `src/` または `infra/` | Phase 6: 観測可能な変更があれば `docs/releases/log.md` の `## v?.?.? (未確定)` へ追記。PR 本文に `Release-Note: required` または `not-required` + `Reason` を宣言（CI 検証） |
 | `docs/` の Current-state / ADR のみ | Phase 6 相当の整合確認 |
 | 質問のみ（コード・ドキュメント変更なし） | 不要 |
+
+### Skill カタログ（正本: `.agents/skills/`）
+
+| Skill | 用途 |
+|-------|------|
+| `implementation-workflow` | Issue / Plan / ADR / OKF / 検証の共通フロー |
+| `test-strategy` | テスト観点表・リスクベースのテスト設計（**テスト方針の正本**） |
+| `test-driven-development` | 自動化可能な振る舞い変更時の Red-Green-Refactor |
+| `project-verification` | 本リポジトリ固有の CI / Docker / トレース検証コマンド |
+| `mcp-server-engineering` | MCP サーバー設計・変更（併用） |
+| `ponytail` | 最小実装（必要なテスト・検証は省略しない） |
+| `grill-me` / `grilling` | 設計強度の Plan refinement |
+| `commit-only` / `commit-push` / `commit-push-pr` | Git 操作（`delivery-reference.md` 参照） |
+| `gh` | GitHub CLI 参照専用 |
+
+`.claude/skills/` は `.agents/skills/` から `scripts/sync_skills.py` で生成する。手編集しない。
 
 MCP サーバー実装・変更では `mcp-server-engineering` Skill を併用します。共通ワークフローは本 Skill が正本で、MCP 固有の完了チェックは `references/mcp-completion-checklist.md` を参照します。
 
@@ -422,12 +438,19 @@ Validation:
 - Build: `docker compose -f infra/app/compose.yml build`
 - OKF: `uv run python scripts/validate_okf.py`
 - PR workflow (pull request): `scripts/validate_pr_workflow.py`（CI: `.github/workflows/pr-workflow.yml`）
+- Skill sync: `uv run python scripts/sync_skills.py --check`
 - Local stack: `make -C infra up && make -C infra seed`
 ```
 
 Coding conventions:
 
-- TDD for SearchService and trace propagation tests
+- テスト方針の正本は `test-strategy` Skill。変更種別に応じて `test-driven-development` を適用する
+  - **新規機能**（自動化可能な振る舞い）: `test-strategy` で観点整理 → TDD（失敗テスト先行）
+  - **SearchService / トレース伝播**: TDD 必須
+  - **バグ修正**: 再現テストまたは回帰テストを先行
+  - **リファクタ**: 既存テストで保護、不足時は characterization test
+  - **docs / 設定 / Skill のみ**: TDD 不要。該当 validator を実行
+- Phase 5 検証は `project-verification` Skill と併用する
 - Langfuse SDK initializes before FastMCP import in both Chainlit and MCP server processes
 - Do not log API keys, embeddings, or full document bodies in spans
 - MCP tools are read-only search; system ingest via `scripts/seed.py`, `scripts/run_langflow_ingest.py`, and `scripts/import_langflow.py`
