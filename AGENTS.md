@@ -12,6 +12,19 @@
 
 コードの実装、変更、リファクタリング、機能追加を行う場合は、`implementation-workflow` Skillを使用します。
 
+着手前に `.agents/skills/implementation-workflow/SKILL.md` を読み、以下のトリガーに従ってください。
+
+| 変更対象 | 必須アクション |
+|----------|----------------|
+| `src/`、`scripts/`、`infra/`、`tests/` | Phase 0〜2（Issue 確認・Implementation Plan）→ 実装 → Phase 5 検証 |
+| `src/` または `infra/` | Phase 6: `docs/releases/log.md` の `## v?.?.? (未確定)` へ追記 |
+| `docs/` の Current-state / ADR のみ | Phase 6 相当の整合確認 |
+| 質問のみ（コード・ドキュメント変更なし） | 不要 |
+
+MCP サーバー実装・変更では `mcp-server-engineering` Skill を併用します。共通ワークフローは本 Skill が正本で、MCP 固有の完了チェックは `references/mcp-completion-checklist.md` を参照します。
+
+Pull Request は対応 Issue を `Refs #<issue>` または `Closes #<issue>` で明示します（`src/` 変更がある PR は CI で検証）。
+
 Skillとこのファイルの指示が競合する場合は、このリポジトリ固有のルールである`AGENTS.md`を優先します。
 
 ---
@@ -408,6 +421,7 @@ Validation:
 - Lint: `uv run ruff check src tests scripts`
 - Build: `docker compose -f infra/app/compose.yml build`
 - OKF: `uv run python scripts/validate_okf.py`
+- PR workflow (pull request): `scripts/validate_pr_workflow.py`（CI: `.github/workflows/pr-workflow.yml`）
 - Local stack: `make -C infra up && make -C infra seed`
 ```
 

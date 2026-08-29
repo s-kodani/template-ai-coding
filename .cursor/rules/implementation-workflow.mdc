@@ -1,0 +1,24 @@
+---
+description: コード変更前に implementation-workflow Skill を読み、Issue 紐付け・検証・OKF 整合を行う
+globs:
+  - src/**
+  - scripts/**
+  - infra/**
+  - tests/**
+  - docs/**
+alwaysApply: false
+---
+
+# Implementation Workflow（Cursor）
+
+`src/`、`scripts/`、`infra/`、`tests/`、`docs/` を変更するタスクでは、**コード編集前に**次を実行する。
+
+1. `.agents/skills/implementation-workflow/SKILL.md` を読む（`AGENTS.md` の Repository 固有ルールと併用）
+2. Phase 0: 対応 GitHub Issue を確認・紐付け（新規 Issue 起票前にユーザーへ既存 Issue の有無を確認）
+3. Phase 2: Implementation Plan を作成（リポジトリへコミットしない）
+4. 実装後: Phase 5 検証（`uv run pytest`、`uv run ruff check`、`uv run python scripts/validate_okf.py` 等）
+5. Phase 6: `docs/releases/log.md` の `## v?.?.? (未確定)` へ追記（`src/` / `infra/` 変更時）
+
+MCP サーバー作業では、追加で `mcp-server-engineering` の `references/mcp-completion-checklist.md` を参照する。
+
+Pull Request 本文には `Refs #<issue>` または `Closes #<issue>` を含める（`src/` 変更時は CI で必須）。
