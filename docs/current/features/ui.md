@@ -1,9 +1,12 @@
 ---
 type: UI Capability
 title: Chainlit チャット UI
-description: knowledge-mcp への traced FastMCP 接続と、追加 MCP サーバを選べる Chainlit チャット UI。
-tags: [chainlit, ui, mcp]
+description: Keycloak OAuth 付きの Chainlit チャット UI。knowledge-mcp への traced FastMCP 接続と追加 MCP 接続。
+tags: [chainlit, ui, mcp, oauth, keycloak]
 status: stable
+generated:
+  at: "2026-08-29T12:00:00Z"
+  by: process:cursor-agent
 ---
 
 # Chainlit チャット UI
@@ -13,9 +16,12 @@ status: stable
 - モジュール: `src/chat_ui/app.py`
 - URL: http://localhost:8080
 - 設定: `.chainlit/config.toml`
+- 認証: Keycloak OAuth（[ADR-0011](/decisions/ADR-0011-keycloak-chainlit-oauth.md)）
 
 ## 動作
 
+- 未ログインではチャットできない。Keycloak（`knowledge` realm）でログインする
+- 開発ユーザーは `dev` / `dev`（email `dev@localhost`）。管理者コンソールは http://localhost:8081
 - OpenAI 互換チャットに、knowledge-mcp の `search_knowledge` / `get_document` を常に載せる
 - 既定ツールは `MCP_SERVER_URL` へ FastMCP Client で呼び出す（native telemetry）
 - Chainlit 内蔵 MCP 接続 UI で Streamable HTTP / SSE サーバを追加接続できる。接続先は `.chainlit/config.toml` の `user_servers.allowed_urls` に含まれる origin に限る（[ADR-0009](/decisions/ADR-0009-chainlit-mcp-user-servers-allowlist.md)）
@@ -36,4 +42,4 @@ status: stable
 
 ## 設定
 
-`CHAT_MODEL`、`OPENAI_API_KEY`、`MCP_SERVER_URL`、Langfuse キーはルートの `.env.example` を参照。
+`CHAT_MODEL`、`OPENAI_API_KEY`、`MCP_SERVER_URL`、`CHAINLIT_AUTH_SECRET`、`OAUTH_GENERIC_*`、Langfuse キーはルートの `.env.example` を参照。

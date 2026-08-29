@@ -25,7 +25,7 @@ make -C infra up
 make -C infra seed
 ```
 
-5. Chainlit は http://localhost:8080、Langfuse は http://localhost:3000 を開きます。MCP プラグインの一覧に knowledge-mcp が表示されます。追加の Streamable HTTP / SSE サーバも、`.chainlit/config.toml` の URL allowlist 内であればここから接続できます（stdio は無効）。
+5. Chainlit は http://localhost:8080 を開き、Keycloak でログインします（開発ユーザー `dev` / `dev`）。Langfuse は http://localhost:3000 です。MCP プラグインの一覧に knowledge-mcp が表示されます。追加の Streamable HTTP / SSE サーバも、`.chainlit/config.toml` の URL allowlist 内であればここから接続できます（stdio は無効）。Keycloak 管理 UI は http://localhost:8081（`admin` / `admin`）です。
 
 6. Langfuse でサインアップ後、`LANGFUSE_PUBLIC_KEY` と `LANGFUSE_SECRET_KEY` を `.env` に追加し、アプリサービスを再起動します。
 
@@ -66,6 +66,7 @@ make -C infra langflow-down
 | サービス | URL |
 |---|---|
 | Chainlit | http://localhost:8080 |
+| Keycloak | http://localhost:8081 |
 | FastMCP | http://127.0.0.1:8000/mcp |
 | Langfuse | http://localhost:3000 |
 | アプリ Postgres | localhost:5433 |

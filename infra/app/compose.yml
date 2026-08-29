@@ -60,6 +60,34 @@ services:
       - observability
       - langfuse_internal
 
+  keycloak:
+    image: keycloak/keycloak:26.4.5
+    command: start-dev --import-realm
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KC_BOOTSTRAP_ADMIN_USERNAME:-admin}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KC_BOOTSTRAP_ADMIN_PASSWORD:-admin}
+      KC_HTTP_ENABLED: "true"
+      KC_HOSTNAME: http://localhost:8081
+      KC_HOSTNAME_STRICT: "false"
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
+      KC_HEALTH_ENABLED: "true"
+    ports:
+      - "8081:8080"
+    volumes:
+      - ./keycloak/knowledge-realm.json:/opt/keycloak/data/import/knowledge-realm.json:ro
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "exec 3<>/dev/tcp/127.0.0.1/9000 && echo -e 'GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && cat <&3 | grep -q '\"status\": \"UP\"'",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 60s
+    networks:
+      - observability
+
   chainlit:
     build:
       context: ../..
@@ -70,10 +98,24 @@ services:
       MCP_SERVER_URL: http://mcp-server:8000/mcp
       FASTMCP_TELEMETRY_MODE: native
       LANGFUSE_HOST: http://langfuse-web:3000
+      DATABASE_URL: ""
+      CHAINLIT_URL: http://localhost:8080
+      CHAINLIT_AUTH_SECRET: ${CHAINLIT_AUTH_SECRET:-chainlit-local-auth-secret-change-me}
+      OAUTH_GENERIC_CLIENT_ID: ${OAUTH_GENERIC_CLIENT_ID:-chainlit}
+      OAUTH_GENERIC_CLIENT_SECRET: ${OAUTH_GENERIC_CLIENT_SECRET:-chainlit-local-secret}
+      OAUTH_GENERIC_AUTH_URL: http://localhost:8081/realms/knowledge/protocol/openid-connect/auth
+      OAUTH_GENERIC_TOKEN_URL: http://keycloak:8080/realms/knowledge/protocol/openid-connect/token
+      OAUTH_GENERIC_USER_INFO_URL: http://keycloak:8080/realms/knowledge/protocol/openid-connect/userinfo
+      OAUTH_GENERIC_SCOPES: openid profile email
+      OAUTH_GENERIC_NAME: keycloak
+      OAUTH_GENERIC_USER_IDENTIFIER: email
+      OAUTH_KEYCLOAK_NAME: unused
     ports:
       - "8080:8080"
     depends_on:
       mcp-server:
+        condition: service_healthy
+      keycloak:
         condition: service_healthy
     networks:
       - observability

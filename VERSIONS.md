@@ -5,6 +5,7 @@
 | MCP 仕様 | 2026-07-28 系（実装時に再確認） |
 | FastMCP | >=2.14、Streamable HTTP stateless |
 | Chainlit | >=2.7 |
+| Keycloak | `keycloak/keycloak:26.4.5` |
 | Langfuse | 公式 `docker-compose.yml`（`langfuse/langfuse` main） |
 | Python | 3.12 |
 | pgvector イメージ | `pgvector/pgvector:pg17` |

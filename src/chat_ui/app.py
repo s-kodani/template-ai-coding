@@ -8,6 +8,7 @@ from typing import Any
 import chainlit as cl
 from langfuse import observe
 
+from chat_ui.auth import register_oauth_callback
 from chat_ui.mcp_bridge import GET_DOCUMENT_TOOL, SEARCH_TOOL, MCPBridge, build_openai_client
 from chat_ui.mcp_tools import call_session_tool, collect_openai_tools, resolve_tool_target
 from chat_ui.mcp_ui import write_mcp_autoload_script
@@ -21,6 +22,7 @@ settings = get_settings()
 openai_client = build_openai_client(settings)
 mcp_bridge = MCPBridge(settings)
 write_mcp_autoload_script(Path.cwd() / "public", settings.mcp_server_url)
+register_oauth_callback()
 
 SYSTEM_PROMPT = (
     "You are a helpful assistant with access to a local knowledge base "

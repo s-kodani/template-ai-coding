@@ -1,9 +1,12 @@
 ---
 type: Business Requirements
 title: ビジネス要件
-description: トレース付きチャット UI による MCP ベクトル検索と、Langflow から documents への Ingest。
-tags: [requirements, local]
+description: Keycloak 認証付きチャット UI による MCP ベクトル検索と、Langflow から documents への Ingest。
+tags: [requirements, local, auth]
 status: stable
+generated:
+  at: "2026-08-29T12:00:00Z"
+  by: process:cursor-agent
 ---
 
 # ビジネス要件
@@ -13,7 +16,7 @@ status: stable
 以下を検証する **ローカル専用** の開発者向けスタックを提供する。
 
 1. PostgreSQL + pgvector 上の FastMCP ベクトル検索
-2. MCP ツールを呼び出し Langfuse ルートトレースを持つ Chainlit チャット UI（追加 MCP サーバを UI から接続可能）
+2. Keycloak OAuth でログインしたうえで MCP ツールを呼び出し、Langfuse ルートトレースを持つ Chainlit チャット UI（追加 MCP サーバを UI から接続可能）
 3. Chainlit、MCP クライアント/サーバー、embedding、Postgres クライアントスパンにわたる end-to-end 親子トレース
 4. 任意の Langflow サイドカーによるファイル Ingest。ホスト原本を Files / Flow API で投入し、専用 Collection から `documents` へ adapter で複製して Chainlit / FastMCP から検索する
 
@@ -23,6 +26,7 @@ status: stable
 
 ## スコープ外
 
-- 本番公開、OAuth、マルチテナント運用
+- 本番公開、マルチテナント、RBAC、MCP / Langfuse / Langflow の SSO
+- 本番用 TLS や Keycloak クラスタ
 - Langfuse トレース以外の metrics / logs パイプライン
 - MCP Resource / Prompt、MCP 経由の ingest 変更

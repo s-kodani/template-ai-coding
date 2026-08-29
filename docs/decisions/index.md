@@ -10,3 +10,4 @@
 - [ADR-0008: 原本はホスト、Langflow Files API は一時転送](/decisions/ADR-0008-host-originals-langflow-api.md) — My Files に依存せず API で Ingest Flow を実行する
 - [ADR-0009: Chainlit 2.12 の MCP user_servers allowlist](/decisions/ADR-0009-chainlit-mcp-user-servers-allowlist.md) — 追加 MCP の静的 URL allowlist と stdio 無効
 - [ADR-0010: DevSecOps パターンA（OSS Shift Left）](/decisions/ADR-0010-devsecops-pattern-a.md) — Ruff/Bandit/uv audit/gitleaks/Trivy と pre-commit
+- [ADR-0011: Keycloak を Chainlit のローカル IdP にする](/decisions/ADR-0011-keycloak-chainlit-oauth.md) — Chainlit OAuth / OIDC
