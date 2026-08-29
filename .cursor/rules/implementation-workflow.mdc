@@ -15,11 +15,12 @@ alwaysApply: false
 `src/`、`scripts/`、`infra/`、`tests/`、`docs/`、`.agents/skills/` を変更するタスクでは、**コード編集前に**次を実行する。
 
 1. `.agents/skills/implementation-workflow/SKILL.md` を読む（`AGENTS.md` の Repository 固有ルールと併用）
-2. Phase 0: 対応 GitHub Issue を確認・紐付け
-3. Phase 2: 変更強度（軽微 / 標準 / 設計）を判定し、Implementation Plan を作成（リポジトリへコミットしない）
-4. 「設計」または「標準」で未解決判断がある場合のみ `grill-me` / `grilling`
-5. 実装後: Phase 5 検証（`project-verification` Skill、`test-strategy`、必要時 `test-driven-development`）
-6. Phase 6: 観測可能な変更があれば `docs/releases/log.md` の `## v?.?.? (未確定)` へ追記
+2. Phase 0: 対応 GitHub Issue を確認・紐付け（新規 Issue 起票前にユーザーへ既存 Issue の有無を確認）
+3. Phase 2: 変更強度（軽微 / 標準 / 設計）を判定し、Implementation Plan を `.plans/` の md として作成する（リポジトリへコミットしない）
+4. 「設計」または「標準」で未解決判断がある場合のみ `grill-me` / `grilling`。結果は md へ反映する
+5. ユーザー承認を得てから実装する（Cloud / background agent も例外ではない）
+6. 実装後: Phase 5 検証（`project-verification` Skill、`test-strategy`、必要時 `test-driven-development`）
+7. Phase 6: 観測可能な変更があれば `docs/releases/log.md` の `## v?.?.? (未確定)` へ追記
 
 MCP サーバー作業では、追加で `mcp-server-engineering` の `references/mcp-completion-checklist.md` を参照する。
 

@@ -85,8 +85,9 @@ Checkpoint では**予定ではなく事実**を優先する。Implementation Pl
 7. Changed Files / Completed / In Progress / Remaining が実コードと整合しているか確認
 8. Pending Decisions が未解決のままか確認
 9. External State が現在も有効か確認
-10. 現在状態を基準に新しい Implementation Plan を作成し、必要なら grill-me / grilling
-11. 必要に応じて Resume コメントを Issue へ残してから再開
+10. 現在状態を基準に Implementation Plan を `.plans/` の md として作成または更新する。古いプラン md があってもそのまま使わず、リポジトリ現在状態と照合して更新する
+11. 変更強度に応じて grill-me / grilling を行い、ユーザー承認を得てから実装を再開する
+12. 必要に応じて Resume コメントを Issue へ残してから再開する
 
 ### Source of Truth（優先順位）
 

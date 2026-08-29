@@ -21,7 +21,7 @@ AI Coding Agentによる実装を、**高速に進めながら品質・設計判
 |---|---|---|
 | GitHub Issue Body | 現在有効な作業契約 | GitHub |
 | GitHub Issue Comments | 作業履歴・変更履歴・Session Checkpoint | GitHub |
-| Implementation Plan | 現在のセッションでの実装計画 | 原則保存しない |
+| Implementation Plan | 現在のセッションでの実装計画 | `.plans/` へ一時書き出し（git 管理外。コミットしない） |
 | Repository / Code | 実装状態 | Git |
 | Current-state Documentation | 現在何が正しいか | OKF |
 | Decision Record / ADR | なぜその設計を選んだか | OKF |
@@ -29,7 +29,7 @@ AI Coding Agentによる実装を、**高速に進めながら品質・設計判
 
 重要な原則は次のとおりです。
 
-> **Planは使い捨てる。  
+> **Planはローカル md として使い、コミットしない。  
 > Issueは作業をつなぐ。  
 > Codeは実装状態を表す。  
 > OKFは現在の知識を表す。  
@@ -45,7 +45,7 @@ AI Codingでは、実装前に計画を作成しても、コード調査・テ�
 
 そのため、このSkillではImplementation Planを必須としつつ、**恒久成果物にはしません**。
 
-Implementation Planはそのセッションの実装を安全に進めるための一時的なWorking Artifactとして扱い、最終的に価値のある情報だけをCurrent-state Documentation、ADR、Release Logへ昇格させます。Release Logは Phase 6 で `## v?.?.? (未確定)` 見出し下へ追記し、バージョンタグ確定時に SemVer 見出しへ置き換えます。
+Implementation Planは `.plans/` 配下の Markdown として書き出し、必要な grilling のあとユーザー承認を得てから実装します。git 管理外の一時的な Working Artifact であり、最終的に価値のある情報だけをCurrent-state Documentation、ADR、Release Logへ昇格させます。Release Logは Phase 6 で `## v?.?.? (未確定)` 見出し下へ追記し、バージョンタグ確定時に SemVer 見出しへ置き換えます。
 
 ### セッションを跨いだ作業再開
 
@@ -125,9 +125,11 @@ GitHub Issue確認 / 起票
         ↓
 Understand
         ↓
-Implementation Plan
+Implementation Plan（`.plans/` の md へ書き出し）
         ↓
-grill-me / grilling（Plan Refinement）
+grill-me / grilling（変更強度に応じて。結果を md へ反映）
+        ↓
+ユーザー承認（必須。修正があれば md を更新して再承認）
         ↓
 Decision Check
         ↓
@@ -143,7 +145,7 @@ Implement
         │        ↓
         │   Resume Protocol
         │        ↓
-        │   Plan再生成 + grill-me / grilling
+        │   Plan再生成または更新（`.plans/` の md）+ 必要なら grilling + ユーザー承認
         │
         ↓
 Verify
@@ -239,7 +241,7 @@ Checkpointには機械的に検索しやすいmarkerを付けます。
 
 Checkpointと現在のRepository Stateが異なる場合は、Repository Stateを優先して再調査します。
 
-再開時は古いImplementation Planを復元するのではなく、**現在状態をもとに新しいImplementation Planを作成**し、`grill-me` / `grilling` による Plan Refinement を行います。
+再開時は古いImplementation Planを復元するのではなく、**現在状態をもとに `.plans/` の md を作成または更新**し、変更強度に応じた `grill-me` / `grilling` のあとユーザー承認を得てから実装を再開します。
 
 ---
 
@@ -414,8 +416,9 @@ Phase 6 では Current-state Documentation、ADR、Release Log を最終実装�
 例:
 
 - GitHub Issue workflow
-- Implementation Plan
-- Implementation Plan の grill-me / grilling による refinement
+- Implementation Plan（`.plans/` への md 書き出し）
+- Implementation Plan の grill-me / grilling による refinement（変更強度に応じて）
+- ユーザー承認ゲート（Cloud / background agent も例外なし）
 - Decision Check
 - Session Handoff / Resume
 - Verification
@@ -432,6 +435,7 @@ Phase 6 では Current-state Documentation、ADR、Release Log を最終実装�
 - 使用するSkill
 - GitHub Issue / PR運用
 - Human Approvalルール
+- Implementation Plan の一時ディレクトリ（既定は `.plans/`）
 - OKF Bundleの配置
 - Current-state Documentationのパス
 - ADR / Release Logの保存先
@@ -501,7 +505,7 @@ implementation-workflow/
 
 ## 設計原則
 
-> **Planは未来を考えるために使い、保存しない。**  
+> **Planは `.plans/` の md として未来を考え、コミットしない。**  
 > **Issueは作業をセッション間でつなぐ。**  
 > **Codeは実装状態のSource of Truthとする。**  
 > **OKFは現在の恒久知識を構造化する。**  
