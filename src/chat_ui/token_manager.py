@@ -73,7 +73,7 @@ class PostgresTokenStore:
                 VALUES (
                     $1, $2,
                     pgp_sym_encrypt($3, $4),
-                    CASE WHEN $5 IS NULL THEN NULL ELSE pgp_sym_encrypt($5, $4) END,
+                    CASE WHEN $5::text IS NULL THEN NULL ELSE pgp_sym_encrypt($5::text, $4) END,
                     to_timestamp($6)
                 )
                 ON CONFLICT (subject) DO UPDATE SET

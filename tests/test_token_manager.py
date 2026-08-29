@@ -6,7 +6,12 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from chat_ui.token_manager import KeycloakTokenManager, MemoryTokenStore
+from chat_ui.token_manager import (
+    KeycloakTokenManager,
+    MemoryTokenStore,
+    PostgresTokenStore,
+    StoredTokens,
+)
 
 
 def _unsigned(payload: dict) -> str:
@@ -70,3 +75,27 @@ async def test_get_access_token_force_refresh_uses_refresh_token(monkeypatch: py
 
     got = await mgr.get_access_token("sess", force_refresh=True)
     assert got == refreshed
+
+
+@pytest.mark.asyncio
+async def test_postgres_store_upserts_when_refresh_token_is_missing() -> None:
+    import asyncpg
+
+    url = "postgresql://knowledge:change-me@localhost:5433/knowledge"
+    try:
+        conn = await asyncpg.connect(url, timeout=2)
+    except (OSError, asyncpg.PostgresError):
+        pytest.skip("app postgres is not available")
+    await conn.close()
+
+    store = PostgresTokenStore(url, "test-token-store-key")
+    token = _unsigned({"sub": "sub-null-rt", "exp": 1_900_000_000})
+    await store.upsert(
+        StoredTokens(access_token=token, refresh_token=None, expires_at=1_900_000_000, subject="sub-null-rt"),
+        session_id="sess-null-rt",
+    )
+    loaded = await store.get_by_session("sess-null-rt")
+    assert loaded is not None
+    assert loaded.access_token == token
+    assert loaded.refresh_token is None
+    await store.delete_by_session("sess-null-rt")
