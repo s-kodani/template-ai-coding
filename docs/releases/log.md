@@ -2,6 +2,7 @@
 
 ## v?.?.? (未確定)
 
+- **Added**: Keycloak をアプリ Compose に追加し、Chainlit を OAuth ログイン必須にした（[UI 機能](/current/features/ui.md)、[インフラ](/current/infrastructure.md)、[ADR-0011](/decisions/ADR-0011-keycloak-chainlit-oauth.md)）
 - **Changed**: APM 管理 Skill（`ponytail`、`test-driven-development`）を upstream 内容へ復元。リポジトリ固有ルールは `AGENTS.md` / `test-strategy` へ集約
 - **Changed**: `AGENTS.md` の workflow / OKF 共通ルールを `implementation-workflow` references へ委譲し、リポジトリ固有設定に slim 化（~496行 → ~220行）
 - **Changed**: `implementation-workflow` Skill を Progressive Disclosure 構成へ再編（`SKILL.md` 入口 + `references/` 8 本、`mcp-server-engineering` と同パターン）

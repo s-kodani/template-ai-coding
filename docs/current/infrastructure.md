@@ -1,11 +1,11 @@
 ---
 type: Infrastructure
 title: インフラ
-description: アプリ、Langfuse、任意 Langflow の Docker Compose スタックと CI/CD・DevSecOps 検証。
-tags: [docker, langfuse, langflow, postgres, ci, devsecops]
+description: アプリ、Keycloak、Langfuse、任意 Langflow の Docker Compose スタックと CI/CD・DevSecOps 検証。
+tags: [docker, langfuse, langflow, postgres, keycloak, ci, devsecops]
 status: stable
 generated:
-  at: "2026-08-29T08:00:00Z"
+  at: "2026-08-29T12:00:00Z"
   by: process:cursor-agent
 ---
 
@@ -16,7 +16,7 @@ generated:
 | スタック | パス | 用途 |
 |---|---|---|
 | Langfuse 公式 | `infra/langfuse/docker-compose.yml` + `network.yml` | トレース UI とストレージ |
-| アプリケーション | `infra/app/compose.yml` | FastMCP、pgvector Postgres、Chainlit |
+| アプリケーション | `infra/app/compose.yml` | FastMCP、pgvector Postgres、Chainlit、Keycloak |
 | Langflow（任意） | `infra/langflow/compose.yml` | Ingest PoC。`make -C infra langflow-up` |
 
 アプリと Langfuse の共有 Docker ネットワーク: `observability`。Langflow スタックは独立ネットワークであり、このネットワークには参加しない。
@@ -29,6 +29,7 @@ generated:
 |---|---|
 | Langfuse UI | 3000 |
 | Chainlit | 8080 |
+| Keycloak | 8081 |
 | FastMCP | 127.0.0.1:8000 |
 | アプリ Postgres | 5433 |
 | Langflow UI | 7860 |
@@ -71,10 +72,19 @@ Langfuse SDK 4 はデフォルトで LLM / Langfuse スパン以外を落とす�
 
 MCP `_meta` には FastMCP 既定の `traceparent` に加え、Langfuse の `langfuse_trace_id` baggage を載せます。これがないと、mcp-server プロセス側の FastMCP スパンが同一 `traceId` でもトレース一覧の追加ルートになります。
 
+## 認証（Keycloak）
+
+Chainlit は Keycloak の `knowledge` realm で OAuth する（[ADR-0011](/decisions/ADR-0011-keycloak-chainlit-oauth.md)）。
+
+- 管理 UI: http://localhost:8081 （`admin` / `admin`）
+- チャットログイン: Chainlit の Keycloak ボタンから。開発ユーザーは `dev` / `dev`
+- Chainlit コンテナは `localhost:host-gateway` 経由でホストの `:8081` に token / userinfo を送る
+- realm 定義は `infra/app/keycloak/knowledge-realm.json`。変更後は Keycloak コンテナを再作成する
+
 ## 手動検証
 
 1. **MCP Inspector**: `http://127.0.0.1:8000/mcp` に接続
-2. **Chainlit**: `search_knowledge` が呼ばれる質問を送信
+2. **Chainlit**: Keycloak でログインし、`search_knowledge` が呼ばれる質問を送信
 3. **Langfuse**: チャット 1 ターンあたり 1 本のトレースに、クライアント/サーバーのツールスパンがネストされていることを確認
 
 ### トレース検証チェックリスト（1 ターン = 1 trace）

@@ -197,8 +197,8 @@ Backend:
 
 Infrastructure:
 - Platform: Docker Compose
-- IaC: `infra/app/compose.yml`, `infra/langfuse/docker-compose.yml` + `network.yml`, `infra/langflow/compose.yml`
-- Orchestration: `make -C infra up|down|migrate|seed`。Langflow は `make -C infra langflow-up|langflow-down|ingest-langflow|import-langflow`（デフォルト `up` には含めない）
+- IaC: `infra/app/compose.yml`（Keycloak 含む）, `infra/langfuse/docker-compose.yml` + `network.yml`, `infra/langflow/compose.yml`
+- Orchestration: `make -C infra up|down|migrate|seed`。Langflow は `make -C infra langflow-up|langflow-down|ingest-langflow|import-langflow`（デフォルト `up` には含めない）。Chainlit は Keycloak OAuth
 
 Validation:
 - Test: `uv run pytest`

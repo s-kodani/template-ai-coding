@@ -1,9 +1,12 @@
 ---
 type: Architecture
 title: アーキテクチャ
-description: FastMCP、Chainlit、pgvector、Langfuse のトレース構成と、ホスト原本から Langflow API 経由で documents へ載せる Ingest。
-tags: [architecture, mcp, tracing, langflow]
+description: FastMCP、Chainlit、pgvector、Keycloak、Langfuse のトレース構成と、ホスト原本から Langflow API 経由で documents へ載せる Ingest。
+tags: [architecture, mcp, tracing, langflow, keycloak]
 status: stable
+generated:
+  at: "2026-08-29T12:00:00Z"
+  by: process:cursor-agent
 ---
 
 # アーキテクチャ
@@ -12,9 +15,10 @@ status: stable
 
 | コンポーネント | 役割 |
 |---|---|
-| Chainlit（`src/chat_ui/`） | チャット UI、Langfuse ルートスパン、既定 FastMCP クライアント、追加 MCP 接続 UI |
+| Chainlit（`src/chat_ui/`） | チャット UI、Keycloak OAuth、Langfuse ルートスパン、既定 FastMCP クライアント、追加 MCP 接続 UI |
 | FastMCP サーバー（`src/knowledge_mcp/`） | Streamable HTTP MCP、検索ツール、子スパン |
 | PostgreSQL + pgvector | アプリ用ベクトルストア（Langfuse DB・Langflow DB とは分離） |
+| Keycloak | Chainlit 向けローカル IdP（realm import） |
 | Langfuse（公式 compose） | トレース取り込みと UI |
 | Langflow（任意サイドカー） | ファイル Ingest。専用 DB へ書き、ホスト adapter が `documents` へ複製する |
 | MCP Inspector | FastMCP へのプロトコル検証 |
@@ -32,6 +36,7 @@ flowchart TB
         Chainlit["Chainlit<br/>src/chat_ui/"]
         MCP["FastMCP Server<br/>src/knowledge_mcp/"]
         PG[("PostgreSQL 17<br/>pgvector")]
+        Keycloak["Keycloak<br/>IdP"]
     end
 
     subgraph external["外部 API"]
@@ -50,6 +55,8 @@ flowchart TB
     end
 
     User -->|HTTP :8080| Chainlit
+    User -->|OAuth :8081| Keycloak
+    Chainlit -->|token / userinfo via localhost:8081| Keycloak
     User -->|HTTP :7860| Langflow
     User -->|"host files (data/ingest)"| Adapter
     Adapter -->|"Files API + Flow API"| Langflow

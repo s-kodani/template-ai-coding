@@ -60,20 +60,57 @@ services:
       - observability
       - langfuse_internal
 
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.4.5
+    command: start-dev --import-realm
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KC_BOOTSTRAP_ADMIN_USERNAME:-admin}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KC_BOOTSTRAP_ADMIN_PASSWORD:-admin}
+      KC_HTTP_ENABLED: "true"
+      KC_HOSTNAME: http://localhost:8081
+      KC_HOSTNAME_STRICT: "false"
+      KC_HEALTH_ENABLED: "true"
+    ports:
+      - "8081:8080"
+    volumes:
+      - ./keycloak/knowledge-realm.json:/opt/keycloak/data/import/knowledge-realm.json:ro
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "exec 3<>/dev/tcp/127.0.0.1/9000 && echo -e 'GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && cat <&3 | grep -q '\"status\": \"UP\"'",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 60s
+    networks:
+      - observability
+
   chainlit:
     build:
       context: ../..
       dockerfile: infra/app/Dockerfile.chainlit
     env_file:
       - ../../.env
+    extra_hosts:
+      - "localhost:host-gateway"
     environment:
       MCP_SERVER_URL: http://mcp-server:8000/mcp
       FASTMCP_TELEMETRY_MODE: native
       LANGFUSE_HOST: http://langfuse-web:3000
+      CHAINLIT_URL: http://localhost:8080
+      CHAINLIT_AUTH_SECRET: ${CHAINLIT_AUTH_SECRET:-chainlit-local-auth-secret-change-me}
+      OAUTH_KEYCLOAK_CLIENT_ID: ${OAUTH_KEYCLOAK_CLIENT_ID:-chainlit}
+      OAUTH_KEYCLOAK_CLIENT_SECRET: ${OAUTH_KEYCLOAK_CLIENT_SECRET:-chainlit-local-secret}
+      OAUTH_KEYCLOAK_REALM: ${OAUTH_KEYCLOAK_REALM:-knowledge}
+      OAUTH_KEYCLOAK_BASE_URL: http://localhost:8081
     ports:
       - "8080:8080"
     depends_on:
       mcp-server:
+        condition: service_healthy
+      keycloak:
         condition: service_healthy
     networks:
       - observability
