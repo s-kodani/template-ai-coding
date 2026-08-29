@@ -5,12 +5,8 @@ from __future__ import annotations
 
 import argparse
 import re
-import subprocess
 import sys
 from dataclasses import dataclass, field
-from pathlib import Path
-
-ROOT = Path(__file__).resolve().parents[1]
 
 ISSUE_REF_PREFIXES = ("src/",)
 RELEASE_LOG_TRIGGER_PREFIXES = ("src/", "infra/")
@@ -33,13 +29,8 @@ class ValidationResult:
         return not self.errors
 
 
-def git_diff_name_only(base: str, head: str, cwd: Path = ROOT) -> list[str]:
-    output = subprocess.check_output(
-        ["git", "diff", "--name-only", f"{base}...{head}"],
-        cwd=cwd,
-        text=True,
-    )
-    return [line.strip() for line in output.splitlines() if line.strip()]
+def read_changed_files_from_stdin() -> list[str]:
+    return [line.strip() for line in sys.stdin if line.strip()]
 
 
 def has_prefix(changed_files: list[str], prefixes: tuple[str, ...]) -> bool:
@@ -78,8 +69,13 @@ def validate_pr_workflow(
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--base", required=True, help="Base git ref (merge base or branch tip)")
-    parser.add_argument("--head", default="HEAD", help="Head git ref (default: HEAD)")
+    parser.add_argument(
+        "--changed-file",
+        action="append",
+        default=[],
+        dest="changed_files",
+        help="Changed file path (repeatable). If omitted, read paths from stdin.",
+    )
     parser.add_argument(
         "--pr-body",
         default="",
@@ -90,7 +86,7 @@ def main(argv: list[str] | None = None) -> int:
     import os
 
     pr_body = args.pr_body or os.environ.get("PR_BODY", "")
-    changed_files = git_diff_name_only(args.base, args.head)
+    changed_files = args.changed_files or read_changed_files_from_stdin()
     result = validate_pr_workflow(changed_files, pr_body)
 
     if result.ok:

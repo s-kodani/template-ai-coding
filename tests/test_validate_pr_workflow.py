@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-import subprocess
-from pathlib import Path
+import sys
 
 from scripts.validate_pr_workflow import (
     RELEASE_LOG_PATH,
@@ -68,34 +67,10 @@ def test_closes_keyword_is_accepted() -> None:
     assert result.ok, result.errors
 
 
-def test_git_diff_name_only_against_repo(tmp_path: Path) -> None:
-    repo = tmp_path / "repo"
-    repo.mkdir()
-    subprocess.run(["git", "init", "-b", "main"], cwd=repo, check=True, capture_output=True)
-    subprocess.run(
-        ["git", "config", "user.email", "test@example.com"],
-        cwd=repo,
-        check=True,
-        capture_output=True,
-    )
-    subprocess.run(
-        ["git", "config", "user.name", "Test"],
-        cwd=repo,
-        check=True,
-        capture_output=True,
-    )
-    (repo / "README.md").write_text("base\n", encoding="utf-8")
-    subprocess.run(["git", "add", "README.md"], cwd=repo, check=True, capture_output=True)
-    subprocess.run(["git", "commit", "-m", "base"], cwd=repo, check=True, capture_output=True)
-    base = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=repo, text=True).strip()
+def test_reads_changed_files_from_stdin(monkeypatch) -> None:
+    import io
 
-    (repo / "src").mkdir()
-    (repo / "src" / "app.py").write_text("print('hi')\n", encoding="utf-8")
-    subprocess.run(["git", "add", "src/app.py"], cwd=repo, check=True, capture_output=True)
-    subprocess.run(["git", "commit", "-m", "add src"], cwd=repo, check=True, capture_output=True)
-    head = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=repo, text=True).strip()
+    from scripts.validate_pr_workflow import read_changed_files_from_stdin
 
-    from scripts.validate_pr_workflow import git_diff_name_only
-
-    changed = git_diff_name_only(base, head, cwd=repo)
-    assert changed == ["src/app.py"]
+    monkeypatch.setattr(sys, "stdin", io.StringIO("src/a.py\n\n"))
+    assert read_changed_files_from_stdin() == ["src/a.py"]
