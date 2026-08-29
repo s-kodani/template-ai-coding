@@ -8,7 +8,7 @@ status: stable
 
 # MCP ツール契約
 
-トランスポート: **Streamable HTTP**、stateless、パス `/mcp`。
+トランスポート: **Streamable HTTP**、stateless、パス `/mcp`。Compose 上では Keycloak JWT（`aud=http://localhost:8000/mcp`、scope `mcp-tools`、role `mcp-reader`）が必要（[ADR-0012](/decisions/ADR-0012-mcp-gateway-resource-server.md)）。Inspector は `scripts/mcp_dev_token.py` で Bearer を発行する。
 
 ## ツール
 
@@ -38,3 +38,4 @@ Langfuse では Chainlit 側の `chat.turn` 配下に tool observation として
 - 文書 ingest（`scripts/seed.py`、`scripts/run_langflow_ingest.py`、`scripts/import_langflow.py` を使用）
 - 文書削除（`scripts/delete_document.py`。親 `document_id` 単位）
 - Resource と Prompt
+

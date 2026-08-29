@@ -1,11 +1,11 @@
 ---
 type: Infrastructure
 title: インフラ
-description: アプリ、Keycloak、Langfuse、任意 Langflow の Docker Compose スタックと CI/CD・DevSecOps 検証。
-tags: [docker, langfuse, langflow, postgres, keycloak, ci, devsecops]
+description: アプリ、Keycloak、MCP Gateway、Langfuse、任意 Langflow の Docker Compose スタックと CI/CD・DevSecOps 検証。
+tags: [docker, langfuse, langflow, postgres, keycloak, gateway, ci, devsecops]
 status: stable
 generated:
-  at: "2026-08-29T12:00:00Z"
+  at: "2026-08-29T14:30:00Z"
   by: process:cursor-agent
 ---
 
@@ -16,7 +16,7 @@ generated:
 | スタック | パス | 用途 |
 |---|---|---|
 | Langfuse 公式 | `infra/langfuse/docker-compose.yml` + `network.yml` | トレース UI とストレージ |
-| アプリケーション | `infra/app/compose.yml` | FastMCP、pgvector Postgres、Chainlit、Keycloak |
+| アプリケーション | `infra/app/compose.yml` | FastMCP、MCP Gateway、pgvector Postgres、Chainlit、Keycloak |
 | Langflow（任意） | `infra/langflow/compose.yml` | Ingest PoC。`make -C infra langflow-up` |
 
 アプリと Langfuse の共有 Docker ネットワーク: `observability`。Langflow スタックは独立ネットワークであり、このネットワークには参加しない。
@@ -31,6 +31,7 @@ generated:
 | Chainlit | 8080 |
 | Keycloak | 8081 |
 | FastMCP | 127.0.0.1:8000 |
+| MCP Gateway | 非公開（compose 内部のみ） |
 | アプリ Postgres | 5433 |
 | Langflow UI | 7860 |
 | Langflow Postgres | 5434 |
@@ -74,16 +75,18 @@ MCP `_meta` には FastMCP 既定の `traceparent` に加え、Langfuse の `lan
 
 ## 認証（Keycloak）
 
-Chainlit は Keycloak の `knowledge` realm で OAuth する（[ADR-0011](/decisions/ADR-0011-keycloak-chainlit-oauth.md)）。
+Chainlit は Keycloak の `knowledge` realm で OAuth する（[ADR-0011](/decisions/ADR-0011-keycloak-chainlit-oauth.md)）。既定 knowledge-mcp 呼び出しは MCP Gateway が Token Exchange する（[ADR-0012](/decisions/ADR-0012-mcp-gateway-resource-server.md)）。
 
 - 管理 UI: http://localhost:8081 （`admin` / `admin`）
-- チャットログイン: Chainlit の Keycloak ボタンから。開発ユーザーは `dev` / `dev`
-- Chainlit コンテナはアプリ Postgres の `DATABASE_URL` を使わない（Chainlit 内蔵 data layer の `User` テーブルは持たない）
+- チャットログイン: Chainlit の Keycloak ボタンから。開発ユーザーは `dev` / `dev`（role `mcp-reader`）
+- Chainlit コンテナはアプリ Postgres の `DATABASE_URL` を使わない（Chainlit 内蔵 data layer の `User` テーブルは持たない）。refresh token は `TOKEN_STORE_DATABASE_URL` で同じ Postgres の `chainlit_oauth_tokens` に保存する
+- MCP Gateway はホストポートを公開しない。Chainlit から `http://mcp-gateway:8082` へ到達する
+- knowledge-mcp は `MCP_JWKS_URI` 設定時に Bearer 必須。Inspector は `uv run python scripts/mcp_dev_token.py` でトークンを取る
 - realm 定義は `infra/app/keycloak/knowledge-realm.json`。変更後は Keycloak コンテナを再作成する
 
 ## 手動検証
 
-1. **MCP Inspector**: `http://127.0.0.1:8000/mcp` に接続
+1. **MCP Inspector**: `uv run python scripts/mcp_dev_token.py` の出力を Bearer にし、`http://127.0.0.1:8000/mcp` に接続
 2. **Chainlit**: Keycloak でログインし、`search_knowledge` が呼ばれる質問を送信
 3. **Langfuse**: チャット 1 ターンあたり 1 本のトレースに、クライアント/サーバーのツールスパンがネストされていることを確認
 
@@ -106,18 +109,19 @@ Chainlit は Keycloak の `knowledge` realm で OAuth する（[ADR-0011](/decis
 
 | ワークフロー | ジョブ | 内容 |
 |---|---|---|
-| `.github/workflows/ci.yml` | quality | `ruff check`, `pytest`（`uv sync --frozen`） |
+| `.github/workflows/ci.yml` | quality | `ruff check`, `pytest`（ルートと `gateway/`）、`uv sync --frozen` |
 | | security | Bandit, `uv audit`, gitleaks |
-| | build-and-scan | `docker compose build`, Trivy（mcp-server / chainlit イメージ、`scanners: vuln`） |
+| | build-and-scan | `docker compose build`, Trivy（mcp-server / chainlit / mcp-gateway イメージ、`scanners: vuln`） |
 | `.github/workflows/okf.yml` | okf | OKF bundle 検証 |
 
 ### ローカル検証
 
 ```bash
 uv sync --extra dev
-uv run ruff check src tests scripts
+uv run ruff check src tests scripts gateway
 uv run pytest
-uv run bandit -r src scripts -c pyproject.toml
+uv run --directory gateway pytest
+uv run bandit -r src scripts gateway/src -c pyproject.toml
 uv audit --preview-features audit-command
 uv run pre-commit run --all-files
 uv run python scripts/validate_okf.py

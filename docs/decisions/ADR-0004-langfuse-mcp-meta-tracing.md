@@ -27,3 +27,7 @@ decision_status: accepted
 - Langfuse API キーは初回 UI サインアップ後に手動設定する
 - キー未設定時はトレースは no-op だが、MCP と Chainlit は利用可能
 - 1 チャットターンの Langfuse 一覧ルートは `chat.turn` 1 件。FastMCP / asyncpg スパンは同一 `traceId` の子としてネストする
+
+## 改訂
+
+既定ツールは MCP Gateway が Chainlit からの HTTP トレースコンテキストを受け取り、knowledge-mcp への `tools/call` の `_meta` へ注入する（[ADR-0012](/decisions/ADR-0012-mcp-gateway-resource-server.md)）。追加 MCP の `_meta` 注入は従来どおり Chainlit 側。
