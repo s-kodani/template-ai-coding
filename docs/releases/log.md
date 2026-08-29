@@ -3,6 +3,7 @@
 ## v?.?.? (未確定)
 
 - **Added**: MCP Gateway を導入し、Chainlit の既定 knowledge-mcp 呼び出しを Keycloak Token Exchange 経由にした。knowledge-mcp は Resource Server として JWT を検証する（[アーキテクチャ](/current/architecture.md)、[ADR-0012](/decisions/ADR-0012-mcp-gateway-resource-server.md)）
+- **Fixed**: Keycloak 26 standard token exchange（V2）では `audience=knowledge-mcp` を送らず、`mcp-tools` の custom audience mapper で `aud=http://localhost:8000/mcp` を付ける。realm import が `basic` / `profile` / `email` / `roles` を消さないようにした
 - **Added**: Keycloak をアプリ Compose に追加し、Chainlit を OAuth ログイン必須にした（[UI 機能](/current/features/ui.md)、[インフラ](/current/infrastructure.md)、[ADR-0011](/decisions/ADR-0011-keycloak-chainlit-oauth.md)）
 - **Changed**: APM 管理 Skill（`ponytail`、`test-driven-development`）を upstream 内容へ復元。リポジトリ固有ルールは `AGENTS.md` / `test-strategy` へ集約
 - **Changed**: `AGENTS.md` の workflow / OKF 共通ルールを `implementation-workflow` references へ委譲し、リポジトリ固有設定に slim 化（~496行 → ~220行）

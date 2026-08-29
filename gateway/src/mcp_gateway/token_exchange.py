@@ -16,11 +16,11 @@ async def exchange_token(
     client_id: str,
     client_secret: str,
     subject_token: str,
-    audience: str,
     scope: str,
     timeout_seconds: float,
     client: httpx.AsyncClient | None = None,
 ) -> dict[str, Any]:
+    # Keycloak 26 V2: omit `audience`. Resource `aud` comes from mcp-tools mapper.
     own_client = client is None
     http = client or httpx.AsyncClient(timeout=timeout_seconds)
     try:
@@ -30,7 +30,6 @@ async def exchange_token(
                 "grant_type": EXCHANGE_GRANT,
                 "subject_token": subject_token,
                 "subject_token_type": ACCESS_TYPE,
-                "audience": audience,
                 "scope": scope,
                 "client_id": client_id,
                 "client_secret": client_secret,

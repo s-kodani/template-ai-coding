@@ -46,7 +46,6 @@ async def _mcp_token(
         client_id=settings.gateway_client_id,
         client_secret=settings.gateway_client_secret,
         subject_token=source_token,
-        audience=auth.get("target_client") or "knowledge-mcp",
         scope=" ".join(scopes),
         timeout_seconds=settings.token_exchange_timeout_seconds,
     )

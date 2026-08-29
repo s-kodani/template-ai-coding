@@ -6,7 +6,7 @@ tags: [decision, architecture, authentication, mcp, keycloak, gateway]
 status: stable
 decision_status: accepted
 generated:
-  at: "2026-08-29T14:30:00Z"
+  at: "2026-08-29T15:10:00Z"
   by: process:cursor-agent
 ---
 
@@ -24,7 +24,7 @@ MCP の Authorization では、下流サーバーへ上流 Access Token をパ�
 
 - **mcp-gateway** を別プロセス / 別 Python プロジェクト（`gateway/`、`mcp>=2`）としてアプリ Compose に載せる。ホストポートは公開しない
 - Chainlit の既定ツール（`search_knowledge` / `get_document`）は Gateway の `POST /v1/mcp/{server_id}/tools/{name}:call` 経由で実行する。LLM 向け tool schema は従来どおりハードコードする
-- knowledge-mcp は Keycloak の Resource Server とする（FastMCP `JWTVerifier` + `RemoteAuthProvider`）。検証する `aud` と PRM `resource` は `http://localhost:8000/mcp`。Token Exchange の `audience` はクライアント ID `knowledge-mcp`
+- knowledge-mcp は Keycloak の Resource Server とする（FastMCP `JWTVerifier` + `RemoteAuthProvider`）。検証する `aud` と PRM `resource` は `http://localhost:8000/mcp`。Keycloak 26 の standard token exchange（V2）では `audience` パラメータを付けない（付けると `Requested audience not available: knowledge-mcp`）。Resource `aud` は `mcp-gateway` の default scope `mcp-tools` の custom audience mapper が付与する
 - Gateway は Chainlit トークンを検証し（`aud=mcp-gateway`、`azp=chainlit`）、`mcp-gateway` クライアントで Token Exchange する。ユーザー識別は JWT `sub` のみ。リクエスト body の `user_id` は拒否する
 - ツール認可は realm role `mcp-reader`。scope 名は `mcp-tools`
 - Chainlit の refresh token はアプリ Postgres に pgcrypto で保存する（`TOKEN_STORE_DATABASE_URL`）。Chainlit 内蔵 data layer の `DATABASE_URL` は空のまま

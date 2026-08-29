@@ -5,6 +5,7 @@ from pathlib import Path
 
 import jwt
 import pytest
+import yaml
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from fastapi.testclient import TestClient
@@ -14,6 +15,7 @@ from mcp_gateway.config import Settings
 from mcp_gateway.jwt_auth import verify_chainlit_token, verify_exchanged_token
 from mcp_gateway.policy import authorize_tool
 from mcp_gateway.principal import Principal
+from mcp_gateway.token_exchange import exchange_token
 
 ISSUER = "http://localhost:8081/realms/knowledge"
 RESOURCE = "http://localhost:8000/mcp"
@@ -91,6 +93,48 @@ def test_verify_rejects_expired(rsa_keys: tuple[object, str]) -> None:
     assert exc.value.code == "TOKEN_EXPIRED"  # type: ignore[attr-defined]
 
 
+def test_registry_does_not_use_client_id_as_exchange_audience() -> None:
+    registry = yaml.safe_load(REGISTRY.read_text(encoding="utf-8"))
+    auth = registry["servers"]["knowledge"]["authentication"]
+    assert "target_client" not in auth
+    assert auth["resource"] == RESOURCE
+    assert auth["scopes"] == ["mcp-tools"]
+
+
+async def test_exchange_token_omits_audience_for_keycloak_v2() -> None:
+    captured: dict[str, object] = {}
+
+    class FakeResponse:
+        status_code = 200
+
+        def json(self) -> dict[str, str]:
+            return {"access_token": "mcp-token"}
+
+    class FakeClient:
+        async def post(self, _url: str, data: dict[str, str]) -> FakeResponse:
+            captured["data"] = data
+            return FakeResponse()
+
+        async def aclose(self) -> None:
+            return None
+
+    payload = await exchange_token(
+        token_url="http://keycloak/token",
+        client_id="mcp-gateway",
+        client_secret="secret",
+        subject_token="chainlit-token",
+        scope="mcp-tools",
+        timeout_seconds=5,
+        client=FakeClient(),  # type: ignore[arg-type]
+    )
+    assert payload["access_token"] == "mcp-token"
+    data = captured["data"]
+    assert isinstance(data, dict)
+    assert "audience" not in data
+    assert data["scope"] == "mcp-tools"
+    assert data["subject_token"] == "chainlit-token"
+
+
 def test_exchanged_token_must_include_resource_audience(rsa_keys: tuple[object, str]) -> None:
     private_key, _ = rsa_keys
     token = _token(private_key, aud=["knowledge-mcp"])
@@ -151,8 +195,9 @@ def test_call_uses_jwt_subject_not_body(rsa_keys: tuple[object, str], monkeypatc
         return {"ok": True}
 
     async def fake_exchange(**kwargs: object) -> dict[str, object]:
+        seen["exchange"] = kwargs
         seen["subject_token"] = kwargs["subject_token"]
-        mcp_token = _token(private_key, aud=[RESOURCE, "knowledge-mcp"], azp="mcp-gateway")
+        mcp_token = _token(private_key, aud=[RESOURCE], azp="mcp-gateway")
         return {"access_token": mcp_token, "expires_in": 300}
 
     monkeypatch.setattr("mcp_gateway.app.exchange_token", fake_exchange)
@@ -169,6 +214,7 @@ def test_call_uses_jwt_subject_not_body(rsa_keys: tuple[object, str], monkeypatc
     assert response.json() == {"ok": True}
     assert seen["subject_token"] == token
     assert seen["url"] == "http://mcp-server:8000/mcp"
+    assert "audience" not in seen["exchange"]  # type: ignore[operator]
 
 
 def test_unknown_server_is_not_found(rsa_keys: tuple[object, str]) -> None:

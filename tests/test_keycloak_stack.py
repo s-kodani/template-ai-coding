@@ -108,6 +108,35 @@ def test_realm_defines_mcp_gateway_and_knowledge_mcp_clients() -> None:
     assert mcp["implicitFlowEnabled"] is False
 
 
+def test_realm_keeps_oidc_scopes_needed_for_sub_email_and_roles() -> None:
+    realm = _realm()
+    names = {scope["name"] for scope in realm.get("clientScopes") or []}
+    for required in ("basic", "profile", "email", "roles"):
+        assert required in names
+
+    chainlit = next(client for client in realm["clients"] if client["clientId"] == "chainlit")
+    for required in ("basic", "profile", "email", "roles", "chainlit-mcp-gateway"):
+        assert required in (chainlit.get("defaultClientScopes") or [])
+
+    gateway = next(client for client in realm["clients"] if client["clientId"] == "mcp-gateway")
+    for required in ("basic", "roles", "mcp-tools"):
+        assert required in (gateway.get("defaultClientScopes") or [])
+
+    sub_mappers = [
+        mapper
+        for mapper in _client_scope(realm, "basic").get("protocolMappers") or []
+        if mapper.get("protocolMapper") == "oidc-sub-mapper"
+    ]
+    assert sub_mappers
+    assert sub_mappers[0]["config"]["access.token.claim"] == "true"
+
+    roles_mappers = {
+        mapper["name"]: mapper for mapper in _client_scope(realm, "roles").get("protocolMappers") or []
+    }
+    assert roles_mappers["realm roles"]["config"]["claim.name"] == "realm_access.roles"
+    assert roles_mappers["realm roles"]["config"]["access.token.claim"] == "true"
+
+
 def test_realm_audience_mappers_bind_gateway_and_mcp_resource() -> None:
     realm = _realm()
     chainlit = next(client for client in realm["clients"] if client["clientId"] == "chainlit")
@@ -189,3 +218,9 @@ def test_compose_defines_internal_mcp_gateway() -> None:
     assert mcp_server["environment"]["MCP_JWKS_URI"].startswith("http://keycloak:8080/")
     assert mcp_server["environment"]["MCP_AUDIENCE"] == "http://localhost:8000/mcp"
     assert chainlit["depends_on"]["mcp-gateway"]["condition"] == "service_healthy"
+
+
+def test_mcp_dev_token_script_omits_keycloak_v2_audience() -> None:
+    text = (ROOT / "scripts" / "mcp_dev_token.py").read_text(encoding="utf-8")
+    assert '"audience"' not in text
+    assert '"scope": "mcp-tools"' in text

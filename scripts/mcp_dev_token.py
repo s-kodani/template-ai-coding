@@ -63,7 +63,6 @@ def main() -> int:
                 "client_secret": args.gateway_client_secret,
                 "subject_token": subject_token,
                 "subject_token_type": ACCESS_TYPE,
-                "audience": "knowledge-mcp",
                 "scope": "mcp-tools",
             },
         )
