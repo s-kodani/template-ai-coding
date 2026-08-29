@@ -76,6 +76,61 @@ def test_realm_defines_chainlit_client_and_dev_user() -> None:
     assert dev["emailVerified"] is True
     passwords = [item["value"] for item in dev["credentials"] if item["type"] == "password"]
     assert passwords == ["dev"]
+    assert "mcp-reader" in (dev.get("realmRoles") or [])
+
+
+def _client_scope(realm: dict, name: str) -> dict:
+    scopes = {scope["name"]: scope for scope in realm.get("clientScopes") or []}
+    return scopes[name]
+
+
+def _audience_mapper_config(scope: dict, mapper_name: str) -> dict:
+    mappers = {mapper["name"]: mapper for mapper in scope.get("protocolMappers") or []}
+    return mappers[mapper_name]["config"]
+
+
+def test_realm_defines_mcp_gateway_and_knowledge_mcp_clients() -> None:
+    realm = _realm()
+    clients = {client["clientId"]: client for client in realm["clients"]}
+
+    gateway = clients["mcp-gateway"]
+    assert gateway["publicClient"] is False
+    assert gateway["standardFlowEnabled"] is False
+    assert gateway["directAccessGrantsEnabled"] is False
+    assert gateway["implicitFlowEnabled"] is False
+    assert gateway["attributes"]["standard.token.exchange.enabled"] == "true"
+    assert gateway["secret"] == "mcp-gateway-local-secret"
+
+    mcp = clients["knowledge-mcp"]
+    assert mcp["enabled"] is True
+    assert mcp["standardFlowEnabled"] is False
+    assert mcp["directAccessGrantsEnabled"] is False
+    assert mcp["implicitFlowEnabled"] is False
+
+
+def test_realm_audience_mappers_bind_gateway_and_mcp_resource() -> None:
+    realm = _realm()
+    chainlit = next(client for client in realm["clients"] if client["clientId"] == "chainlit")
+    assert "chainlit-mcp-gateway" in (chainlit.get("defaultClientScopes") or [])
+
+    gateway_aud = _audience_mapper_config(
+        _client_scope(realm, "chainlit-mcp-gateway"), "mcp-gateway-audience"
+    )
+    assert gateway_aud["included.client.audience"] == "mcp-gateway"
+    assert gateway_aud["access.token.claim"] == "true"
+
+    resource_aud = _audience_mapper_config(_client_scope(realm, "mcp-tools"), "knowledge-mcp-resource")
+    assert resource_aud["included.custom.audience"] == "http://localhost:8000/mcp"
+
+
+def test_realm_defines_mcp_reader_role_and_readerless_user() -> None:
+    realm = _realm()
+    role_names = [role["name"] for role in (realm.get("roles") or {}).get("realm") or []]
+    assert "mcp-reader" in role_names
+
+    users = {user["username"]: user for user in realm["users"]}
+    assert "mcp-reader" not in (users["readerless"].get("realmRoles") or [])
+    assert users["readerless"]["enabled"] is True
 
 
 def test_env_example_documents_keycloak_oauth() -> None:
@@ -94,12 +149,21 @@ def test_env_example_documents_keycloak_oauth() -> None:
         "OAUTH_KEYCLOAK_NAME",
         "KC_BOOTSTRAP_ADMIN_USERNAME",
         "KC_BOOTSTRAP_ADMIN_PASSWORD",
+        "MCP_GATEWAY_URL",
+        "TOKEN_STORE_DATABASE_URL",
+        "TOKEN_STORE_KEY",
+        "MCP_JWKS_URI",
+        "MCP_AUDIENCE",
+        "GATEWAY_CLIENT_SECRET",
     ):
         assert f"{name}=" in text
     assert "OAUTH_GENERIC_NAME=keycloak" in text
     assert "OAUTH_KEYCLOAK_NAME=unused" in text
     assert "OAUTH_GENERIC_CLIENT_SECRET=chainlit-local-secret" in text
     assert "localhost:8081" in text
+    assert "MCP_GATEWAY_URL=" in text
+    assert "TOKEN_STORE_DATABASE_URL=" in text
+    assert "MCP_AUDIENCE=http://localhost:8000/mcp" in text
 
 
 def test_default_up_includes_app_stack_that_now_has_keycloak() -> None:
@@ -109,3 +173,19 @@ def test_default_up_includes_app_stack_that_now_has_keycloak() -> None:
     assert "up: langfuse-up app-up" in makefile
     assert "keycloak" in compose["services"]
     assert "langflow" not in compose["services"]
+
+
+def test_compose_defines_internal_mcp_gateway() -> None:
+    compose = _compose()
+    gateway = compose["services"]["mcp-gateway"]
+    chainlit = compose["services"]["chainlit"]
+    mcp_server = compose["services"]["mcp-server"]
+
+    assert "ports" not in gateway
+    assert gateway["build"]["dockerfile"] == "infra/app/Dockerfile.gateway"
+    assert chainlit["environment"]["MCP_GATEWAY_URL"] == "http://mcp-gateway:8082"
+    assert chainlit["environment"]["DATABASE_URL"] == ""
+    assert "TOKEN_STORE_DATABASE_URL" in chainlit["environment"]
+    assert mcp_server["environment"]["MCP_JWKS_URI"].startswith("http://keycloak:8080/")
+    assert mcp_server["environment"]["MCP_AUDIENCE"] == "http://localhost:8000/mcp"
+    assert chainlit["depends_on"]["mcp-gateway"]["condition"] == "service_healthy"

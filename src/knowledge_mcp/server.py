@@ -17,6 +17,7 @@ instrument_asyncpg()
 from fastmcp import FastMCP
 from fastmcp.server.lifespan import lifespan
 
+from knowledge_mcp.auth import build_mcp_auth, require_mcp_reader
 from knowledge_mcp.config import get_settings
 from knowledge_mcp.embedding import EmbeddingClient
 from knowledge_mcp.repository import VectorRepository
@@ -46,10 +47,11 @@ mcp = FastMCP(
         "Search a local knowledge base with vector similarity and fetch documents by id."
     ),
     lifespan=app_lifespan,
+    auth=build_mcp_auth(settings),
 )
 
 
-@mcp.tool
+@mcp.tool(auth=require_mcp_reader)
 async def search_knowledge(query: str, top_k: int = 5) -> dict:
     """Search the knowledge base for passages similar to the query."""
     record_tool_input({"query": query, "top_k": top_k})
@@ -68,7 +70,7 @@ async def search_knowledge(query: str, top_k: int = 5) -> dict:
     return output
 
 
-@mcp.tool
+@mcp.tool(auth=require_mcp_reader)
 async def get_document(document_id: str) -> dict:
     """Fetch a full document by id returned from search_knowledge."""
     record_tool_input({"document_id": document_id})

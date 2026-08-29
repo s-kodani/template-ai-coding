@@ -19,6 +19,16 @@ def test_init_sql_defines_chunk_columns_and_parent_unique() -> None:
     assert "embedding_model TEXT" in INIT_SQL
     assert "UNIQUE (document_id, chunk_index)" in INIT_SQL
     assert "source TEXT UNIQUE" not in INIT_SQL
+    assert "CREATE TABLE IF NOT EXISTS chainlit_oauth_tokens" in INIT_SQL
+    assert "pgp_sym_encrypt" not in INIT_SQL
+
+
+def test_migrate_script_applies_all_migrate_sql_files() -> None:
+    migrate_py = (ROOT / "scripts" / "migrate_documents.py").read_text(encoding="utf-8")
+    assert "migrate_*.sql" in migrate_py
+    oauth_sql = (ROOT / "infra" / "app" / "migrate_oauth_tokens.sql").read_text(encoding="utf-8")
+    assert "CREATE TABLE IF NOT EXISTS chainlit_oauth_tokens" in oauth_sql
+    assert "pgp_sym_encrypt" not in oauth_sql
 
 
 def test_migrate_sql_backfills_parent_id_and_drops_source_unique() -> None:

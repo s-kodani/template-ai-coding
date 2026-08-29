@@ -44,10 +44,17 @@ services:
       FASTMCP_STATELESS_HTTP: "true"
       FASTMCP_TELEMETRY_MODE: native
       LANGFUSE_HOST: http://langfuse-web:3000
+      MCP_JWKS_URI: http://keycloak:8080/realms/knowledge/protocol/openid-connect/certs
+      MCP_ISSUER: http://localhost:8081/realms/knowledge
+      MCP_AUDIENCE: http://localhost:8000/mcp
+      MCP_AUTHORIZATION_SERVER: http://localhost:8081/realms/knowledge
+      MCP_RESOURCE_BASE_URL: http://localhost:8000
     ports:
       - "127.0.0.1:8000:8000"
     depends_on:
       postgres:
+        condition: service_healthy
+      keycloak:
         condition: service_healthy
     healthcheck:
       # Streamable HTTP の /mcp は GET を許可しない（405）。TCP で待受を確認する。
@@ -59,6 +66,39 @@ services:
     networks:
       - observability
       - langfuse_internal
+
+  mcp-gateway:
+    build:
+      context: ../..
+      dockerfile: infra/app/Dockerfile.gateway
+    environment:
+      KEYCLOAK_ISSUER: http://localhost:8081/realms/knowledge
+      KEYCLOAK_JWKS_URI: http://keycloak:8080/realms/knowledge/protocol/openid-connect/certs
+      KEYCLOAK_TOKEN_URL: http://keycloak:8080/realms/knowledge/protocol/openid-connect/token
+      GATEWAY_CLIENT_ID: mcp-gateway
+      GATEWAY_CLIENT_SECRET: ${GATEWAY_CLIENT_SECRET:-mcp-gateway-local-secret}
+      REGISTRY_PATH: /app/infra/app/gateway-registry.yml
+      HOST: 0.0.0.0
+      PORT: "8082"
+    volumes:
+      - ./gateway-registry.yml:/app/infra/app/gateway-registry.yml:ro
+    depends_on:
+      keycloak:
+        condition: service_healthy
+      mcp-server:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "python -c \"from urllib.request import urlopen; urlopen('http://127.0.0.1:8082/health', timeout=3)\"",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
+    networks:
+      - observability
 
   keycloak:
     image: keycloak/keycloak:26.4.5
@@ -96,9 +136,12 @@ services:
       - ../../.env
     environment:
       MCP_SERVER_URL: http://mcp-server:8000/mcp
+      MCP_GATEWAY_URL: http://mcp-gateway:8082
       FASTMCP_TELEMETRY_MODE: native
       LANGFUSE_HOST: http://langfuse-web:3000
       DATABASE_URL: ""
+      TOKEN_STORE_DATABASE_URL: postgresql://${POSTGRES_USER:-knowledge}:${POSTGRES_PASSWORD:-change-me}@app-postgres:5432/${POSTGRES_DB:-knowledge}
+      TOKEN_STORE_KEY: ${TOKEN_STORE_KEY:-chainlit-token-store-key-change-me}
       CHAINLIT_URL: http://localhost:8080
       CHAINLIT_AUTH_SECRET: ${CHAINLIT_AUTH_SECRET:-chainlit-local-auth-secret-change-me}
       OAUTH_GENERIC_CLIENT_ID: ${OAUTH_GENERIC_CLIENT_ID:-chainlit}
@@ -114,6 +157,8 @@ services:
       - "8080:8080"
     depends_on:
       mcp-server:
+        condition: service_healthy
+      mcp-gateway:
         condition: service_healthy
       keycloak:
         condition: service_healthy

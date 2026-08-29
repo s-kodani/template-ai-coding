@@ -19,10 +19,16 @@ jobs:
         run: uv sync --frozen --extra dev
 
       - name: Ruff
-        run: uv run ruff check src tests scripts
+        run: uv run ruff check src tests scripts gateway
 
       - name: Pytest
         run: uv run pytest
+
+      - name: Gateway dependencies
+        run: uv sync --directory gateway --frozen --extra dev
+
+      - name: Gateway pytest
+        run: uv run --directory gateway pytest
 
       - name: Skill sync check
         run: uv run python scripts/sync_skills.py --check
@@ -42,7 +48,7 @@ jobs:
         run: uv sync --frozen --extra dev
 
       - name: Bandit
-        run: uv run bandit -r src scripts -c pyproject.toml
+        run: uv run bandit -r src scripts gateway/src -c pyproject.toml
 
       - name: uv audit
         run: uv audit --preview-features audit-command
@@ -76,6 +82,17 @@ jobs:
         with:
           scan-type: image
           image-ref: knowledge-app-chainlit
+          scanners: vuln
+          format: table
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: 1
+
+      - name: Trivy scan mcp-gateway image
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: image
+          image-ref: knowledge-app-mcp-gateway
           scanners: vuln
           format: table
           severity: CRITICAL,HIGH

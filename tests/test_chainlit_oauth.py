@@ -71,7 +71,44 @@ async def test_register_oauth_callback_accepts_keycloak_user(
         {"email": "dev@localhost"},
         default_user,
     )
-    assert accepted is default_user
+    assert accepted is not None
+    assert accepted.identifier == "dev@localhost"
+
+
+@pytest.mark.asyncio
+async def test_oauth_callback_persists_refresh_token(monkeypatch: pytest.MonkeyPatch) -> None:
+    import base64
+    import json
+
+    from chat_ui.auth import set_token_manager, stash_token_response
+    from chat_ui.token_manager import KeycloakTokenManager, MemoryTokenStore
+
+    for name in OAUTH_ENV:
+        monkeypatch.setenv(name, "set")
+
+    payload = {"sub": "kc-sub-1", "exp": 1_900_000_000}
+    body = base64.urlsafe_b64encode(json.dumps(payload).encode()).rstrip(b"=").decode()
+    access = f"h.{body}.s"
+    store = MemoryTokenStore()
+    manager = KeycloakTokenManager(store)
+    set_token_manager(manager)
+    stash_token_response({"access_token": access, "refresh_token": "refresh-1"})
+
+    from chainlit.config import config
+
+    config.code.oauth_callback = None
+    assert register_oauth_callback() is True
+    accepted = await config.code.oauth_callback(
+        KEYCLOAK_PROVIDER_ID,
+        access,
+        {"email": "dev@localhost"},
+        _user(),
+    )
+    assert accepted is not None
+    assert accepted.metadata["keycloak_sub"] == "kc-sub-1"
+    await manager.bind_session("kc-sub-1", "sess-1")
+    assert await manager.get_access_token("sess-1") == access
+    set_token_manager(None)
 
 
 def test_register_oauth_callback_skips_when_env_missing(monkeypatch: pytest.MonkeyPatch) -> None:

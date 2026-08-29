@@ -8,10 +8,12 @@ from typing import Any
 import chainlit as cl
 from langfuse import observe
 
-from chat_ui.auth import register_oauth_callback
-from chat_ui.mcp_bridge import GET_DOCUMENT_TOOL, SEARCH_TOOL, MCPBridge, build_openai_client
+from chat_ui.auth import register_oauth_callback, set_token_manager
+from chat_ui.gateway_client import MCPGatewayClient, call_default_tool
+from chat_ui.mcp_bridge import GET_DOCUMENT_TOOL, SEARCH_TOOL, build_openai_client
 from chat_ui.mcp_tools import call_session_tool, collect_openai_tools, resolve_tool_target
 from chat_ui.mcp_ui import write_mcp_autoload_script
+from chat_ui.token_manager import build_token_manager
 from knowledge_mcp.config import get_settings
 from knowledge_mcp.tracing import configure_langfuse_tracing, instrument_asyncpg
 
@@ -20,8 +22,10 @@ instrument_asyncpg()
 
 settings = get_settings()
 openai_client = build_openai_client(settings)
-mcp_bridge = MCPBridge(settings)
-write_mcp_autoload_script(Path.cwd() / "public", settings.mcp_server_url)
+gateway_client = MCPGatewayClient(settings.mcp_gateway_url)
+token_manager = build_token_manager(settings)
+set_token_manager(token_manager)
+write_mcp_autoload_script(Path.cwd() / "public")
 register_oauth_callback()
 
 SYSTEM_PROMPT = (
@@ -33,10 +37,18 @@ SYSTEM_PROMPT = (
 )
 
 
+def _session_user() -> Any:
+    return cl.user_session.get("user") or getattr(cl.context.session, "user", None)
+
+
 @cl.on_chat_start
 async def on_chat_start() -> None:
     cl.user_session.set("messages", [{"role": "system", "content": SYSTEM_PROMPT}])
     cl.user_session.set("mcp_tools", {})
+    user = _session_user()
+    subject = (getattr(user, "metadata", None) or {}).get("keycloak_sub")
+    if subject:
+        await token_manager.bind_session(str(subject), cl.context.session.id)
 
 
 @cl.on_mcp_connect
@@ -73,7 +85,13 @@ async def _dispatch_tool(name: str, arguments: dict[str, Any]) -> dict[str, Any]
     session_tools = cl.user_session.get("mcp_tools") or {}
     kind, session_name = resolve_tool_target(name, session_tools)
     if kind == "default":
-        return await mcp_bridge.call_tool(name, arguments)
+        return await call_default_tool(
+            gateway_client,
+            token_manager,
+            cl.context.session.id,
+            name,
+            arguments,
+        )
     if kind == "session" and session_name:
         entry = cl.context.session.mcp_sessions.get(session_name)
         if not entry:

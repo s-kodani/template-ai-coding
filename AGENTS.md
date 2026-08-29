@@ -198,16 +198,17 @@ Frontend:
 Backend:
 - Runtime: Python 3.12
 - Framework: FastMCP 3.x (Streamable HTTP), SearchService in `src/knowledge_mcp/`
+- MCP Gateway: `gateway/`（公式 `mcp>=2`。Chainlit の `mcp<2` と分離）
 - Database: PostgreSQL 17 + pgvector (app compose)
 
 Infrastructure:
 - Platform: Docker Compose
-- IaC: `infra/app/compose.yml`（Keycloak 含む）, `infra/langfuse/docker-compose.yml` + `network.yml`, `infra/langflow/compose.yml`
+- IaC: `infra/app/compose.yml`（Keycloak・MCP Gateway 含む）, `infra/langfuse/docker-compose.yml` + `network.yml`, `infra/langflow/compose.yml`
 - Orchestration: `make -C infra up|down|migrate|seed`。Langflow は `make -C infra langflow-up|langflow-down|ingest-langflow|import-langflow`（デフォルト `up` には含めない）。Chainlit は Keycloak OAuth
 
 Validation:
-- Test: `uv run pytest`
-- Lint: `uv run ruff check src tests scripts`
+- Test: `uv run pytest` と `uv run --directory gateway pytest`
+- Lint: `uv run ruff check src tests scripts gateway`
 - Build: `docker compose -f infra/app/compose.yml build`
 - OKF: `uv run python scripts/validate_okf.py`
 - PR workflow (pull request): `scripts/validate_pr_workflow.py`（CI: `.github/workflows/pr-workflow.yml`）
@@ -228,6 +229,7 @@ Coding conventions:
 - Langfuse SDK initializes before FastMCP import in both Chainlit and MCP server processes
 - Do not log API keys, embeddings, or full document bodies in spans
 - MCP tools are read-only search; system ingest via `scripts/seed.py`, `scripts/run_langflow_ingest.py`, and `scripts/import_langflow.py`
+- Default knowledge-mcp tools go through MCP Gateway (Keycloak Token Exchange). Chainlit does not pass its access token to MCP servers
 - Langflow is an optional ingest sidecar; it writes to its own Collection. A host adapter copies chunks into app `documents`. SearchService does not read LangChain / Langflow Collection tables
 
 Human approval:
