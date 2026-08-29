@@ -42,4 +42,4 @@ generated:
 
 ## 設定
 
-`CHAT_MODEL`、`OPENAI_API_KEY`、`MCP_SERVER_URL`、`CHAINLIT_AUTH_SECRET`、`OAUTH_KEYCLOAK_*`、Langfuse キーはルートの `.env.example` を参照。
+`CHAT_MODEL`、`OPENAI_API_KEY`、`MCP_SERVER_URL`、`CHAINLIT_AUTH_SECRET`、`OAUTH_GENERIC_*`、Langfuse キーはルートの `.env.example` を参照。

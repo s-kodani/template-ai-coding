@@ -24,7 +24,7 @@ def test_app_compose_runs_keycloak_with_realm_import() -> None:
     compose = _compose()
     keycloak = compose["services"]["keycloak"]
 
-    assert keycloak["image"].startswith("quay.io/keycloak/keycloak:26.")
+    assert keycloak["image"].startswith("keycloak/keycloak:26.")
     assert "--import-realm" in keycloak["command"]
     assert "8081:8080" in keycloak["ports"]
     volumes = keycloak["volumes"]
@@ -35,18 +35,22 @@ def test_app_compose_runs_keycloak_with_realm_import() -> None:
     assert env["KC_HEALTH_ENABLED"] == "true"
 
 
-def test_chainlit_waits_for_keycloak_and_uses_host_loopback() -> None:
+def test_chainlit_waits_for_keycloak_and_splits_browser_and_backchannel_urls() -> None:
     compose = _compose()
     chainlit = compose["services"]["chainlit"]
 
-    assert chainlit["extra_hosts"] == ["localhost:host-gateway"]
+    assert "extra_hosts" not in chainlit
     assert chainlit["depends_on"]["keycloak"]["condition"] == "service_healthy"
     env = chainlit["environment"]
-    assert env["OAUTH_KEYCLOAK_BASE_URL"] == "http://localhost:8081"
     assert env["CHAINLIT_URL"] == "http://localhost:8080"
+    assert env["DATABASE_URL"] == ""
     assert "CHAINLIT_AUTH_SECRET" in env
-    assert env["OAUTH_KEYCLOAK_CLIENT_ID"] == "${OAUTH_KEYCLOAK_CLIENT_ID:-chainlit}"
-    assert env["OAUTH_KEYCLOAK_REALM"] == "${OAUTH_KEYCLOAK_REALM:-knowledge}"
+    assert env["OAUTH_GENERIC_NAME"] == "keycloak"
+    assert env["OAUTH_KEYCLOAK_NAME"] == "unused"
+    assert env["OAUTH_GENERIC_CLIENT_ID"] == "${OAUTH_GENERIC_CLIENT_ID:-chainlit}"
+    assert "localhost:8081" in env["OAUTH_GENERIC_AUTH_URL"]
+    assert "keycloak:8080" in env["OAUTH_GENERIC_TOKEN_URL"]
+    assert "keycloak:8080" in env["OAUTH_GENERIC_USER_INFO_URL"]
 
 
 def test_realm_defines_chainlit_client_and_dev_user() -> None:
@@ -80,16 +84,22 @@ def test_env_example_documents_keycloak_oauth() -> None:
     for name in (
         "CHAINLIT_AUTH_SECRET",
         "CHAINLIT_URL",
-        "OAUTH_KEYCLOAK_CLIENT_ID",
-        "OAUTH_KEYCLOAK_CLIENT_SECRET",
-        "OAUTH_KEYCLOAK_REALM",
-        "OAUTH_KEYCLOAK_BASE_URL",
+        "OAUTH_GENERIC_CLIENT_ID",
+        "OAUTH_GENERIC_CLIENT_SECRET",
+        "OAUTH_GENERIC_AUTH_URL",
+        "OAUTH_GENERIC_TOKEN_URL",
+        "OAUTH_GENERIC_USER_INFO_URL",
+        "OAUTH_GENERIC_SCOPES",
+        "OAUTH_GENERIC_NAME",
+        "OAUTH_KEYCLOAK_NAME",
         "KC_BOOTSTRAP_ADMIN_USERNAME",
         "KC_BOOTSTRAP_ADMIN_PASSWORD",
     ):
         assert f"{name}=" in text
-    assert "OAUTH_KEYCLOAK_BASE_URL=http://localhost:8081" in text
-    assert "OAUTH_KEYCLOAK_CLIENT_SECRET=chainlit-local-secret" in text
+    assert "OAUTH_GENERIC_NAME=keycloak" in text
+    assert "OAUTH_KEYCLOAK_NAME=unused" in text
+    assert "OAUTH_GENERIC_CLIENT_SECRET=chainlit-local-secret" in text
+    assert "localhost:8081" in text
 
 
 def test_default_up_includes_app_stack_that_now_has_keycloak() -> None:

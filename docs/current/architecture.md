@@ -56,7 +56,7 @@ flowchart TB
 
     User -->|HTTP :8080| Chainlit
     User -->|OAuth :8081| Keycloak
-    Chainlit -->|token / userinfo via localhost:8081| Keycloak
+    Chainlit -->|token / userinfo :8080 コンテナ DNS| Keycloak
     User -->|HTTP :7860| Langflow
     User -->|"host files (data/ingest)"| Adapter
     Adapter -->|"Files API + Flow API"| Langflow

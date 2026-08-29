@@ -78,7 +78,7 @@ Chainlit は Keycloak の `knowledge` realm で OAuth する（[ADR-0011](/decis
 
 - 管理 UI: http://localhost:8081 （`admin` / `admin`）
 - チャットログイン: Chainlit の Keycloak ボタンから。開発ユーザーは `dev` / `dev`
-- Chainlit コンテナは `localhost:host-gateway` 経由でホストの `:8081` に token / userinfo を送る
+- Chainlit コンテナはアプリ Postgres の `DATABASE_URL` を使わない（Chainlit 内蔵 data layer の `User` テーブルは持たない）
 - realm 定義は `infra/app/keycloak/knowledge-realm.json`。変更後は Keycloak コンテナを再作成する
 
 ## 手動検証

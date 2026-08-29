@@ -6,16 +6,18 @@ import chainlit as cl
 from chainlit.user import User
 
 KEYCLOAK_PROVIDER_ID = "keycloak"
-KEYCLOAK_ENV = (
-    "OAUTH_KEYCLOAK_CLIENT_ID",
-    "OAUTH_KEYCLOAK_CLIENT_SECRET",
-    "OAUTH_KEYCLOAK_REALM",
-    "OAUTH_KEYCLOAK_BASE_URL",
+OAUTH_ENV = (
+    "OAUTH_GENERIC_CLIENT_ID",
+    "OAUTH_GENERIC_CLIENT_SECRET",
+    "OAUTH_GENERIC_AUTH_URL",
+    "OAUTH_GENERIC_TOKEN_URL",
+    "OAUTH_GENERIC_USER_INFO_URL",
+    "OAUTH_GENERIC_SCOPES",
 )
 
 
 def keycloak_oauth_configured() -> bool:
-    return all(os.environ.get(name) for name in KEYCLOAK_ENV)
+    return all(os.environ.get(name) for name in OAUTH_ENV)
 
 
 def accept_oauth_user(provider_id: str, default_app_user: User) -> User | None:

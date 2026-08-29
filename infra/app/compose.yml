@@ -61,7 +61,7 @@ services:
       - langfuse_internal
 
   keycloak:
-    image: quay.io/keycloak/keycloak:26.4.5
+    image: keycloak/keycloak:26.4.5
     command: start-dev --import-realm
     environment:
       KC_BOOTSTRAP_ADMIN_USERNAME: ${KC_BOOTSTRAP_ADMIN_USERNAME:-admin}
@@ -69,6 +69,7 @@ services:
       KC_HTTP_ENABLED: "true"
       KC_HOSTNAME: http://localhost:8081
       KC_HOSTNAME_STRICT: "false"
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
       KC_HEALTH_ENABLED: "true"
     ports:
       - "8081:8080"
@@ -93,18 +94,22 @@ services:
       dockerfile: infra/app/Dockerfile.chainlit
     env_file:
       - ../../.env
-    extra_hosts:
-      - "localhost:host-gateway"
     environment:
       MCP_SERVER_URL: http://mcp-server:8000/mcp
       FASTMCP_TELEMETRY_MODE: native
       LANGFUSE_HOST: http://langfuse-web:3000
+      DATABASE_URL: ""
       CHAINLIT_URL: http://localhost:8080
       CHAINLIT_AUTH_SECRET: ${CHAINLIT_AUTH_SECRET:-chainlit-local-auth-secret-change-me}
-      OAUTH_KEYCLOAK_CLIENT_ID: ${OAUTH_KEYCLOAK_CLIENT_ID:-chainlit}
-      OAUTH_KEYCLOAK_CLIENT_SECRET: ${OAUTH_KEYCLOAK_CLIENT_SECRET:-chainlit-local-secret}
-      OAUTH_KEYCLOAK_REALM: ${OAUTH_KEYCLOAK_REALM:-knowledge}
-      OAUTH_KEYCLOAK_BASE_URL: http://localhost:8081
+      OAUTH_GENERIC_CLIENT_ID: ${OAUTH_GENERIC_CLIENT_ID:-chainlit}
+      OAUTH_GENERIC_CLIENT_SECRET: ${OAUTH_GENERIC_CLIENT_SECRET:-chainlit-local-secret}
+      OAUTH_GENERIC_AUTH_URL: http://localhost:8081/realms/knowledge/protocol/openid-connect/auth
+      OAUTH_GENERIC_TOKEN_URL: http://keycloak:8080/realms/knowledge/protocol/openid-connect/token
+      OAUTH_GENERIC_USER_INFO_URL: http://keycloak:8080/realms/knowledge/protocol/openid-connect/userinfo
+      OAUTH_GENERIC_SCOPES: openid profile email
+      OAUTH_GENERIC_NAME: keycloak
+      OAUTH_GENERIC_USER_IDENTIFIER: email
+      OAUTH_KEYCLOAK_NAME: unused
     ports:
       - "8080:8080"
     depends_on:
