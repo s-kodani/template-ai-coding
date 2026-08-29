@@ -16,11 +16,12 @@ alwaysApply: false
 
 1. `git fetch origin main` し、新規ブランチは `origin/main` から切る。既存ブランチなら `git merge origin/main`（rebase は明示時のみ。dirty tree では止まって報告する）
 2. `.agents/skills/implementation-workflow/SKILL.md` を読む（`AGENTS.md` の Repository 固有ルールと併用）
-3. Phase 0: 対応 GitHub Issue を確認・紐付け
-4. Phase 2: 変更強度（軽微 / 標準 / 設計）を判定し、Implementation Plan を作成（リポジトリへコミットしない）
-5. 「設計」または「標準」で未解決判断がある場合のみ `grill-me` / `grilling`
-6. 実装後: Phase 5 検証（`project-verification` Skill、`test-strategy`、必要時 `test-driven-development`）
-7. Phase 6: 観測可能な変更があれば `docs/releases/log.md` の `## v?.?.? (未確定)` へ追記
+3. Phase 0: 対応 GitHub Issue を確認・紐付け（新規 Issue 起票前にユーザーへ既存 Issue の有無を確認）
+4. Phase 2: 変更強度（軽微 / 標準 / 設計）を判定し、Implementation Plan を `.plans/` の md として作成する（リポジトリへコミットしない）
+5. 「設計」または「標準」で未解決判断がある場合のみ `grill-me` / `grilling`。結果は md へ反映する
+6. ユーザー承認を得てから実装する（Cloud / background agent も例外ではない）
+7. 実装後: Phase 5 検証（`project-verification` Skill、`test-strategy`、必要時 `test-driven-development`）
+8. Phase 6: 観測可能な変更があれば `docs/releases/log.md` の `## v?.?.? (未確定)` へ追記
 
 MCP サーバー作業では、追加で `mcp-server-engineering` の `references/mcp-completion-checklist.md` を参照する。
 

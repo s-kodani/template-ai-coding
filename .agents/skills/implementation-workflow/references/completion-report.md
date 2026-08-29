@@ -51,12 +51,14 @@ Documentation
 
 以下は原則コミットしない。
 
-- Implementation Plan
+- Implementation Plan（`.plans/` 配下の md。git 管理外）
 - Scratch Note
 - 中間案
 - 破棄した Design Draft
 - Intermediate Reasoning
 - 陳腐化した Implementation Approach
+
+Implementation Plan は会話だけに置かず `.plans/` へ書き出すが、リポジトリへコミットしてはいけない。`AGENTS.md` が別パスを指定している場合は、そのディレクトリも git 管理外とする。
 
 恒久的な価値がある情報だけを、Current-state Documentation、ADR、Release Note へ昇格させる。
 

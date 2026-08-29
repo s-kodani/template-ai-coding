@@ -1,6 +1,6 @@
 ---
 name: implementation-workflow
-description: コードの実装・変更・リファクタリング・機能追加を行う際に、GitHub Issueによる作業トラッキングとSession Checkpoint、Implementation Planの作成（grill-me / grilling による計画 refinement を含む）、ADR候補の検出、実装・検証、OKFベースのCurrent-state Documentation・Decision Record・Release Note（未確定 `## v?.?.? (未確定)` および SemVer 確定見出し）への整合までを一貫して進めるためのワークフロー。実装スピードを維持しながら、セッションを跨いだ再開可能性、設計上の意思決定の追跡可能性、AIが利用しやすい知識構造、恒久ドキュメントの正確性を確保したい場合に使用する。
+description: コードの実装・変更・リファクタリング・機能追加を行う際に、GitHub Issueによる作業トラッキングとSession Checkpoint、Implementation Planの作成（`.plans/` への md 書き出し、変更強度に応じた grill-me / grilling、ユーザー承認を含む）、ADR候補の検出、実装・検証、OKFベースのCurrent-state Documentation・Decision Record・Release Note（未確定 `## v?.?.? (未確定)` および SemVer 確定見出し）への整合までを一貫して進めるためのワークフロー。実装スピードを維持しながら、セッションを跨いだ再開可能性、設計上の意思決定の追跡可能性、AIが利用しやすい知識構造、恒久ドキュメントの正確性を確保したい場合に使用する。
 ---
 
 # 実装ワークフロー Skill
@@ -15,7 +15,7 @@ description: コードの実装・変更・リファクタリング・機能追�
 - セッションを跨いだ安全な作業再開
 - 完了前の確実な検証
 
-Implementation Plan は一時的な作業成果物。明示的な指示がない限りリポジトリへコミットしない。恒久的な情報は Current-state Documentation、ADR、Release Note へ整理する。
+Implementation Plan は一時的な作業成果物。`.plans/` 配下の Markdown として書き出し、参照・編集する。git 管理外であり、リポジトリへコミットしない。恒久的な情報は Current-state Documentation、ADR、Release Note へ整理する。
 
 ---
 
@@ -28,7 +28,7 @@ Implementation Plan は一時的な作業成果物。明示的な指示がない
 | 判断・作業 | 読む reference |
 |---|---|
 | Phase 0 — GitHub Issue 確認・起票、本文/コメント運用 | `references/github-issue-workflow.md` |
-| Phase 1–2 — Understand、Implementation Plan、変更強度、grilling | `references/implementation-plan.md` |
+| Phase 1–2 — Understand、Implementation Plan、変更強度、grilling、ユーザー承認 | `references/implementation-plan.md` |
 | Phase 3 — ADR 候補判定、Decision Level、実装中の判断検出 | `references/decision-check.md` |
 | Session Handoff / Resume — Checkpoint、再開時の Source of Truth | `references/session-handoff.md` |
 | Phase 5 — 検証、OKF Documentation Validation | `references/verification.md` |
@@ -44,10 +44,10 @@ Implementation Plan は一時的な作業成果物。明示的な指示がない
 
 1. **作業開始前に最新 default branch を取り込む** — `git fetch` のあと、新規ブランチは `origin/<default-branch>` から切る。既存ブランチは `git merge origin/<default-branch>`。rebase / force-push は明示時のみ。
 2. **実装前に理解する** — 関連コード、Current-state Documentation、制約、過去の意思決定を理解してから着手する。
-3. **コード変更前に計画する** — Implementation Plan を作成する（原則ファイル化・コミットしない）。
+3. **コード変更前に計画する** — Implementation Plan を `.plans/` の Markdown として作成する（git 管理外。コミットしない）。Phase 3 / 実装の前にユーザー承認が必須。Cloud / background agent も例外ではない。
 4. **計画と恒久知識を分離する** — Plan は「どう実装する予定か」、Current-state は「現在何が正しいか」、ADR は「なぜそう決めたか」、Release Note は「何が変わったか」。
 5. **Current-state Documentation を Source of Truth とする** — ADR や Release Note だけから現在状態を推測しない。
-6. **実態に合わせて計画を変更する** — Plan Drift を許容する。Plan は履歴文書ではない。
+6. **実態に合わせて計画を変更する** — Plan Drift を許容する。Plan は履歴文書ではない。スコープや Acceptance Criteria が変わる見直しは `.plans/` の md を更新し、再承認を得てから続行する。
 7. **実装後に恒久知識を再構成する** — 最終実装を基準にドキュメントを整合させる。
 8. **OKF では Concept 単位で知識を管理する** — 1 ファイル = 1 Concept を原則とし、過剰分割も避ける。
 9. **GitHub Issue を Coordination Ledger として使う** — 本文は作業契約、コメントは追記型履歴。Issue を恒久ドキュメントの代替にしない。
@@ -64,7 +64,7 @@ Phase 0: Work Item Setup（GitHub Issue）
         ↓
 Phase 1: Understand
         ↓
-Phase 2: Implementation Plan（+ grill-me / grilling）
+Phase 2: Implementation Plan（`.plans/` + 必要に応じて grilling → ユーザー承認）
         ↓
 Phase 3: Decision Check
         ↓
@@ -112,7 +112,7 @@ Implementation Plan 作成前に、リポジトリルール・関連コード・
 
 ## Phase 2: Implementation Plan
 
-コード変更前に必ず Plan を作成する。変更強度（軽微 / 標準 / 設計）に応じて Plan の深さと grilling の要否を決める。「設計」では grilling 必須、「軽微」では省略可。詳細は `references/implementation-plan.md`。
+コード変更前に必ず Plan を `.plans/` の md として作成する。変更強度（軽微 / 標準 / 設計）に応じて Plan の深さと grilling の要否を決める。「設計」では grilling 必須、「軽微」では省略可。grilling の有無にかかわらず、ユーザー承認なしに Phase 3 / 実装へ進まない。Cloud / background agent も例外ではない。詳細は `references/implementation-plan.md`。
 
 ---
 
@@ -130,6 +130,7 @@ ADR 候補基準と Decision Level（1: Architecture / 2: Design / 3: Implementa
 - 実装と同時にテストを更新する
 - テスト設計は `test-strategy` Skill、自動化可能な振る舞い変更は `test-driven-development` Skill に従う
 - 新しい事実に応じて Plan から逸脱してよい（Plan の同期維持のためだけに更新しない）
+- スコープや Acceptance Criteria が変わる場合は `.plans/` の md を更新し、再承認を得てから続行する
 
 実装中に重要な設計判断が発生した場合は `references/decision-check.md` の Decision Detection に従う。
 
@@ -137,7 +138,7 @@ ADR 候補基準と Decision Level（1: Architecture / 2: Design / 3: Implementa
 
 ## Session Handoff / Resume
 
-セッション終了時は Issue へ Work Checkpoint を残す。別セッション再開時は最新 default branch を取り込んだうえで、Checkpoint と Repository 現在状態を照合してから Plan を再生成する。詳細は `references/session-handoff.md`。
+セッション終了時は Issue へ Work Checkpoint を残す。別セッション再開時は最新 default branch を取り込んだうえで、Checkpoint と Repository 現在状態を照合し、`.plans/` の Plan を更新してユーザー承認を得てから再開する。詳細は `references/session-handoff.md`。
 
 ---
 
@@ -163,8 +164,8 @@ Changes、Verification、Documentation 更新、GitHub Issue 最終コメント�
 
 **作業開始前に最新 default branch を取り込む。  
 Issue で作業契約を明確にする。  
-コードを書く前に計画する。  
-計画は grill-me / grilling で練る（設計強度では必須）。  
+コードを書く前に計画を `.plans/` の md として書く。  
+計画は変更強度に応じて grill-me / grilling で練り、ユーザー承認を得てから実装する。必要なら md を見直して再承認する。  
 セッションを跨ぐときは Checkpoint を残す。  
 恒久的な意思決定を検出する。  
 実装して検証する。  
