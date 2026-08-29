@@ -8,15 +8,20 @@ set -euo pipefail
 # container traffic is dropped when bridged frames traverse the iptables FORWARD chain.
 # Load br_netfilter and disable bridge-nf so containers on the same compose network can
 # reach each other (e.g. mcp-server -> app-postgres).
-sudo modprobe br_netfilter 2>/dev/null || true
-for f in bridge-nf-call-iptables bridge-nf-call-ip6tables; do
-  [ -w "/proc/sys/net/bridge/$f" ] && echo 0 | sudo tee "/proc/sys/net/bridge/$f" >/dev/null || true
-done
+# NOTE: run the writes under root; the sysctl nodes are root-owned, and a redirect in an
+# unprivileged shell (even with a sudo command) would be opened by the non-root shell.
+disable_bridge_nf() {
+  sudo modprobe br_netfilter 2>/dev/null || true
+  for f in bridge-nf-call-iptables bridge-nf-call-ip6tables; do
+    sudo sh -c "[ -e /proc/sys/net/bridge/$f ] && echo 0 > /proc/sys/net/bridge/$f" 2>/dev/null || true
+  done
+}
+
+disable_bridge_nf
 
 # Start the Docker daemon if it is not already responding.
 if ! sudo docker info >/dev/null 2>&1; then
-  sudo mkdir -p /var/log
-  sudo nohup dockerd --storage-driver=fuse-overlayfs >/var/log/dockerd.log 2>&1 &
+  sudo sh -c 'nohup dockerd --storage-driver=fuse-overlayfs >/var/log/dockerd.log 2>&1 &'
   for _ in $(seq 1 60); do
     sudo docker info >/dev/null 2>&1 && break
     sleep 1
@@ -24,9 +29,7 @@ if ! sudo docker info >/dev/null 2>&1; then
 fi
 
 # Re-assert the sysctl once the docker0 bridge exists, then confirm readiness.
-for f in bridge-nf-call-iptables bridge-nf-call-ip6tables; do
-  [ -w "/proc/sys/net/bridge/$f" ] && echo 0 | sudo tee "/proc/sys/net/bridge/$f" >/dev/null || true
-done
+disable_bridge_nf
 
 if sudo docker info >/dev/null 2>&1; then
   echo "start.sh: docker ready ($(sudo docker info --format '{{.ServerVersion}} driver={{.Driver}}'))"
