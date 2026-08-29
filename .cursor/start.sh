@@ -31,9 +31,19 @@ fi
 # Re-assert the sysctl once the docker0 bridge exists, then confirm readiness.
 disable_bridge_nf
 
+disable_bridge_nf
+
 if sudo docker info >/dev/null 2>&1; then
   echo "start.sh: docker ready ($(sudo docker info --format '{{.ServerVersion}} driver={{.Driver}}'))"
 else
   echo "start.sh: docker failed to start; see /var/log/dockerd.log" >&2
   exit 1
+fi
+
+# Containers cannot SNAT to the public internet while bridge-nf is 0. A host
+# CONNECT proxy lets mcp-server / chainlit reach allowlisted HTTPS (api.openai.com).
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+if ! ss -lntp 2>/dev/null | grep -q ':8888 '; then
+  nohup python3 "$ROOT/.cursor/egress-proxy.py" >/tmp/cursor-egress-proxy.log 2>&1 &
+  echo "start.sh: egress proxy on :8888"
 fi
