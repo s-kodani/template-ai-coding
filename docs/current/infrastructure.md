@@ -1,9 +1,12 @@
 ---
 type: Infrastructure
 title: インフラ
-description: アプリ、Langfuse、任意 Langflow の Docker Compose スタック。
-tags: [docker, langfuse, langflow, postgres]
+description: アプリ、Langfuse、任意 Langflow の Docker Compose スタックと CI/CD・DevSecOps 検証。
+tags: [docker, langfuse, langflow, postgres, ci, devsecops]
 status: stable
+generated:
+  at: "2026-08-29T08:00:00Z"
+  by: process:cursor-agent
 ---
 
 # インフラ
@@ -84,3 +87,36 @@ MCP `_meta` には FastMCP 既定の `traceparent` に加え、Langfuse の `lan
 | MCP サーバー | `tools/call …` SERVER span 配下に `search.embed` / `search.query` |
 | Postgres | `search.query` 近傍に asyncpg クライアントスパン（CONNECT / SELECT 等） |
 | 自動テスト | `uv run pytest tests/test_trace_propagation.py tests/test_langfuse_span_export.py` |
+
+## CI/CD と DevSecOps
+
+[ADR-0010](/decisions/ADR-0010-devsecops-pattern-a.md) に従い、パターンA（OSS Shift Left）で PR / `main` push 時に自動検証する。
+
+### GitHub Actions
+
+| ワークフロー | ジョブ | 内容 |
+|---|---|---|
+| `.github/workflows/ci.yml` | quality | `ruff check`, `pytest`（`uv sync --frozen`） |
+| | security | Bandit, `uv audit`, gitleaks |
+| | build-and-scan | `docker compose build`, Trivy（mcp-server / chainlit イメージ） |
+| `.github/workflows/okf.yml` | okf | OKF bundle 検証 |
+
+### ローカル検証
+
+```bash
+uv sync --extra dev
+uv run ruff check src tests scripts
+uv run pytest
+uv run bandit -r src scripts -c pyproject.toml
+uv audit --preview-features audit-command
+uv run pre-commit run --all-files
+uv run python scripts/validate_okf.py
+docker compose -f infra/app/compose.yml build
+```
+
+pre-commit はコミット前の Shift Left 用。初回は `uv run pre-commit install` でフックを有効化する。
+
+### 依存更新
+
+- `uv.lock` を Source of Truth とし、Dependabot（`.github/dependabot.yml`）が pip と GitHub Actions を週次更新する。
+- Trivy は CRITICAL/HIGH かつ修正版ありの CVE で CI を失敗させる（`ignore-unfixed: true`）。

@@ -2,6 +2,7 @@
 
 ## v?.?.? (未確定)
 
+- **Added**: DevSecOps パターンA — CI（ruff / pytest / Docker build）、`uv.lock`、Dependabot、Bandit、`uv audit`、gitleaks、Trivy、pre-commit（[インフラ](/current/infrastructure.md)、[ADR-0010](/decisions/ADR-0010-devsecops-pattern-a.md)）
 - **Fixed**: Chainlit 2.12 の MCP 設定へ移行し起動を復旧。`user_servers` と静的 URL allowlist を採用し、knowledge-mcp の autoload を 2.12 形式へ合わせる（[UI 機能](/current/features/ui.md)、[ADR-0009](/decisions/ADR-0009-chainlit-mcp-user-servers-allowlist.md)）
 - **Changed**: README に Langflow 任意サイドカーの番号付きクイックスタートを追加し、末尾の重複 PoC 記述を整理
 - **Added**: OKF validator を拡張（YAML frontmatter、cross-link、index 整合、メタデータ検証）し、CI ワークフローとテストを追加（`scripts/validate_okf.py`、`.github/workflows/okf.yml`）

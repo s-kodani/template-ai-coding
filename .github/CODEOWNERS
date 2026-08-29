@@ -1,0 +1,4 @@
+# DevSecOps / CI — changes require review from repository owner.
+/.github/ @s-kodani
+/.pre-commit-config.yaml @s-kodani
+/uv.lock @s-kodani
