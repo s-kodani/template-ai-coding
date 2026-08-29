@@ -2,7 +2,11 @@
 
 ## v?.?.? (未確定)
 
-- **Changed**: Release Log を Phase 6 から `## v?.?.? (未確定)` 見出し下へ追記する運用に変更。タグ確定はユーザー依頼時のみ（`implementation-workflow` Skill、Issue #19 / PR #18）
+- **Fixed**: Chainlit 2.12 の MCP 設定へ移行し起動を復旧。`user_servers` と静的 URL allowlist を採用し、knowledge-mcp の autoload を 2.12 形式へ合わせる（[UI 機能](/current/features/ui.md)、[ADR-0009](/decisions/ADR-0009-chainlit-mcp-user-servers-allowlist.md)）
+- **Changed**: README に Langflow 任意サイドカーの番号付きクイックスタートを追加し、末尾の重複 PoC 記述を整理
+- **Added**: OKF validator を拡張（YAML frontmatter、cross-link、index 整合、メタデータ検証）し、CI ワークフローとテストを追加（`scripts/validate_okf.py`、`.github/workflows/okf.yml`）
+- **Changed**: `AGENTS.md` に Knowledge Catalog 連携（オプション）ガイダンスと OKF メタデータ規則を追記
+- **Changed**: Release Log を Phase 6 から `## v?.?.? (未確定)` 見出し下へ追記する運用に変更。タグ確定はユーザー依頼時のみ（`implementation-workflow` Skill）
 - **Changed**: OKF validator が未確定リリース見出し（先頭・最大 1 件）を許容（`scripts/validate_okf.py`）
 
 ## v1.0.0
