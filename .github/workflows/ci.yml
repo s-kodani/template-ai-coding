@@ -62,6 +62,7 @@ jobs:
         with:
           scan-type: image
           image-ref: knowledge-app-mcp-server
+          scanners: vuln
           format: table
           severity: CRITICAL,HIGH
           ignore-unfixed: true
@@ -72,6 +73,7 @@ jobs:
         with:
           scan-type: image
           image-ref: knowledge-app-chainlit
+          scanners: vuln
           format: table
           severity: CRITICAL,HIGH
           ignore-unfixed: true
