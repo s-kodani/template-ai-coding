@@ -13,7 +13,7 @@ mcp-server-engineering/
     ├── transport-and-state.md
     ├── security-and-authorization.md
     ├── testing-and-observability.md
-    └── implementation-workflow.md
+    └── mcp-completion-checklist.md
 ```
 
 `SKILL.md` は判断フローだけを保持し、詳細は必要なときだけ `references/` から読む設計です。
