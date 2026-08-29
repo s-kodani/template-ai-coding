@@ -39,7 +39,7 @@ SaaS 統合（Snyk / SonarCloud 等）は運用コストと外部依存が増え
 | Bandit | Python SAST | security ジョブ |
 | `uv audit` | Python SCA（OSV） | security ジョブ |
 | gitleaks | シークレット | security ジョブ |
-| Trivy | Docker イメージ（CRITICAL/HIGH、未修正のみ失敗） | build-and-scan ジョブ |
+| Trivy | Docker イメージ（CRITICAL/HIGH、未修正のみ失敗、`scanners: vuln`） | build-and-scan ジョブ |
 | pre-commit | ローカル Shift Left | `ruff` / gitleaks / bandit |
 
 Bandit は `tests/` を除外し、`B101`（assert）は dev 向けのため skip する。

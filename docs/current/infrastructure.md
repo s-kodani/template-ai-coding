@@ -98,7 +98,7 @@ MCP `_meta` には FastMCP 既定の `traceparent` に加え、Langfuse の `lan
 |---|---|---|
 | `.github/workflows/ci.yml` | quality | `ruff check`, `pytest`（`uv sync --frozen`） |
 | | security | Bandit, `uv audit`, gitleaks |
-| | build-and-scan | `docker compose build`, Trivy（mcp-server / chainlit イメージ） |
+| | build-and-scan | `docker compose build`, Trivy（mcp-server / chainlit イメージ、`scanners: vuln`） |
 | `.github/workflows/okf.yml` | okf | OKF bundle 検証 |
 
 ### ローカル検証
