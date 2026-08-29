@@ -10,7 +10,7 @@ Use this skill when committing local changes on the current branch without pushi
 ## Preconditions
 
 - There are modified files.
-- Commit messages follow `reference.md`.
+- Commit messages follow `reference.md` and `delivery-reference.md`（`../commit-push-pr/delivery-reference.md`）。
 
 ## Workflow
 
@@ -19,7 +19,7 @@ Use this skill when committing local changes on the current branch without pushi
 3. Stage changes with `git add -A`.
 4. Commit with the generated message.
 
-Read `reference.md` when generating the commit message.
+Read `reference.md` when generating the commit message. See `delivery-reference.md` for branch and quality-check rules.
 
 ## Example
 

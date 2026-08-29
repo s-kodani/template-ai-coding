@@ -1,0 +1,18 @@
+{
+  "source": ".agents/skills",
+  "target": ".claude/skills",
+  "skills": [
+    "commit-only",
+    "commit-push",
+    "commit-push-pr",
+    "gh",
+    "grill-me",
+    "grilling",
+    "implementation-workflow",
+    "mcp-server-engineering",
+    "ponytail",
+    "project-verification",
+    "test-driven-development",
+    "test-strategy"
+  ]
+}
