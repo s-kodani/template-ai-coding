@@ -42,21 +42,24 @@ Implementation Plan は一時的な作業成果物。`.plans/` 配下の Markdow
 
 ## 基本原則
 
-1. **実装前に理解する** — 関連コード、Current-state Documentation、制約、過去の意思決定を理解してから着手する。
-2. **コード変更前に計画する** — Implementation Plan を `.plans/` の Markdown として作成する（git 管理外。コミットしない）。Phase 3 / 実装の前にユーザー承認が必須。Cloud / background agent も例外ではない。
-3. **計画と恒久知識を分離する** — Plan は「どう実装する予定か」、Current-state は「現在何が正しいか」、ADR は「なぜそう決めたか」、Release Note は「何が変わったか」。
-4. **Current-state Documentation を Source of Truth とする** — ADR や Release Note だけから現在状態を推測しない。
-5. **実態に合わせて計画を変更する** — Plan Drift を許容する。Plan は履歴文書ではない。スコープや Acceptance Criteria が変わる見直しは `.plans/` の md を更新し、再承認を得てから続行する。
-6. **実装後に恒久知識を再構成する** — 最終実装を基準にドキュメントを整合させる。
-7. **OKF では Concept 単位で知識を管理する** — 1 ファイル = 1 Concept を原則とし、過剰分割も避ける。
-8. **GitHub Issue を Coordination Ledger として使う** — 本文は作業契約、コメントは追記型履歴。Issue を恒久ドキュメントの代替にしない。
-9. **セッション終了時に Checkpoint を残す** — 別セッションが Repository 状態と照合して再開できる事実を残す。
+1. **作業開始前に最新 default branch を取り込む** — `git fetch` のあと、新規ブランチは `origin/<default-branch>` から切る。既存ブランチは `git merge origin/<default-branch>`。rebase / force-push は明示時のみ。
+2. **実装前に理解する** — 関連コード、Current-state Documentation、制約、過去の意思決定を理解してから着手する。
+3. **コード変更前に計画する** — Implementation Plan を `.plans/` の Markdown として作成する（git 管理外。コミットしない）。Phase 3 / 実装の前にユーザー承認が必須。Cloud / background agent も例外ではない。
+4. **計画と恒久知識を分離する** — Plan は「どう実装する予定か」、Current-state は「現在何が正しいか」、ADR は「なぜそう決めたか」、Release Note は「何が変わったか」。
+5. **Current-state Documentation を Source of Truth とする** — ADR や Release Note だけから現在状態を推測しない。
+6. **実態に合わせて計画を変更する** — Plan Drift を許容する。Plan は履歴文書ではない。スコープや Acceptance Criteria が変わる見直しは `.plans/` の md を更新し、再承認を得てから続行する。
+7. **実装後に恒久知識を再構成する** — 最終実装を基準にドキュメントを整合させる。
+8. **OKF では Concept 単位で知識を管理する** — 1 ファイル = 1 Concept を原則とし、過剰分割も避ける。
+9. **GitHub Issue を Coordination Ledger として使う** — 本文は作業契約、コメントは追記型履歴。Issue を恒久ドキュメントの代替にしない。
+10. **セッション終了時に Checkpoint を残す** — 別セッションが Repository 状態と照合して再開できる事実を残す。
 
 ---
 
 # ワークフロー
 
 ```text
+最新 default branch を取り込み（fetch + merge）
+        ↓
 Phase 0: Work Item Setup（GitHub Issue）
         ↓
 Phase 1: Understand
@@ -76,6 +79,20 @@ Phase 6: Documentation Reconciliation
         ↓
 Phase 7: Completion Report → Issue Close
 ```
+
+---
+
+## 作業開始前: 最新 default branch の取り込み
+
+コード変更を始める前に、必ずリモートの最新 default branch を取り込む。Cloud / background agent も例外ではない。一般的な「fetch を先行しない」指示より、本 Skill と `AGENTS.md` を優先する。
+
+1. `git fetch origin <default-branch>`（未指定時は `main`。`AGENTS.md` があればそれに従う）
+2. 新規ブランチは `origin/<default-branch>` から切る
+3. 既存の作業ブランチにいる場合は `git merge origin/<default-branch>` で取り込む。rebase はユーザーが明示したときだけ。force-push はしない
+4. 作業ツリーが dirty で merge できない場合は stash せず、状態を報告して止まる
+5. 衝突したら単純なものは解消し、意図の衝突は報告して止まる
+
+この手順は別 reference に分けない。本節を正とする。
 
 ---
 
@@ -121,7 +138,7 @@ ADR 候補基準と Decision Level（1: Architecture / 2: Design / 3: Implementa
 
 ## Session Handoff / Resume
 
-セッション終了時は Issue へ Work Checkpoint を残す。別セッション再開時は Checkpoint と Repository 現在状態を照合し、`.plans/` の Plan を更新してユーザー承認を得てから再開する。詳細は `references/session-handoff.md`。
+セッション終了時は Issue へ Work Checkpoint を残す。別セッション再開時は最新 default branch を取り込んだうえで、Checkpoint と Repository 現在状態を照合し、`.plans/` の Plan を更新してユーザー承認を得てから再開する。詳細は `references/session-handoff.md`。
 
 ---
 
@@ -145,7 +162,8 @@ Changes、Verification、Documentation 更新、GitHub Issue 最終コメント�
 
 ## 要約
 
-**Issue で作業契約を明確にする。  
+**作業開始前に最新 default branch を取り込む。  
+Issue で作業契約を明確にする。  
 コードを書く前に計画を `.plans/` の md として書く。  
 計画は変更強度に応じて grill-me / grilling で練り、ユーザー承認を得てから実装する。必要なら md を見直して再承認する。  
 セッションを跨ぐときは Checkpoint を残す。  

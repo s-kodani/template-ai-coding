@@ -77,17 +77,18 @@ Checkpoint では**予定ではなく事実**を優先する。Implementation Pl
 既存 Issue の途中作業を別セッションで再開する場合、コード変更前に:
 
 1. `AGENTS.md` と適用 Skill を読む
-2. Issue 本文から Goal / Scope / Acceptance Criteria / Constraints を確認
-3. 最新の `agent-work-checkpoint:v1` コメントを特定
-4. Checkpoint 以降のコメントをすべて確認
-5. Repository の現在状態を確認（branch、HEAD、`git status`、diff、commits、PR）
-6. Checkpoint と現在状態を比較
-7. Changed Files / Completed / In Progress / Remaining が実コードと整合しているか確認
-8. Pending Decisions が未解決のままか確認
-9. External State が現在も有効か確認
-10. 現在状態を基準に Implementation Plan を `.plans/` の md として作成または更新する。古いプラン md があってもそのまま使わず、リポジトリ現在状態と照合して更新する
-11. 変更強度に応じて grill-me / grilling を行い、ユーザー承認を得てから実装を再開する
-12. 必要に応じて Resume コメントを Issue へ残してから再開する
+2. `git fetch origin <default-branch>` し、作業ブランチへ `git merge origin/<default-branch>` する（未指定時は `main`。rebase は明示時のみ。dirty tree では stash せず止まって報告する。衝突は単純なら解消し、意図の衝突は報告して止まる）
+3. Issue 本文から Goal / Scope / Acceptance Criteria / Constraints を確認
+4. 最新の `agent-work-checkpoint:v1` コメントを特定
+5. Checkpoint 以降のコメントをすべて確認
+6. Repository の現在状態を確認（branch、HEAD、`git status`、diff、commits、PR）
+7. Checkpoint と現在状態を比較
+8. Changed Files / Completed / In Progress / Remaining が実コードと整合しているか確認
+9. Pending Decisions が未解決のままか確認
+10. External State が現在も有効か確認
+11. 現在状態を基準に Implementation Plan を `.plans/` の md として作成または更新する。古いプラン md があってもそのまま使わず、リポジトリ現在状態と照合して更新する
+12. 変更強度に応じて grill-me / grilling を行い、ユーザー承認を得てから実装を再開する
+13. 必要に応じて Resume コメントを Issue へ残してから再開する
 
 ### Source of Truth（優先順位）
 
