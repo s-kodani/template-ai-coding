@@ -1,6 +1,6 @@
 # GitHub Issue Workflow
 
-Phase 0 の詳細。`AGENTS.md` の GitHub Work Item Policy と併用する。
+Phase 0 の詳細。本リポジトリでは `AGENTS.md` の GitHub Work Item Policy で Issue 紐付けを必須とする。
 
 ## 既存 Issue の確認（必須）
 

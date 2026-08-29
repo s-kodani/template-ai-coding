@@ -2,6 +2,7 @@
 
 ## v?.?.? (未確定)
 
+- **Changed**: `AGENTS.md` の workflow / OKF 共通ルールを `implementation-workflow` references へ委譲し、リポジトリ固有設定に slim 化（~496行 → ~220行）
 - **Changed**: `implementation-workflow` Skill を Progressive Disclosure 構成へ再編（`SKILL.md` 入口 + `references/` 8 本、`mcp-server-engineering` と同パターン）
 - **Added**: Agent Skill 構成整理 — テスト方針統一（`test-strategy` 正本）、workflow 3 段階簡略化、`project-verification` Skill、`.agents` → `.claude` Skill 同期（`scripts/sync_skills.py`）、PR Release Note 要否宣言（`validate_pr_workflow.py`）、Git/PR `delivery-reference.md`
 - **Added**: PR workflow CI（`src/` 変更時の Issue 紐付け、`src/` / `infra/` 変更時の Release Log 更新チェック）、`.cursor/rules/implementation-workflow.mdc`、PR テンプレート（`scripts/validate_pr_workflow.py`、`.github/workflows/pr-workflow.yml`）
