@@ -44,7 +44,7 @@ MCPの仕様変更は速い。記憶している仕様だけを根拠に実装�
 | Streamable HTTP、stdio、Stateless core、State handle、MRTR、Extensions | `references/transport-and-state.md` |
 | OAuth、scope、token、SSRF、state handle保護、secret | `references/security-and-authorization.md` |
 | Unit/Integration/Contract/Security test、Inspector、Observability | `references/testing-and-observability.md` |
-| 実装着手、GitHub Issue、checkpoint、引き継ぎ、完了報告 | `references/implementation-workflow.md` |
+| MCP 作業の完了報告・検証記録（共通ワークフローは `AGENTS.md` / implementation-workflow Skill） | `references/mcp-completion-checklist.md` |
 
 同じルールを `SKILL.md` とreferenceの両方に重複して記載しない。
 
@@ -54,7 +54,7 @@ MCPの仕様変更は速い。記憶している仕様だけを根拠に実装�
 
 実装やレビューを開始する前に、以下を確認する。
 
-1. リポジトリの `AGENTS.md` とプロジェクト固有ルール
+1. リポジトリの `AGENTS.md` とプロジェクト固有ルール（`implementation-workflow` Skill 指定がある場合は着手前に `.agents/skills/implementation-workflow/SKILL.md` を読む）
 2. 使用言語とMCP SDK
 3. SDK versionと対象MCP specification
 4. Transport

@@ -2,6 +2,8 @@
 
 ## v?.?.? (未確定)
 
+- **Added**: PR workflow CI（`src/` 変更時の Issue 紐付け、`src/` / `infra/` 変更時の Release Log 更新チェック）、`.cursor/rules/implementation-workflow.mdc`、PR テンプレート（`scripts/validate_pr_workflow.py`、`.github/workflows/pr-workflow.yml`）
+- **Changed**: `mcp-server-engineering` の workflow reference を MCP 固有の `mcp-completion-checklist.md` に改名・縮小し、共通ワークフローは `implementation-workflow` Skill を正本と明記（`AGENTS.md`）
 - **Added**: MCP ツール実行の output を Langfuse トレースへ記録（`record_tool_output`、`get_document` 本文は先頭 500 文字に truncate）（[API 契約](/current/features/api.md)、[インフラ](/current/infrastructure.md)）
 - **Added**: DevSecOps パターンA — CI（ruff / pytest / Docker build）、`uv.lock`、Dependabot、Bandit、`uv audit`、gitleaks、Trivy、pre-commit（[インフラ](/current/infrastructure.md)、[ADR-0010](/decisions/ADR-0010-devsecops-pattern-a.md)）
 - **Fixed**: Chainlit 2.12 の MCP 設定へ移行し起動を復旧。`user_servers` と静的 URL allowlist を採用し、knowledge-mcp の autoload を 2.12 形式へ合わせる（[UI 機能](/current/features/ui.md)、[ADR-0009](/decisions/ADR-0009-chainlit-mcp-user-servers-allowlist.md)）
