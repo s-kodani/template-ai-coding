@@ -1,4 +1,7 @@
 
+# Temporary Implementation Plans (do not commit)
+.plans/
+
 # APM dependencies
 apm_modules/
 

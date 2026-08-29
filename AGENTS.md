@@ -16,7 +16,7 @@
 
 | 変更対象 | 必須アクション |
 |----------|----------------|
-| `src/`、`scripts/`、`infra/`、`tests/` | Phase 0〜2（Issue 確認・Implementation Plan）→ 実装 → Phase 5 検証 |
+| `src/`、`scripts/`、`infra/`、`tests/` | Phase 0〜2（Issue 確認・Implementation Plan を `.plans/` へ書き出し・ユーザー承認）→ 実装 → Phase 5 検証 |
 | `src/` または `infra/` | Phase 6: `docs/releases/log.md` の `## v?.?.? (未確定)` へ追記 |
 | `docs/` の Current-state / ADR のみ | Phase 6 相当の整合確認 |
 | 質問のみ（コード・ドキュメント変更なし） | 不要 |
@@ -26,6 +26,8 @@ MCP サーバー実装・変更では `mcp-server-engineering` Skill を併用�
 Pull Request は対応 Issue を `Refs #<issue>` または `Closes #<issue>` で明示します（`src/` 変更がある PR は CI で検証）。
 
 Skillとこのファイルの指示が競合する場合は、このリポジトリ固有のルールである`AGENTS.md`を優先します。
+
+Implementation Plan の一時ファイルは `.plans/`（git 管理外）へ書き出します。grilling のあと、ユーザー承認なしに Phase 3 / 実装へ進んではいけません。Cloud / background agent も例外ではありません。手順の詳細は `implementation-workflow` Skill に従います。
 
 ---
 
@@ -452,6 +454,7 @@ Human approval:
 - Coding Convention
 - 禁止事項
 - Human Approvalが必要な操作
+- Implementation Plan の一時ディレクトリ（本リポジトリでは `.plans/`）
 - GitHub Issue / PRの命名・Label・Project・Milestone等のRepository固有ルール
 
 Implementation Planの作成方法、ADR候補の一般基準、実装・検証・Documentation Reconciliationの共通ワークフローは`AGENTS.md`に重複記載せず、`implementation-workflow` Skillへ集約します。
@@ -467,6 +470,7 @@ Cursor Cloud Agent 環境は `.cursor/environment.json` で定義します。
 
 運用メモ:
 
+- Implementation Plan のユーザー承認は Cloud Agent でも必須です。プラン md の承認前に実装へ進んではいけません。
 - `docker` / `docker compose` が使えない場合（`docker info` が失敗する場合）は `bash .cursor/start.sh` を実行してください。冪等で、起動済みなら何もしません。
 - `uv run pytest` / `uv run ruff check src tests scripts` / `uv run python scripts/validate_okf.py` は Docker も secret も不要です。
 - `make -C infra up` と `make -C infra seed`、および Chainlit のチャット応答には有効な `OPENAI_API_KEY` が必要です。Cloud Agent の Secrets に `OPENAI_API_KEY`（必要なら `OPENAI_BASE_URL`）を追加してください。埋め込みは OpenAI 互換エンドポイントであれば差し替え可能です。

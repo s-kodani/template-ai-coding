@@ -15,7 +15,7 @@ alwaysApply: false
 
 1. `.agents/skills/implementation-workflow/SKILL.md` を読む（`AGENTS.md` の Repository 固有ルールと併用）
 2. Phase 0: 対応 GitHub Issue を確認・紐付け（新規 Issue 起票前にユーザーへ既存 Issue の有無を確認）
-3. Phase 2: Implementation Plan を作成（リポジトリへコミットしない）
+3. Phase 2: Implementation Plan を `.plans/` の md として作成し、`grill-me` のあとユーザー承認を得る（リポジトリへコミットしない。Cloud / background agent も例外ではない）
 4. 実装後: Phase 5 検証（`uv run pytest`、`uv run ruff check`、`uv run python scripts/validate_okf.py` 等）
 5. Phase 6: `docs/releases/log.md` の `## v?.?.? (未確定)` へ追記（`src/` / `infra/` 変更時）
 

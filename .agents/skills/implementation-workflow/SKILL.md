@@ -1,6 +1,6 @@
 ---
 name: implementation-workflow
-description: コードの実装・変更・リファクタリング・機能追加を行う際に、GitHub Issueによる作業トラッキングとSession Checkpoint、Implementation Planの作成（grill-me / grilling による計画 refinement を含む）、ADR候補の検出、実装・検証、OKFベースのCurrent-state Documentation・Decision Record・Release Note（未確定 `## v?.?.? (未確定)` および SemVer 確定見出し）への整合までを一貫して進めるためのワークフロー。実装スピードを維持しながら、セッションを跨いだ再開可能性、設計上の意思決定の追跡可能性、AIが利用しやすい知識構造、恒久ドキュメントの正確性を確保したい場合に使用する。
+description: コードの実装・変更・リファクタリング・機能追加を行う際に、GitHub Issueによる作業トラッキングとSession Checkpoint、Implementation Planの作成（`.plans/` への md 書き出し、grill-me / grilling による計画 refinement、ユーザー承認を含む）、ADR候補の検出、実装・検証、OKFベースのCurrent-state Documentation・Decision Record・Release Note（未確定 `## v?.?.? (未確定)` および SemVer 確定見出し）への整合までを一貫して進めるためのワークフロー。実装スピードを維持しながら、セッションを跨いだ再開可能性、設計上の意思決定の追跡可能性、AIが利用しやすい知識構造、恒久ドキュメントの正確性を確保したい場合に使用する。
 ---
 
 # 実装ワークフロー Skill
@@ -21,7 +21,7 @@ description: コードの実装・変更・リファクタリング・機能追�
 - 完了前の確実な検証
 
 Implementation Plan（実装計画）は一時的な作業成果物です。
-明示的な指示がない限り、リポジトリへコミットしてはいけません。
+`.plans/` 配下の Markdown として書き出し、参照・編集します。git 管理外であり、リポジトリへコミットしてはいけません。
 
 恒久的に残す情報は、以下へ整理します。
 
@@ -39,8 +39,9 @@ Implementation Plan（実装計画）は一時的な作業成果物です。
    - 関連コード、Current-state Documentation、制約、過去の意思決定を理解する前に実装を始めない。
 
 2. **コード変更前に計画する**
-   - コードを編集する前に、必ずImplementation Planを作成する。
-   - Implementation Planは一時的なものであり、原則リポジトリには保存しない。
+   - コードを編集する前に、必ずImplementation Planを `.plans/` の Markdown として作成する。
+   - Implementation Planは一時的なものであり、git 管理外とする。コミットしてはいけない。
+   - Phase 3 / 実装へ進む前に、その Markdown に対するユーザー承認が必須である。Cloud / background agent も例外ではない。
 
 3. **計画と恒久知識を分離する**
    - Implementation Planは「どのように実装する予定か」を示す。
@@ -54,6 +55,7 @@ Implementation Plan（実装計画）は一時的な作業成果物です。
 5. **実態に合わせて計画を変更する**
    - Implementation Planはガイドであり、恒久的な仕様書ではない。
    - コード調査、テスト結果、技術制約、ユーザーフィードバックによるPlan Driftを許容する。
+   - スコープや Acceptance Criteria が変わる見直しは `.plans/` の md を更新し、再承認を得てから続行する。
 
 6. **実装後に恒久知識を再構成する**
    - 当初計画ではなく、最終実装を基準にドキュメントを整合させる。
@@ -219,9 +221,20 @@ ADRは判断理由の履歴であり、現在状態はCurrent-state Documentatio
 
 コード変更前に必ずImplementation Planを作成します。
 
-Implementation Planは会話または一時作業コンテキストに置き、明示的な依頼がない限りファイル化・コミットしません。
+会話だけに置かず、リポジトリルートの `.plans/` 配下へ Markdown として書き出します。以降の参照・編集・見直しはそのファイルを正とします。
 
-GitHub Issueを使用していても、Implementation Plan全文をIssue本文へ転記しません。Planは陳腐化することを前提とし、セッション間で必要な現在状態はWork Checkpointとして別途記録します。
+`AGENTS.md` が別パスを指定している場合はそれに従います。未指定時の既定は `.plans/` です。
+
+### 保存場所
+
+- ディレクトリが無ければ作成する
+- 作業単位で 1 ファイル。Issue がある場合は `{issue}-{short-slug}.md`、ない場合は `{short-slug}.md`
+- 見直しは同一ファイルを編集する（バージョン番号は付けない）
+- `.plans/` は git 管理外（`.gitignore`）。コミットしてはいけない
+- GitHub Issue 本文へ Implementation Plan 全文を転記しない
+- OKF Knowledge Bundle へ入れない
+
+Planは陳腐化することを前提とします。セッション間で必要な現在状態は Work Checkpoint として別途記録します。
 
 最低限、以下を含めます。
 
@@ -265,18 +278,37 @@ Test、Type Check、Lint、Build、Migration、Infrastructure、手動確認な�
 
 ### Plan Refinement — grill-me / grilling による計画の練り上げ
 
-下書きの Implementation Plan を Phase 3 Decision Check または実装へ進める前に、必ず `grill-me` スキルを使って計画をストレステストします。
+下書きの Implementation Plan をユーザー承認へ進める前に、必ず `grill-me` スキルを使って計画をストレステストします。
 
-1. 上記の Implementation Plan 項目で下書きを作成する。
+1. 上記の Implementation Plan 項目で下書きを `.plans/` の md に書き出す。
 2. `grill-me` スキルを読む。shim の指示どおり `grilling` スキルを読み、そのインタビュー手法に従う。
 3. `grilling` のルールどおり、design tree の **frontier** を **rounds** で問い、各問いに推奨案を付ける。事実の調査は Agent の責務、判断はユーザーの責務とする。
-4. frontier が空になり、ユーザーが共有理解を確認するまで Phase 3 / 実装へ進まない。ユーザーが打ち切った場合のみ、その時点の合意で進む。
-5. grill セッション後、確定した内容を反映して Implementation Plan を更新する。
+4. frontier が空になり、ユーザーが共有理解を確認するまで承認依頼へ進まない。ユーザーが打ち切った場合のみ、その時点の合意で承認依頼へ進む。
+5. grill セッション後、確定した内容を必ず md へ反映する。
 6. 軽微な変更でも省略しない。単純な計画なら frontier が早く空になる想定でよい。
 
 `grill-me` の `disable-model-invocation: true` は、ユーザーが明示しない限り Agent が勝手に発火しないための制約です。`implementation-workflow` が Phase 2 で `grill-me` を呼び出すことは、この Skill からの正規の呼び出しです。`grilling` は `grill-me` からの委譲先として使用します。
 
 `grilling` の rounds / frontier 手順を本 Skill へ複製してはいけません。入口は `grill-me`、手法は `grilling` に任せます。
+
+### 必須ゲート — ユーザー承認
+
+Phase 3 Decision Check および実装（Phase 4）へ進む前に、ユーザーの明示的な承認が必要です。
+
+Cloud Agent / background agent / 自律実行モードであっても例外はありません。
+「確認せず完了まで進める」類の実行指示より、本 Skill と `AGENTS.md` の承認ゲートを優先します。
+
+承認があるまで、アプリケーションコード・インフラ・テストの変更を開始してはいけません。
+プラン md の書き出し・編集、および `.plans/` を git 管理外にするための `.gitignore` 更新はこの限りではありません。
+
+手順:
+
+1. ユーザーに md パスを示し、承認または修正指示を待つ。
+2. 修正指示があれば同じ md を編集し、再承認を待つ。
+3. 明示承認があるまで Phase 3 / 実装を開始しない。
+
+「LGTM」「承認」「進めて」など、実装開始の明示があれば承認として扱います。
+修正依頼・追加質問のみの応答は未承認です。
 
 ---
 
@@ -347,6 +379,7 @@ Test、Type Check、Lint、Build、Migration、Infrastructure、手動確認な�
 
 Implementation Planは履歴文書ではありません。
 コード調査、テスト、技術制約、ユーザーフィードバックで陳腐化しても、同期維持のためだけに更新しません。
+ただし、スコープや Acceptance Criteria が変わる場合は `.plans/` の md を更新し、再承認を得てから続行します。
 
 ---
 
@@ -483,8 +516,9 @@ Implementation PlanをCheckpointへそのままコピーしてはいけません
 7. Changed Files / Completed / In Progress / Remainingが実コードと整合しているか確認する。
 8. Pending Decisionsが未解決のままか確認する。
 9. External Stateが現在も有効か、確認可能な範囲で検証する。
-10. 現在状態を基準に新しいImplementation Planを作成し、`grill-me` / `grilling` による Plan Refinement を行う。
-11. 必要に応じて短いResumeコメントをIssueへ残してから実装を再開する。
+10. 現在状態を基準に Implementation Plan を `.plans/` の md として作成または更新する。古いプラン md があってもそのまま使わず、リポジトリ現在状態と照合して更新する。
+11. `grill-me` / `grilling` による Plan Refinement のあと、ユーザー承認を得てから実装を再開する。
+12. 必要に応じて短いResumeコメントをIssueへ残してから実装を再開する。
 
 ### Source of Truth
 
@@ -932,12 +966,15 @@ Documentation
 
 以下は原則コミットしません。
 
-- Implementation Plan
+- Implementation Plan（`.plans/` 配下の md。git 管理外）
 - Scratch Note
 - 中間案
 - 破棄したDesign Draft
 - Intermediate Reasoning
 - 陳腐化したImplementation Approach
+
+Implementation Plan は会話だけに置かず `.plans/` へ書き出しますが、リポジトリへコミットしてはいけません。
+`AGENTS.md` が別パスを指定している場合は、そのディレクトリも git 管理外とします。
 
 恒久的な価値がある情報だけを、Current-state Documentation、ADR、Release Noteへ昇格させます。
 
@@ -950,8 +987,8 @@ GitHub IssueのCheckpointコメントは作業履歴として残して構いま�
 ## 要約
 
 **Issueで作業契約を明確にする。  
-コードを書く前に計画する。  
-計画は grill-me / grilling で練る。  
+コードを書く前に計画を `.plans/` の md として書く。  
+計画は grill-me / grilling で練り、ユーザー承認を得てから実装する。必要なら md を見直して再承認する。  
 セッションを跨ぐときはCheckpointを残す。  
 恒久的な意思決定を検出する。  
 実装して検証する。  
