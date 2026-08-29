@@ -350,23 +350,41 @@ Implementation PlanやSession CheckpointはOKF Knowledge Bundleへ保存しま�
 
 ## Progressive Disclosure
 
-AI Agentが毎回すべてのドキュメントを読み込む必要がないよう、OKFの`index.md`を入口として段階的に探索します。
+この Skill 自体も Progressive Disclosure 構成です。
 
-推奨探索順序:
+- **入口**: `SKILL.md` — Phase 0–7 の概要と reference 対応表のみ
+- **詳細**: `references/` — Phase やトピックごとの詳細ルール
+
+Agent は最初に `SKILL.md` だけを読み、該当 Phase の作業に入る時点で必要な reference だけを読みます。`mcp-server-engineering` Skill と同じパターンです。
+
+```text
+implementation-workflow/
+├── SKILL.md              # 入口（~150行）
+├── README.md             # 人間向け概要
+└── references/
+    ├── github-issue-workflow.md
+    ├── implementation-plan.md
+    ├── decision-check.md
+    ├── session-handoff.md
+    ├── verification.md
+    ├── okf-documentation.md
+    ├── release-note.md
+    └── completion-report.md
+```
+
+OKF Knowledge Bundle についても、`index.md` を入口として段階的に探索します。
 
 ```text
 docs/index.md
     ↓
-関連ディレクトリのindex.md
+関連ディレクトリの index.md
     ↓
-関連Concept
+関連 Concept
     ↓
-cross-linkされたConcept
+cross-link された Concept
     ↓
-必要な場合のみADR / Release Log
+必要な場合のみ ADR / Release Log
 ```
-
-これにより、AIへ必要なContextだけを与えながら知識の網羅性を維持します。
 
 ---
 
@@ -470,13 +488,14 @@ repository/
 ```text
 implementation-workflow/
 ├── SKILL.md
-├── AGENTS.md
-└── README.md
+├── README.md
+└── references/
+    └── *.md
 ```
 
-- `SKILL.md` — 共通実装ワークフロー
-- `AGENTS.md` — Repository固有設定のテンプレート
-- `README.md` — このSkillの概要・導入・運用説明
+- `SKILL.md` — 共通実装ワークフロー（入口）
+- `references/` — Phase / トピック別の詳細ルール
+- `README.md` — この Skill の概要・導入・運用説明
 
 ---
 
