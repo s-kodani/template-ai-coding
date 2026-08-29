@@ -6,7 +6,12 @@ from typing import Any
 from openai import AsyncOpenAI
 
 from knowledge_mcp.config import Settings
-from knowledge_mcp.tracing import configure_langfuse_tracing, instrument_asyncpg, tool_observation
+from knowledge_mcp.tracing import (
+    configure_langfuse_tracing,
+    instrument_asyncpg,
+    record_tool_output,
+    tool_observation,
+)
 
 # Langfuse before FastMCP client import side effects.
 _langfuse = configure_langfuse_tracing()
@@ -54,9 +59,13 @@ class MCPBridge:
             async with self._client:
                 result = await self._client.call_tool(name, arguments)
             if not result.content:
-                return {"error": "Tool returned no content."}
+                output = {"error": "Tool returned no content."}
+                record_tool_output(output)
+                return output
             text = result.content[0].text if hasattr(result.content[0], "text") else str(result.content[0])
-            return json.loads(text)
+            output = json.loads(text)
+            record_tool_output(output)
+            return output
 
 
 def build_openai_client(settings: Settings) -> AsyncOpenAI:

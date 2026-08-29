@@ -17,6 +17,7 @@ from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapProp
 
 _langfuse_client: Langfuse | None = None
 _langfuse_enabled = False
+_TRACE_OUTPUT_MAX_CONTENT_LENGTH = 500
 
 ALLOWED_EXTRA_SCOPE_PREFIXES = frozenset(
     {
@@ -143,12 +144,34 @@ def tool_observation(name: str, arguments: dict[str, Any]) -> AbstractContextMan
         yield observation
 
 
+def sanitize_tool_output_for_trace(output: dict[str, Any]) -> dict[str, Any]:
+    """Redact large document bodies before exporting tool output to Langfuse."""
+    content = output.get("content")
+    if not isinstance(content, str) or len(content) <= _TRACE_OUTPUT_MAX_CONTENT_LENGTH:
+        return output
+
+    truncated = content[:_TRACE_OUTPUT_MAX_CONTENT_LENGTH].rstrip() + "…"
+    return {**output, "content": truncated}
+
+
 def record_tool_input(arguments: dict[str, Any]) -> None:
     """Attach tool input to the active FastMCP server span (propagated trace)."""
     if not _langfuse_enabled:
         return
     try:
         get_client().update_current_span(input=arguments)
+    except (ImportError, RuntimeError, AttributeError):
+        return
+
+
+def record_tool_output(output: dict[str, Any]) -> None:
+    """Attach sanitized tool output to the active span (FastMCP server or Langfuse observation)."""
+    if not _langfuse_enabled:
+        return
+    try:
+        get_client().update_current_span(
+            output=sanitize_tool_output_for_trace(output),
+        )
     except (ImportError, RuntimeError, AttributeError):
         return
 

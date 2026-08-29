@@ -7,6 +7,7 @@ from knowledge_mcp.tracing import (
     configure_langfuse_tracing,
     instrument_asyncpg,
     record_tool_input,
+    record_tool_output,
 )
 
 # Langfuse must initialize before FastMCP import.
@@ -55,10 +56,16 @@ async def search_knowledge(query: str, top_k: int = 5) -> dict:
     try:
         result = await search_service.search_knowledge(query=query, top_k=top_k)
     except ValueError as exc:
-        return {"error": str(exc)}
+        output = {"error": str(exc)}
+        record_tool_output(output)
+        return output
     except Exception as exc:  # noqa: BLE001 - return LLM-actionable errors
-        return {"error": str(exc)}
-    return result.model_dump()
+        output = {"error": str(exc)}
+        record_tool_output(output)
+        return output
+    output = result.model_dump()
+    record_tool_output(output)
+    return output
 
 
 @mcp.tool
@@ -68,12 +75,20 @@ async def get_document(document_id: str) -> dict:
     try:
         document = await search_service.get_document(document_id=document_id)
     except ValueError as exc:
-        return {"error": str(exc)}
+        output = {"error": str(exc)}
+        record_tool_output(output)
+        return output
     except Exception as exc:  # noqa: BLE001
-        return {"error": str(exc)}
+        output = {"error": str(exc)}
+        record_tool_output(output)
+        return output
     if document is None:
-        return {"error": f"Document {document_id} was not found."}
-    return document.model_dump()
+        output = {"error": f"Document {document_id} was not found."}
+        record_tool_output(output)
+        return output
+    output = document.model_dump()
+    record_tool_output(output)
+    return output
 
 
 def main() -> None:

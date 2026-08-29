@@ -3,7 +3,11 @@ from __future__ import annotations
 import json
 from typing import Any, Literal
 
-from knowledge_mcp.tracing import inject_langfuse_propagated_meta, tool_observation
+from knowledge_mcp.tracing import (
+    inject_langfuse_propagated_meta,
+    record_tool_output,
+    tool_observation,
+)
 
 DEFAULT_TOOL_NAMES = frozenset({"search_knowledge", "get_document"})
 
@@ -83,4 +87,6 @@ async def call_session_tool(
         result = await session.call_tool(
             name, arguments, meta=inject_langfuse_propagated_meta({})
         )
-    return parse_tool_result(result)
+        output = parse_tool_result(result)
+        record_tool_output(output)
+    return output
