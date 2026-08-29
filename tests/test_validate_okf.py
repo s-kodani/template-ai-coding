@@ -2,8 +2,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import pytest
-
 from scripts.validate_okf import (
     PENDING_VERSION_HEADING,
     ValidationResult,

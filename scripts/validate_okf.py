@@ -80,7 +80,7 @@ def split_frontmatter(text: str) -> tuple[dict[str, Any] | None, str]:
     except yaml.YAMLError as exc:
         raise ValueError(f"invalid YAML frontmatter: {exc}") from exc
     if not isinstance(metadata, dict):
-        raise ValueError("frontmatter must be a mapping")
+        raise TypeError("frontmatter must be a mapping")
     return metadata, parts[2]
 
 
