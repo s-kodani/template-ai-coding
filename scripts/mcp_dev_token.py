@@ -9,8 +9,8 @@ import sys
 
 import httpx
 
-TOKEN_EXCHANGE_GRANT = "urn:ietf:params:oauth:grant-type:token-exchange"
-ACCESS_TOKEN_TYPE = "urn:ietf:params:oauth:token-type:access_token"
+EXCHANGE_GRANT = "urn:ietf:params:oauth:grant-type:token-exchange"
+ACCESS_TYPE = "urn:ietf:params:oauth:token-type:access_token"
 
 
 def main() -> int:
@@ -58,11 +58,11 @@ def main() -> int:
         exchanged = client.post(
             args.token_url,
             data={
-                "grant_type": TOKEN_EXCHANGE_GRANT,
+                "grant_type": EXCHANGE_GRANT,
                 "client_id": args.gateway_client_id,
                 "client_secret": args.gateway_client_secret,
                 "subject_token": subject_token,
-                "subject_token_type": ACCESS_TOKEN_TYPE,
+                "subject_token_type": ACCESS_TYPE,
                 "audience": "knowledge-mcp",
                 "scope": "mcp-tools",
             },

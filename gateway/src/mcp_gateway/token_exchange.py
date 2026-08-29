@@ -6,8 +6,8 @@ import httpx
 
 from mcp_gateway.errors import GatewayError
 
-TOKEN_EXCHANGE_GRANT = "urn:ietf:params:oauth:grant-type:token-exchange"
-ACCESS_TOKEN_TYPE = "urn:ietf:params:oauth:token-type:access_token"
+EXCHANGE_GRANT = "urn:ietf:params:oauth:grant-type:token-exchange"
+ACCESS_TYPE = "urn:ietf:params:oauth:token-type:access_token"
 
 
 async def exchange_token(
@@ -27,9 +27,9 @@ async def exchange_token(
         response = await http.post(
             token_url,
             data={
-                "grant_type": TOKEN_EXCHANGE_GRANT,
+                "grant_type": EXCHANGE_GRANT,
                 "subject_token": subject_token,
-                "subject_token_type": ACCESS_TOKEN_TYPE,
+                "subject_token_type": ACCESS_TYPE,
                 "audience": audience,
                 "scope": scope,
                 "client_id": client_id,

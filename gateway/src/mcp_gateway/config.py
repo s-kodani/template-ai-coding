@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     gateway_client_id: str = "mcp-gateway"
     gateway_client_secret: str = "mcp-gateway-local-secret"
     registry_path: str = "infra/app/gateway-registry.yml"
-    host: str = "0.0.0.0"
+    host: str = "127.0.0.1"
     port: int = 8082
     token_cache_ttl_seconds: int = 300
     mcp_call_timeout_seconds: float = 30.0

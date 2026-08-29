@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 import time
-
-import pytest
 from types import SimpleNamespace
 
+import pytest
 from fastmcp.server.auth import AccessToken, AuthContext, JWTVerifier
 from fastmcp.server.auth.providers.jwt import RSAKeyPair
 

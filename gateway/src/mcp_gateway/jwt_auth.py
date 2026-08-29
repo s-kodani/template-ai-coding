@@ -11,6 +11,13 @@ from mcp_gateway.principal import Principal
 _jwks_clients: dict[str, PyJWKClient] = {}
 
 
+def _verification_key(signing_key: Any) -> Any:
+    public_key = getattr(signing_key, "public_key", None)
+    if callable(public_key):
+        return public_key()
+    return signing_key
+
+
 def _jwks_client(jwks_uri: str) -> PyJWKClient:
     cached = _jwks_clients.get(jwks_uri)
     if cached is None:
@@ -39,12 +46,14 @@ def verify_chainlit_token(
     try:
         if signing_key is None:
             signing_key = _jwks_client(jwks_uri).get_signing_key_from_jwt(token).key
+        else:
+            signing_key = _verification_key(signing_key)
         claims = jwt.decode(
             token,
             signing_key,
             algorithms=["RS256"],
             issuer=issuer,
-            options={"require": ["iss", "sub", "exp", "aud"]},
+            options={"require": ["iss", "sub", "exp", "aud"], "verify_aud": False},
             leeway=5,
         )
     except jwt.ExpiredSignatureError as exc:
@@ -84,6 +93,8 @@ def verify_exchanged_token(
     try:
         if signing_key is None:
             signing_key = _jwks_client(jwks_uri).get_signing_key_from_jwt(token).key
+        else:
+            signing_key = _verification_key(signing_key)
         claims = jwt.decode(
             token,
             signing_key,

@@ -12,7 +12,7 @@ def load_registry(path: str | Path) -> dict[str, Any]:
     data = yaml.safe_load(Path(path).read_text(encoding="utf-8")) or {}
     servers = data.get("servers") or {}
     if not isinstance(servers, dict):
-        raise ValueError("registry servers must be a mapping")
+        raise TypeError("registry servers must be a mapping")
     return servers
 
 

@@ -10,18 +10,15 @@ from mcp_gateway.cache import TokenCache
 from mcp_gateway.config import Settings
 from mcp_gateway.errors import ErrorBody, GatewayError, ToolCallBody
 from mcp_gateway.jwt_auth import verify_chainlit_token, verify_exchanged_token
-from mcp_gateway.mcp_client import attach_trace_from_headers, call_mcp_tool, detach_trace, list_mcp_tools
+from mcp_gateway.mcp_client import (
+    attach_trace_from_headers,
+    call_mcp_tool,
+    detach_trace,
+    list_mcp_tools,
+)
 from mcp_gateway.policy import authorize_tool
 from mcp_gateway.registry import get_server, load_registry
 from mcp_gateway.token_exchange import exchange_token
-
-SENSITIVE = (
-    "authorization",
-    "access_token",
-    "refresh_token",
-    "client_secret",
-    "subject_token",
-)
 
 
 def _bearer(authorization: str | None) -> str:
