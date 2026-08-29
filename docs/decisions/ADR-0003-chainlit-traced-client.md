@@ -34,4 +34,4 @@ end-to-end トレーシングには、ツール呼び出し時の MCP `_meta` �
 
 ## 改訂
 
-既定の knowledge-mcp ツール実行は FastMCP Client 直接呼び出しから **MCP Gateway** 経由へ移した（[ADR-0012](/decisions/ADR-0012-mcp-gateway-resource-server.md)）。追加 MCP の内蔵 UI と `_meta` 注入はこの ADR のまま。knowledge-mcp の MCP 一覧 autoload は行わない。
+既定の knowledge-mcp ツール実行は FastMCP Client 直接呼び出しから **MCP Gateway** 経由へ移した（[ADR-0012](/decisions/ADR-0012-mcp-gateway-resource-server.md)）。追加 MCP の内蔵 UI と `_meta` 注入はこの ADR のまま。knowledge-mcp はプラグ UI に Gateway 表示専用で載せ、Chainlit MCP セッションは張らない。

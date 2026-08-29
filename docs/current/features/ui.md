@@ -5,7 +5,7 @@ description: Keycloak OAuth 付きの Chainlit チャット UI。既定 knowledg
 tags: [chainlit, ui, mcp, oauth, keycloak, gateway]
 status: stable
 generated:
-  at: "2026-08-29T14:30:00Z"
+  at: "2026-08-29T16:20:00Z"
   by: process:cursor-agent
 ---
 
@@ -26,7 +26,7 @@ generated:
 - 既定ツールは `MCP_GATEWAY_URL` の Gateway へ呼び出す。Chainlit の Keycloak トークンを knowledge-mcp へ渡さない
 - refresh token はアプリ Postgres（`TOKEN_STORE_DATABASE_URL` + pgcrypto）に保存する。Chainlit 内蔵 data layer の `DATABASE_URL` は空
 - Chainlit 内蔵 MCP 接続 UI で Streamable HTTP / SSE サーバを追加接続できる。接続先は `.chainlit/config.toml` の `user_servers.allowed_urls` に含まれる origin に限る（[ADR-0009](/decisions/ADR-0009-chainlit-mcp-user-servers-allowlist.md)）
-- 既定の knowledge-mcp は MCP 一覧に autoload しない（Bearer なしの UI 接続を避ける）
+- 既定の knowledge-mcp はプラグ UI（MCP Servers）に **Gateway 表示専用** で載せる。Chainlit は knowledge-mcp へ MCP セッションを張らない
 - 追加接続したサーバのツールはセッションに載り、LLM の function tools に動的追加される
 - 追加サーバへの `tools/call` では `_meta` へ W3C `traceparent` と Langfuse `baggage` を注入する
 - ツール名が衝突した場合は knowledge-mcp、続いて先に接続したセッションを優先する
@@ -39,7 +39,8 @@ generated:
 
 - 追加 MCP へは、Chainlit コンテナから到達でき、allowlist に含まれる URL を指定する
 - 既定 allowlist: `http://mcp-server:8000`、`http://localhost:8000`、`http://127.0.0.1:8000`、`http://host.docker.internal:8000`
-- knowledge-mcp 自体は JWT 必須のため、UI からヘッダーなしで接続しても失敗する
+- 既定 knowledge-mcp は `mcp-autoload.js` が一覧へ載せるが、`POST /mcp` はブラウザ側で成功応答し、Chainlit プロセスは knowledge-mcp に接続しない
+- knowledge-mcp へ UI からヘッダーなしで実接続しようとすると JWT 必須のため失敗する。既定ツールは Gateway 経由のまま
 
 ## 設定
 

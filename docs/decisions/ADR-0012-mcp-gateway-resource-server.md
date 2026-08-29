@@ -6,7 +6,7 @@ tags: [decision, architecture, authentication, mcp, keycloak, gateway]
 status: stable
 decision_status: accepted
 generated:
-  at: "2026-08-29T15:10:00Z"
+  at: "2026-08-29T16:20:00Z"
   by: process:cursor-agent
 ---
 
@@ -28,7 +28,7 @@ MCP の Authorization では、下流サーバーへ上流 Access Token をパ�
 - Gateway は Chainlit トークンを検証し（`aud=mcp-gateway`、`azp=chainlit`）、`mcp-gateway` クライアントで Token Exchange する。ユーザー識別は JWT `sub` のみ。リクエスト body の `user_id` は拒否する
 - ツール認可は realm role `mcp-reader`。scope 名は `mcp-tools`
 - Chainlit の refresh token はアプリ Postgres に pgcrypto で保存する（`TOKEN_STORE_DATABASE_URL`）。Chainlit 内蔵 data layer の `DATABASE_URL` は空のまま
-- Chainlit MCP 接続 UI の knowledge-mcp autoload は止める。追加の未認証 MCP は `user_servers` allowlist のまま
+- Chainlit MCP 接続 UI には knowledge-mcp を **表示専用** で載せる。`POST /mcp` による実セッションは張らず、トークンも渡さない。追加の未認証 MCP は `user_servers` allowlist のまま
 - ローカル HTTP を許容する。TLS / mTLS / CIMD / Redis / 第 2 MCP はこの垂直スライスの対象外
 - 本決定は [ADR-0011](/decisions/ADR-0011-keycloak-chainlit-oauth.md) の「MCP SSO は導入しない」「RBAC は持たない」を knowledge-mcp 経路について改訂する。Chainlit の IdP としての Keycloak 採用は ADR-0011 のまま
 - 既定ツールが FastMCP Client を直接使わなくなる点で [ADR-0003](/decisions/ADR-0003-chainlit-traced-client.md) を更新する。Gateway が MCP `_meta` に W3C トレースを注入する点で [ADR-0004](/decisions/ADR-0004-langfuse-mcp-meta-tracing.md) を補う
@@ -37,5 +37,6 @@ MCP の Authorization では、下流サーバーへ上流 Access Token をパ�
 
 - knowledge-mcp は Compose 上で JWKS 検証を必須にする。MCP Inspector も Bearer が必要（`scripts/mcp_dev_token.py`）
 - 既定ツールの実行は Gateway を経由し、Chainlit トークンは knowledge-mcp に届かない
+- プラグ UI の knowledge-mcp は表示専用であり、Chainlit の MCP セッションにはならない
 - 追加 MCP（allowlist 内）は従来どおり Chainlit 内蔵クライアントで接続できる
 - in-process FastMCP Client テストは `MCP_JWKS_URI` 未設定時に HTTP Bearer を要求しない
