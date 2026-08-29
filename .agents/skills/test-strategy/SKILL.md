@@ -10,11 +10,36 @@ description: >-
 
 ## 本リポジトリとの関係
 
-- **正本**: この Skill（観点表・リスク・テストレベル選択）
-- **TDD 手順**: `test-driven-development` Skill（自動化可能な振る舞い変更時）
+- **正本**: この Skill（観点表・リスク・テストレベル選択・TDD 適用判断）
+- **TDD 手順**: `test-driven-development` Skill（APM 管理。内容は upstream のまま改変しない）
 - **適用規則**: `AGENTS.md` Coding conventions
 
 新規機能は `test-strategy` で観点を整理したうえで、自動化対象のケースは TDD で実装する。
+
+### TDD 適用判断（このリポジトリ）
+
+`test-driven-development` の generic な When to Use より、**本リポジトリでは以下を優先**する。
+
+**TDD を適用する:**
+
+- 新規機能の自動化可能な振る舞い
+- SearchService / トレース伝播の変更
+- バグ修正（再現テスト先行）
+- 挙動に影響するリファクタ（characterization test が必要な場合）
+
+**TDD を省略してよい:**
+
+- docs / OKF / 自前 Skill / 設定のみの変更
+- 観測可能な振る舞いに影響しない機械的修正
+- E2E / 手動のみが合理的な UI 確認（観点表 `Notes` に理由を記載）
+
+省略する場合も本 Skill でリスクと代替検証を確認する。
+
+**Red / Green 検証コマンド（本リポジトリ）:**
+
+```bash
+uv run pytest path/to/test_file.py
+```
 
 ## 目的
 

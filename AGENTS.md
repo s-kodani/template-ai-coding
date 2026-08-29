@@ -45,6 +45,19 @@ Skill とこのファイルが競合する場合は、**このリポジトリ固
 
 `.claude/skills/` は `.agents/skills/` から `scripts/sync_skills.py` で生成する。手編集しない。
 
+### APM 管理 Skill（編集禁止）
+
+`apm.yml` で取り込む外部 Skill は **内容を編集しない**。リポジトリ固有のルールは `AGENTS.md` または自前 Skill（`test-strategy`、`implementation-workflow` 等）へ書く。`apm install` / 更新で upstream に戻る。
+
+| Skill | ソース（`apm.lock.yaml` 参照） | リポジトリ固有ルールの置き場 |
+|-------|------|------|
+| `ponytail` | DietrichGebert/ponytail | `AGENTS.md` Coding conventions |
+| `test-driven-development` | obra/superpowers | `test-strategy`（適用判断）、`AGENTS.md`（必須ケース） |
+| `grill-me` / `grilling` | mattpocock/skills | `implementation-workflow` references |
+| `gh` | cli/cli | 特になし（汎用 CLI 参照） |
+
+自前 Skill（`implementation-workflow`、`test-strategy`、`mcp-server-engineering`、`project-verification`、`commit-*`）は `.agents/skills/` を正本として編集してよい。
+
 MCP サーバー実装・変更では `mcp-server-engineering` Skill を併用します。MCP 固有の完了チェックは `references/mcp-completion-checklist.md` を参照します。
 
 Pull Request は対応 Issue を `Refs #<issue>` または `Closes #<issue>` で明示します（`src/` 変更がある PR は CI で検証）。
@@ -199,12 +212,13 @@ Validation:
 
 Coding conventions:
 
-- テスト方針の正本は `test-strategy` Skill。変更種別に応じて `test-driven-development` を適用する
+- テスト方針の正本は `test-strategy` Skill。変更種別に応じて `test-driven-development`（APM 管理・未改変）を適用する
   - **新規機能**（自動化可能な振る舞い）: `test-strategy` で観点整理 → TDD（失敗テスト先行）
   - **SearchService / トレース伝播**: TDD 必須
   - **バグ修正**: 再現テストまたは回帰テストを先行
   - **リファクタ**: 既存テストで保護、不足時は characterization test
   - **docs / 設定 / Skill のみ**: TDD 不要。該当 validator を実行
+- **`ponytail` 使用時**: 最小実装はコード行数の削減であり、`test-strategy` / 本節で要求するテスト・検証の省略理由にはならない
 - Phase 5 検証は `project-verification` Skill と併用する
 - Langfuse SDK initializes before FastMCP import in both Chainlit and MCP server processes
 - Do not log API keys, embeddings, or full document bodies in spans

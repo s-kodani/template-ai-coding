@@ -94,9 +94,6 @@ that prevents data loss, security measures, accessibility basics, anything
 explicitly requested. User insists on the full version → build it, no
 re-arguing.
 
-**Do not use ponytail to skip tests** required by `test-strategy` or `AGENTS.md`.
-Minimal implementation means fewer lines of code, not fewer required checks.
-
 Never lazy about understanding the problem. The ladder shortens the
 solution, never the reading. Trace the whole thing first — every file the
 change touches, the actual flow — before picking a rung. Laziness that skips

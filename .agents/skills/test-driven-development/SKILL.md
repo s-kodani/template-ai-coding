@@ -1,8 +1,6 @@
 ---
 name: test-driven-development
-description: >
-  自動化可能な振る舞いの新規追加・変更・バグ修正時に、実装コードより先に失敗テストを書く。
-  テスト観点の整理は test-strategy Skill が正本。本 Skill は Red-Green-Refactor の実行手順。
+description: Use when implementing any feature or bugfix, before writing implementation code
 ---
 
 # Test-Driven Development (TDD)
@@ -17,20 +15,18 @@ Write the test first. Watch it fail. Write minimal code to pass.
 
 ## When to Use
 
-**このリポジトリで TDD を適用する場合**（`AGENTS.md` / `test-strategy` と併用）:
+**Always:**
+- New features
+- Bug fixes
+- Refactoring
+- Behavior changes
 
-- 新規機能の自動化可能な振る舞い
-- SearchService / トレース伝播の変更
-- バグ修正（再現テスト先行）
-- 挙動に影響するリファクタ（characterization test が必要な場合）
+**Exceptions (ask your human partner):**
+- Throwaway prototypes
+- Generated code
+- Configuration files
 
-**TDD を省略してよい場合**:
-
-- docs / OKF / Skill / 設定のみの変更
-- 観測可能な振る舞いに影響しない機械的修正
-- E2E / 手動のみが合理的な UI 確認（`test-strategy` の Notes に理由を記載）
-
-省略する場合も `test-strategy` でリスクと代替検証を確認する。
+Thinking "skip TDD just this once"? Stop. That's rationalization.
 
 ## The Iron Law
 
@@ -119,7 +115,7 @@ Vague name, tests mock not code
 **MANDATORY. Never skip.**
 
 ```bash
-uv run pytest path/to/test_file.py
+npm test path/to/test.test.ts
 ```
 
 Confirm:
@@ -174,7 +170,7 @@ Don't add features, refactor other code, or "improve" beyond the test.
 **MANDATORY.**
 
 ```bash
-uv run pytest path/to/test_file.py
+npm test path/to/test.test.ts
 ```
 
 Confirm:
