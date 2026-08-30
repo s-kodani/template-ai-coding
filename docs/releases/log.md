@@ -2,6 +2,7 @@
 
 ## v?.?.? (未確定)
 
+- **Changed**: Chainlit の Gateway ツール配線を Registry / `GET /v1/mcp` ベースにした。LLM schema は knowledge 専用ハードコードではない（[UI 機能](/current/features/ui.md)、[ADR-0012](/decisions/ADR-0012-mcp-gateway-resource-server.md)）
 - **Changed**: Chainlit のプラグ UI に knowledge-mcp を Gateway 表示専用で載せる。実 MCP セッションは張らない（[UI 機能](/current/features/ui.md)、[ADR-0012](/decisions/ADR-0012-mcp-gateway-resource-server.md)）
 - **Added**: MCP Gateway を導入し、Chainlit の既定 knowledge-mcp 呼び出しを Keycloak Token Exchange 経由にした。knowledge-mcp は Resource Server として JWT を検証する（[アーキテクチャ](/current/architecture.md)、[ADR-0012](/decisions/ADR-0012-mcp-gateway-resource-server.md)）
 - **Fixed**: Keycloak 26 standard token exchange（V2）では `audience=knowledge-mcp` を送らず、`mcp-tools` の custom audience mapper で `aud=http://localhost:8000/mcp` を付ける。realm import が `basic` / `profile` / `email` / `roles` を消さないようにした

@@ -9,9 +9,7 @@ from knowledge_mcp.tracing import (
     tool_observation,
 )
 
-DEFAULT_TOOL_NAMES = frozenset({"search_knowledge", "get_document"})
-
-ToolTarget = tuple[Literal["default", "session", "unknown"], str | None]
+ToolTarget = tuple[Literal["gateway", "session", "unknown"], str | None]
 
 
 def openai_tool_from_mcp(tool: dict[str, Any]) -> dict[str, Any]:
@@ -51,11 +49,28 @@ def find_session_for_tool(
     return None
 
 
+def catalog_from_listed_tools(
+    servers: list[tuple[str, list[dict[str, Any]]]],
+) -> tuple[list[dict[str, Any]], dict[str, str]]:
+    openai_tools: list[dict[str, Any]] = []
+    targets: dict[str, str] = {}
+    for server_id, tools in servers:
+        for tool in tools:
+            name = tool.get("name")
+            if not name or name in targets:
+                continue
+            targets[name] = server_id
+            openai_tools.append(openai_tool_from_mcp(tool))
+    return openai_tools, targets
+
+
 def resolve_tool_target(
-    name: str, session_tools: dict[str, list[dict[str, Any]]]
+    name: str,
+    session_tools: dict[str, list[dict[str, Any]]],
+    gateway_targets: dict[str, str] | None = None,
 ) -> ToolTarget:
-    if name in DEFAULT_TOOL_NAMES:
-        return ("default", None)
+    if gateway_targets and name in gateway_targets:
+        return ("gateway", gateway_targets[name])
     session_name = find_session_for_tool(name, session_tools)
     if session_name is None:
         return ("unknown", None)

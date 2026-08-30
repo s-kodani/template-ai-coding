@@ -14,6 +14,11 @@ from chat_ui.mcp_ui import (
     write_mcp_autoload_script,
 )
 
+_KNOWLEDGE_ENTRY = {
+    "name": DEFAULT_MCP_NAME,
+    "tools": [{"name": "search_knowledge"}, {"name": "get_document"}],
+}
+
 HARNESS = r"""
 const fs = require("fs");
 const vm = require("vm");
@@ -105,7 +110,7 @@ vm.runInNewContext(script, sandbox);
 
 
 def test_render_mcp_autoload_js_seeds_gateway_display_entry() -> None:
-    script = render_mcp_autoload_js()
+    script = render_mcp_autoload_js([_KNOWLEDGE_ENTRY])
 
     assert "mcp_storage_key" in script
     assert DEFAULT_MCP_NAME in script
@@ -120,7 +125,7 @@ def test_render_mcp_autoload_js_seeds_gateway_display_entry() -> None:
 
 
 def test_write_mcp_autoload_script_creates_public_js(tmp_path: Path) -> None:
-    path = write_mcp_autoload_script(tmp_path)
+    path = write_mcp_autoload_script(tmp_path, [_KNOWLEDGE_ENTRY])
 
     assert path == tmp_path / "mcp-autoload.js"
     assert DEFAULT_MCP_NAME in path.read_text(encoding="utf-8")
@@ -136,7 +141,7 @@ def test_autoload_script_replaces_legacy_entry_and_intercepts_knowledge_mcp(
     if not Path(node).exists():
         raise RuntimeError("node is required to execute mcp-autoload.js")
 
-    script_path = write_mcp_autoload_script(tmp_path)
+    script_path = write_mcp_autoload_script(tmp_path, [_KNOWLEDGE_ENTRY])
     harness_path = tmp_path / "harness.js"
     harness_path.write_text(HARNESS, encoding="utf-8")
 
@@ -178,3 +183,16 @@ def test_autoload_script_replaces_legacy_entry_and_intercepts_knowledge_mcp(
         "name": "other-mcp",
         "url": "http://localhost:9000/mcp",
     }
+
+
+def test_render_mcp_autoload_js_includes_all_gateway_entries() -> None:
+    script = render_mcp_autoload_js(
+        [
+            {"name": "knowledge-mcp", "tools": [{"name": "search_knowledge"}]},
+            {"name": "other", "tools": [{"name": "ping"}]},
+        ]
+    )
+    assert script.count("unshift") == 1
+    assert "knowledge-mcp" in script
+    assert "other" in script
+    assert "ping" in script

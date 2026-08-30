@@ -10,6 +10,16 @@ status: stable
 
 トランスポート: **Streamable HTTP**、stateless、パス `/mcp`。Compose 上では Keycloak JWT（`aud=http://localhost:8000/mcp`、scope `mcp-tools`、role `mcp-reader`）が必要（[ADR-0012](/decisions/ADR-0012-mcp-gateway-resource-server.md)）。Inspector は `scripts/mcp_dev_token.py` で Bearer を発行する。
 
+## Gateway HTTP
+
+Chainlit は `MCP_GATEWAY_URL` へ次を呼ぶ（Bearer は `aud=mcp-gateway` の Chainlit トークン）。
+
+| メソッド | パス | 用途 |
+|---|---|---|
+| GET | `/v1/mcp` | enabled な `{id, name, tools}`。Registry のみ。下流 MCP は呼ばない |
+| GET | `/v1/mcp/{server_id}/tools` | そのサーバーの tool schema（`allowed_tools` でフィルタ） |
+| POST | `/v1/mcp/{server_id}/tools/{name}:call` | ツール実行 |
+
 ## ツール
 
 ### `search_knowledge`

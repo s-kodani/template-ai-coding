@@ -8,6 +8,7 @@ from opentelemetry import trace
 
 from chat_ui.mcp_tools import (
     call_session_tool,
+    catalog_from_listed_tools,
     collect_openai_tools,
     find_session_for_tool,
     openai_tool_from_mcp,
@@ -129,12 +130,37 @@ def test_find_session_for_tool_returns_owning_connection() -> None:
     assert find_session_for_tool("missing", session_tools) is None
 
 
-def test_resolve_tool_target_prefers_default_knowledge_tools() -> None:
+def test_resolve_tool_target_prefers_gateway_catalog() -> None:
     session_tools = {"ui": [{"name": "search_knowledge"}, {"name": "list_buckets"}]}
+    targets = {"search_knowledge": "knowledge"}
 
-    assert resolve_tool_target("search_knowledge", session_tools) == ("default", None)
-    assert resolve_tool_target("list_buckets", session_tools) == ("session", "ui")
-    assert resolve_tool_target("unknown", session_tools) == ("unknown", None)
+    assert resolve_tool_target("search_knowledge", session_tools, targets) == (
+        "gateway",
+        "knowledge",
+    )
+    assert resolve_tool_target("list_buckets", session_tools, targets) == ("session", "ui")
+    assert resolve_tool_target("unknown", session_tools, targets) == ("unknown", None)
+
+
+def test_catalog_from_listed_tools_first_server_wins_on_collision() -> None:
+    tools, targets = catalog_from_listed_tools(
+        [
+            (
+                "knowledge",
+                [{"name": "search_knowledge", "description": "kb", "inputSchema": {}}],
+            ),
+            (
+                "other",
+                [
+                    {"name": "search_knowledge", "description": "dup", "inputSchema": {}},
+                    {"name": "ping", "description": "p", "inputSchema": {}},
+                ],
+            ),
+        ]
+    )
+    assert [tool["function"]["name"] for tool in tools] == ["search_knowledge", "ping"]
+    assert tools[0]["function"]["description"] == "kb"
+    assert targets == {"search_knowledge": "knowledge", "ping": "other"}
 
 
 def test_parse_tool_result_json_text() -> None:

@@ -6,6 +6,7 @@ import httpx
 from opentelemetry.baggage.propagation import W3CBaggagePropagator
 from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
 
+from chat_ui.mcp_tools import catalog_from_listed_tools
 from knowledge_mcp.tracing import record_tool_output, tool_observation
 
 _TRACE_PROPAGATOR = TraceContextTextMapPropagator()
@@ -51,6 +52,45 @@ class MCPGatewayClient:
             output = _safe_json(response)
             record_tool_output(output)
             return output
+
+    async def list_servers(self, access_token: str) -> list[dict[str, Any]]:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            response = await client.get(
+                f"{self._base_url}/v1/mcp",
+                headers={"Authorization": f"Bearer {access_token}"},
+            )
+        if response.status_code >= 400:
+            return []
+        payload = _safe_json(response)
+        servers = payload.get("servers")
+        return servers if isinstance(servers, list) else []
+
+    async def list_tools(self, server_id: str, access_token: str) -> list[dict[str, Any]]:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            response = await client.get(
+                f"{self._base_url}/v1/mcp/{server_id}/tools",
+                headers={"Authorization": f"Bearer {access_token}"},
+            )
+        if response.status_code >= 400:
+            return []
+        payload = _safe_json(response)
+        tools = payload.get("tools")
+        return tools if isinstance(tools, list) else []
+
+
+async def load_gateway_catalog(
+    client: MCPGatewayClient,
+    access_token: str,
+) -> tuple[list[dict[str, Any]], dict[str, str]]:
+    listed: list[tuple[str, list[dict[str, Any]]]] = []
+    for server in await client.list_servers(access_token):
+        server_id = str(server.get("id") or "")
+        if not server_id:
+            continue
+        tools = await client.list_tools(server_id, access_token)
+        if tools:
+            listed.append((server_id, tools))
+    return catalog_from_listed_tools(listed)
 
 
 async def call_default_tool(

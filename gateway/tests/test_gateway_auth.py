@@ -230,3 +230,58 @@ def test_unknown_server_is_not_found(rsa_keys: tuple[object, str]) -> None:
     )
     assert response.status_code == 404
     assert response.json()["code"] == "MCP_SERVER_NOT_FOUND"
+
+
+def test_list_servers_requires_chainlit_token(rsa_keys: tuple[object, str]) -> None:
+    private_key, _ = rsa_keys
+    settings = Settings(registry_path=str(REGISTRY), keycloak_issuer=ISSUER)
+    app = create_app(settings, jwt_signing_key=private_key)
+    client = TestClient(app)
+    response = client.get("/v1/mcp")
+    assert response.status_code == 401
+
+
+def test_list_servers_returns_enabled_registry_entries(
+    rsa_keys: tuple[object, str], tmp_path: Path
+) -> None:
+    registry = tmp_path / "registry.yml"
+    registry.write_text(
+        """
+servers:
+  knowledge:
+    enabled: true
+    ui:
+      name: knowledge-mcp
+    authorization:
+      allowed_tools:
+        - search_knowledge
+        - get_document
+  other:
+    enabled: true
+    authorization:
+      allowed_tools:
+        - ping
+  off:
+    enabled: false
+    authorization:
+      allowed_tools:
+        - hidden
+""",
+        encoding="utf-8",
+    )
+    private_key, _ = rsa_keys
+    settings = Settings(registry_path=str(registry), keycloak_issuer=ISSUER)
+    app = create_app(settings, jwt_signing_key=private_key)
+    client = TestClient(app)
+    response = client.get("/v1/mcp", headers={"Authorization": f"Bearer {_token(private_key)}"})
+    assert response.status_code == 200
+    assert response.json() == {
+        "servers": [
+            {
+                "id": "knowledge",
+                "name": "knowledge-mcp",
+                "tools": ["search_knowledge", "get_document"],
+            },
+            {"id": "other", "name": "other", "tools": ["ping"]},
+        ]
+    }

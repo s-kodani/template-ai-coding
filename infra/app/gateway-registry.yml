@@ -1,6 +1,8 @@
 servers:
   knowledge:
     enabled: true
+    ui:
+      name: knowledge-mcp
     transport:
       type: streamable_http
       url: http://mcp-server:8000/mcp

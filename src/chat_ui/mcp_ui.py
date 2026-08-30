@@ -2,34 +2,42 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Any
 
 DEFAULT_MCP_NAME = "knowledge-mcp"
 MCP_STORAGE_KEY = "mcp_storage_key"
 GATEWAY_MCP_TYPE = "gateway"
 GATEWAY_MCP_URL_LABEL = "via MCP Gateway"
 
-_GATEWAY_ENTRY = {
-    "name": DEFAULT_MCP_NAME,
-    "tools": [{"name": "search_knowledge"}, {"name": "get_document"}],
-    "status": "connected",
-    "type": GATEWAY_MCP_TYPE,
-    "clientType": GATEWAY_MCP_TYPE,
-    "url": GATEWAY_MCP_URL_LABEL,
-    "isUserProvided": False,
-}
+
+def _display_entries(entries: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    displayed: list[dict[str, Any]] = []
+    for entry in entries:
+        name = entry.get("name")
+        if not name:
+            continue
+        displayed.append(
+            {
+                "name": name,
+                "tools": entry.get("tools") or [],
+                "status": "connected",
+                "type": GATEWAY_MCP_TYPE,
+                "clientType": GATEWAY_MCP_TYPE,
+                "url": GATEWAY_MCP_URL_LABEL,
+                "isUserProvided": False,
+            }
+        )
+    return displayed
 
 
-def render_mcp_autoload_js() -> str:
-    """Show knowledge-mcp in Chainlit's MCP list without opening a real session.
-
-    Chainlit reconnects every Recoil MCP row with POST /mcp. There is no
-    display-only API, so this script seeds localStorage and answers /mcp for
-    this name locally. Tool calls still go through MCP Gateway.
-    """
+def render_mcp_autoload_js(entries: list[dict[str, Any]] | None = None) -> str:
+    """Show Gateway MCPs in Chainlit's list without opening real sessions."""
+    displayed = _display_entries(entries or [])
+    names = [item["name"] for item in displayed]
     return f"""(() => {{
   const KEY = {json.dumps(MCP_STORAGE_KEY)};
-  const NAME = {json.dumps(DEFAULT_MCP_NAME)};
-  const ENTRY = {json.dumps(_GATEWAY_ENTRY)};
+  const ENTRIES = {json.dumps(displayed)};
+  const NAMES = new Set({json.dumps(names)});
   let stored = [];
   try {{
     const parsed = JSON.parse(localStorage.getItem(KEY) || "[]");
@@ -37,8 +45,10 @@ def render_mcp_autoload_js() -> str:
   }} catch (_error) {{
     stored = [];
   }}
-  stored = stored.filter((item) => !(item && item.name === NAME));
-  stored.unshift(ENTRY);
+  stored = stored.filter((item) => !(item && NAMES.has(item.name)));
+  for (let i = ENTRIES.length - 1; i >= 0; i -= 1) {{
+    stored.unshift(ENTRIES[i]);
+  }}
   localStorage.setItem(KEY, JSON.stringify(stored));
 
   const originalFetch = window.fetch.bind(window);
@@ -60,7 +70,8 @@ def render_mcp_autoload_js() -> str:
     if (isMcp && (method === "POST" || method === "DELETE") && typeof body === "string") {{
       try {{
         const payload = JSON.parse(body);
-        if (payload && payload.name === NAME) {{
+        if (payload && NAMES.has(payload.name)) {{
+          const entry = ENTRIES.find((item) => item.name === payload.name) || ENTRIES[0];
           if (method === "DELETE") {{
             return Promise.resolve(new Response(JSON.stringify({{ success: true }}), {{
               status: 200,
@@ -70,10 +81,10 @@ def render_mcp_autoload_js() -> str:
           return Promise.resolve(new Response(JSON.stringify({{
             success: true,
             mcp: {{
-              name: NAME,
-              tools: ENTRY.tools,
-              clientType: ENTRY.clientType,
-              url: ENTRY.url,
+              name: payload.name,
+              tools: entry ? entry.tools : [],
+              clientType: {json.dumps(GATEWAY_MCP_TYPE)},
+              url: {json.dumps(GATEWAY_MCP_URL_LABEL)},
             }},
           }}), {{
             status: 200,
@@ -88,8 +99,11 @@ def render_mcp_autoload_js() -> str:
 """
 
 
-def write_mcp_autoload_script(public_dir: Path) -> Path:
+def write_mcp_autoload_script(
+    public_dir: Path,
+    entries: list[dict[str, Any]] | None = None,
+) -> Path:
     public_dir.mkdir(parents=True, exist_ok=True)
     path = public_dir / "mcp-autoload.js"
-    path.write_text(render_mcp_autoload_js(), encoding="utf-8")
+    path.write_text(render_mcp_autoload_js(entries), encoding="utf-8")
     return path

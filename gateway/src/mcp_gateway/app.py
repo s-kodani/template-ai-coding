@@ -17,7 +17,7 @@ from mcp_gateway.mcp_client import (
     list_mcp_tools,
 )
 from mcp_gateway.policy import authorize_tool
-from mcp_gateway.registry import get_server, load_registry
+from mcp_gateway.registry import get_server, list_enabled_servers, load_registry
 from mcp_gateway.token_exchange import exchange_token
 
 
@@ -87,6 +87,21 @@ def create_app(
     @app.get("/health")
     async def health() -> dict[str, str]:
         return {"status": "ok"}
+
+    @app.get("/v1/mcp")
+    async def list_servers(
+        authorization: str | None = Header(default=None),
+    ) -> dict[str, Any]:
+        token = _bearer(authorization)
+        verify_chainlit_token(
+            token,
+            issuer=settings.keycloak_issuer,
+            jwks_uri=settings.keycloak_jwks_uri,
+            audience=settings.gateway_audience,
+            azp=settings.gateway_azp,
+            signing_key=jwt_signing_key,
+        )
+        return {"servers": list_enabled_servers(registry)}
 
     @app.get("/v1/mcp/{server_id}/tools")
     async def list_tools(

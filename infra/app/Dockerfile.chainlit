@@ -19,5 +19,6 @@ COPY scripts ./scripts
 RUN uv pip install --system .
 
 COPY .chainlit ./.chainlit
+COPY infra/app/gateway-registry.yml ./infra/app/gateway-registry.yml
 
 CMD ["chainlit", "run", "src/chat_ui/app.py", "--host", "0.0.0.0", "--port", "8080"]

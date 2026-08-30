@@ -19,35 +19,6 @@ instrument_asyncpg()
 
 from fastmcp import Client
 
-SEARCH_TOOL = {
-    "type": "function",
-    "function": {
-        "name": "search_knowledge",
-        "description": "Search the local knowledge base for relevant passages.",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "query": {"type": "string"},
-                "top_k": {"type": "integer", "minimum": 1, "maximum": 20},
-            },
-            "required": ["query"],
-        },
-    },
-}
-
-GET_DOCUMENT_TOOL = {
-    "type": "function",
-    "function": {
-        "name": "get_document",
-        "description": "Fetch a full document by id from search results.",
-        "parameters": {
-            "type": "object",
-            "properties": {"document_id": {"type": "string"}},
-            "required": ["document_id"],
-        },
-    },
-}
-
 
 class MCPBridge:
     def __init__(self, settings: Settings) -> None:
