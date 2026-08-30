@@ -4,42 +4,39 @@ import json
 from pathlib import Path
 from typing import Any
 
-DEFAULT_MCP_NAME = "knowledge-mcp"
 MCP_STORAGE_KEY = "mcp_storage_key"
+GATEWAY_MCP_TYPE = "gateway"
+GATEWAY_MCP_URL_LABEL = "via MCP Gateway"
 
 
-def default_mcp_ui_entry(url: str) -> dict[str, Any]:
-    return {
-        "name": DEFAULT_MCP_NAME,
-        "tools": [],
-        "clientType": "streamable-http",
-        "url": url,
-        "status": "disconnected",
-        "isUserProvided": True,
-    }
+def _display_entries(entries: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    displayed: list[dict[str, Any]] = []
+    for entry in entries:
+        name = entry.get("name")
+        if not name:
+            continue
+        displayed.append(
+            {
+                "name": name,
+                "tools": entry.get("tools") or [],
+                "status": "connected",
+                "type": GATEWAY_MCP_TYPE,
+                "clientType": GATEWAY_MCP_TYPE,
+                "url": GATEWAY_MCP_URL_LABEL,
+                "isUserProvided": False,
+            }
+        )
+    return displayed
 
 
-def upsert_mcp_ui_entry(
-    stored: list[dict[str, Any]], entry: dict[str, Any]
-) -> list[dict[str, Any]]:
-    merged = [dict(item) for item in stored]
-    for item in merged:
-        if item.get("name") == entry["name"]:
-            item["url"] = entry["url"]
-            item["clientType"] = entry["clientType"]
-            item["isUserProvided"] = entry["isUserProvided"]
-            item.pop("command", None)
-            if item.get("headers") is None:
-                item.pop("headers", None)
-            return merged
-    return [entry, *merged]
-
-
-def render_mcp_autoload_js(url: str) -> str:
-    entry = default_mcp_ui_entry(url)
+def render_mcp_autoload_js(entries: list[dict[str, Any]] | None = None) -> str:
+    """Show Gateway MCPs in Chainlit's list without opening real sessions."""
+    displayed = _display_entries(entries or [])
+    names = [item["name"] for item in displayed]
     return f"""(() => {{
   const KEY = {json.dumps(MCP_STORAGE_KEY)};
-  const DEFAULT_MCP = {json.dumps(entry, ensure_ascii=False)};
+  const ENTRIES = {json.dumps(displayed)};
+  const NAMES = new Set({json.dumps(names)});
   let stored = [];
   try {{
     const parsed = JSON.parse(localStorage.getItem(KEY) || "[]");
@@ -47,32 +44,48 @@ def render_mcp_autoload_js(url: str) -> str:
   }} catch (_error) {{
     stored = [];
   }}
-  stored.forEach((item) => {{
-    if (item && item.headers == null) {{
-      delete item.headers;
-    }}
-  }});
-  const index = stored.findIndex((item) => item && item.name === DEFAULT_MCP.name);
-  if (index === -1) {{
-    stored.unshift(DEFAULT_MCP);
-  }} else {{
-    stored[index] = {{
-      ...stored[index],
-      url: DEFAULT_MCP.url,
-      clientType: DEFAULT_MCP.clientType,
-      isUserProvided: DEFAULT_MCP.isUserProvided,
-    }};
-    if (stored[index].headers == null) {{
-      delete stored[index].headers;
-    }}
+  stored = stored.filter((item) => !(item && NAMES.has(item.name)));
+  for (let i = ENTRIES.length - 1; i >= 0; i -= 1) {{
+    stored.unshift(ENTRIES[i]);
   }}
   localStorage.setItem(KEY, JSON.stringify(stored));
+
+  const originalFetch = window.fetch.bind(window);
+  window.fetch = function (input, init) {{
+    const url = typeof input === "string" ? input : (input && input.url) || "";
+    const method = (
+      (init && init.method) ||
+      (typeof input === "object" && input && input.method) ||
+      "GET"
+    ).toUpperCase();
+    let pathname = "";
+    try {{
+      pathname = new URL(url, location.origin).pathname;
+    }} catch (_error) {{
+      pathname = "";
+    }}
+    const isMcp = pathname === "/mcp" || pathname === "/mcp/";
+    const body = init && init.body;
+    if (isMcp && (method === "POST" || method === "DELETE") && typeof body === "string") {{
+      try {{
+        const payload = JSON.parse(body);
+        if (payload && NAMES.has(payload.name)) {{
+          const target = new URL("/gateway-mcp", location.origin).href;
+          return originalFetch(target, init);
+        }}
+      }} catch (_error) {{}}
+    }}
+    return originalFetch(input, init);
+  }};
 }})();
 """
 
 
-def write_mcp_autoload_script(public_dir: Path, url: str) -> Path:
+def write_mcp_autoload_script(
+    public_dir: Path,
+    entries: list[dict[str, Any]] | None = None,
+) -> Path:
     public_dir.mkdir(parents=True, exist_ok=True)
     path = public_dir / "mcp-autoload.js"
-    path.write_text(render_mcp_autoload_js(url), encoding="utf-8")
+    path.write_text(render_mcp_autoload_js(entries), encoding="utf-8")
     return path

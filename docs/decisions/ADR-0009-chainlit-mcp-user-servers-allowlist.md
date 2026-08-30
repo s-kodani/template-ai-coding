@@ -23,7 +23,7 @@ Chainlit 2.12.0 は CVE-2026-45018（stdio コマンドインジェクション�
   - `http://localhost:8000`
   - `http://127.0.0.1:8000`
   - `http://host.docker.internal:8000`
-- knowledge-mcp は named server にせず、`mcp-autoload.js` が `MCP_SERVER_URL` を user-provided Streamable HTTP として一覧へ載せる
+- knowledge-mcp は named server にせず、`mcp-autoload.js` が Gateway エントリを MCP 一覧へ載せる（実接続の URL は載せない。切断は `/gateway-mcp` でセッションの利用フラグだけを更新する）
 - `[[features.mcp.servers]]` に stdio サーバを置かない
 - 上記以外の origin / port の追加 MCP は `.chainlit/config.toml` の allowlist を編集してから接続する
 
@@ -41,4 +41,4 @@ Chainlit 2.12.0 は CVE-2026-45018（stdio コマンドインジェクション�
 - Chainlit コンテナはレガシー MCP キーでは起動しない
 - 追加 MCP は allowlist 内の SSE / Streamable HTTP のみ
 - stdio を UI から追加できない
-- knowledge-mcp のツール呼び出しは引き続き FastMCP Client（`MCP_SERVER_URL`）が担う
+- knowledge-mcp のツール呼び出しは MCP Gateway が担う。プラグ UI の一覧表示は `mcp-autoload.js` の表示専用エントリ（[ADR-0012](/decisions/ADR-0012-mcp-gateway-resource-server.md)）

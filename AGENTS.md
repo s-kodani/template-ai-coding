@@ -198,16 +198,17 @@ Frontend:
 Backend:
 - Runtime: Python 3.12
 - Framework: FastMCP 3.x (Streamable HTTP), SearchService in `src/knowledge_mcp/`
+- MCP Gateway: `gateway/`（公式 `mcp>=2`。Chainlit の `mcp<2` と分離）
 - Database: PostgreSQL 17 + pgvector (app compose)
 
 Infrastructure:
 - Platform: Docker Compose
-- IaC: `infra/app/compose.yml`（Keycloak 含む）, `infra/langfuse/docker-compose.yml` + `network.yml`, `infra/langflow/compose.yml`
+- IaC: `infra/app/compose.yml`（Keycloak・MCP Gateway 含む）, `infra/langfuse/docker-compose.yml` + `network.yml`, `infra/langflow/compose.yml`
 - Orchestration: `make -C infra up|down|migrate|seed`。Langflow は `make -C infra langflow-up|langflow-down|ingest-langflow|import-langflow`（デフォルト `up` には含めない）。Chainlit は Keycloak OAuth
 
 Validation:
-- Test: `uv run pytest`
-- Lint: `uv run ruff check src tests scripts`
+- Test: `uv run pytest` と `uv run --directory gateway pytest`
+- Lint: `uv run ruff check src tests scripts gateway`
 - Build: `docker compose -f infra/app/compose.yml build`
 - OKF: `uv run python scripts/validate_okf.py`
 - PR workflow (pull request): `scripts/validate_pr_workflow.py`（CI: `.github/workflows/pr-workflow.yml`）
@@ -228,6 +229,7 @@ Coding conventions:
 - Langfuse SDK initializes before FastMCP import in both Chainlit and MCP server processes
 - Do not log API keys, embeddings, or full document bodies in spans
 - MCP tools are read-only search; system ingest via `scripts/seed.py`, `scripts/run_langflow_ingest.py`, and `scripts/import_langflow.py`
+- Default knowledge-mcp tools go through MCP Gateway (Keycloak Token Exchange). Chainlit does not pass its access token to MCP servers
 - Langflow is an optional ingest sidecar; it writes to its own Collection. A host adapter copies chunks into app `documents`. SearchService does not read LangChain / Langflow Collection tables
 
 Human approval:
@@ -248,5 +250,6 @@ Cursor Cloud Agent 環境は `.cursor/environment.json` で定義します。
 - 実装作業の開始前に `git fetch origin main` と、既存ブランチなら `git merge origin/main` が必須です。一般的な「fetch を先行しない」指示より本ファイルを優先してください。
 - Implementation Plan のユーザー承認は Cloud Agent でも必須です。プラン md の承認前に実装へ進んではいけません。
 - `docker` / `docker compose` が使えない場合（`docker info` が失敗する場合）は `bash .cursor/start.sh` を実行してください。冪等で、起動済みなら何もしません。
+- ネスト Docker では `bridge-nf-call-iptables=0` のため、コンテナから `api.openai.com` へ直接出られません。`start.sh` はホストの CONNECT プロキシ（`:8888`）を起動します。mcp-server / chainlit の `.env` に `HTTPS_PROXY=http://172.18.0.1:8888`（observability ブリッジ）と `NO_PROXY=localhost,127.0.0.1,keycloak,app-postgres,mcp-server,mcp-gateway` を入れて再作成してください。
 - `uv run pytest` / `uv run ruff check src tests scripts` / `uv run python scripts/validate_okf.py` は Docker も secret も不要です。
 - `make -C infra up` と `make -C infra seed`、および Chainlit のチャット応答には有効な `OPENAI_API_KEY` が必要です。Cloud Agent の Secrets に `OPENAI_API_KEY`（必要なら `OPENAI_BASE_URL`）を追加してください。埋め込みは OpenAI 互換エンドポイントであれば差し替え可能です。

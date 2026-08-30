@@ -1,0 +1,22 @@
+servers:
+  knowledge:
+    enabled: true
+    ui:
+      name: knowledge-mcp
+    transport:
+      type: streamable_http
+      url: http://mcp-server:8000/mcp
+    protocol:
+      mode: auto
+    authentication:
+      mode: keycloak_token_exchange
+      resource: http://localhost:8000/mcp
+      scopes:
+        - mcp-tools
+    authorization:
+      allowed_tools:
+        - search_knowledge
+        - get_document
+      required_roles:
+        - knowledge-mcp-reader
+    timeout_seconds: 30

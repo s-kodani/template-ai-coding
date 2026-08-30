@@ -8,7 +8,7 @@ import asyncpg
 from knowledge_mcp.config import Settings
 
 ROOT = Path(__file__).resolve().parents[1]
-MIGRATE_SQL = ROOT / "infra" / "app" / "migrate_documents_chunks.sql"
+MIGRATE_DIR = ROOT / "infra" / "app"
 
 
 def _statements(sql: str) -> list[str]:
@@ -16,12 +16,13 @@ def _statements(sql: str) -> list[str]:
 
 
 async def migrate(settings: Settings) -> None:
-    sql = MIGRATE_SQL.read_text(encoding="utf-8")
     connection = await asyncpg.connect(settings.host_database_url)
     try:
-        for statement in _statements(sql):
-            await connection.execute(statement)
-        print("Applied documents chunk schema migration.")
+        for path in sorted(MIGRATE_DIR.glob("migrate_*.sql")):
+            sql = path.read_text(encoding="utf-8")
+            for statement in _statements(sql):
+                await connection.execute(statement)
+            print(f"Applied {path.name}")
     finally:
         await connection.close()
 

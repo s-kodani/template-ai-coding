@@ -6,12 +6,22 @@ from pathlib import Path
 from typing import Any
 
 import chainlit as cl
+from chainlit.server import app as chainlit_app
 from langfuse import observe
 
-from chat_ui.auth import register_oauth_callback
-from chat_ui.mcp_bridge import GET_DOCUMENT_TOOL, SEARCH_TOOL, MCPBridge, build_openai_client
-from chat_ui.mcp_tools import call_session_tool, collect_openai_tools, resolve_tool_target
+from chat_ui.auth import register_oauth_callback, set_token_manager
+from chat_ui.gateway_client import MCPGatewayClient, call_gateway_tool, load_gateway_catalog
+from chat_ui.gateway_registry import load_ui_servers
+from chat_ui.gateway_routes import register_gateway_mcp_routes
+from chat_ui.mcp_bridge import build_openai_client
+from chat_ui.mcp_tools import (
+    call_session_tool,
+    collect_openai_tools,
+    filter_gateway_catalog,
+    resolve_tool_target,
+)
 from chat_ui.mcp_ui import write_mcp_autoload_script
+from chat_ui.token_manager import build_token_manager
 from knowledge_mcp.config import get_settings
 from knowledge_mcp.tracing import configure_langfuse_tracing, instrument_asyncpg
 
@@ -20,23 +30,50 @@ instrument_asyncpg()
 
 settings = get_settings()
 openai_client = build_openai_client(settings)
-mcp_bridge = MCPBridge(settings)
-write_mcp_autoload_script(Path.cwd() / "public", settings.mcp_server_url)
+gateway_client = MCPGatewayClient(settings.mcp_gateway_url)
+token_manager = build_token_manager(settings)
+set_token_manager(token_manager)
+_ui_servers = load_ui_servers(Path(settings.mcp_gateway_registry_path))
+_ui_name_to_id = {str(entry["name"]): str(entry["id"]) for entry in _ui_servers}
+write_mcp_autoload_script(Path.cwd() / "public", _ui_servers)
 register_oauth_callback()
+register_gateway_mcp_routes(chainlit_app, name_to_id=_ui_name_to_id)
 
 SYSTEM_PROMPT = (
-    "You are a helpful assistant with access to a local knowledge base "
-    "and any MCP tools the user has connected in this session. "
-    "Use search_knowledge when the user asks about project documentation. "
-    "Use other connected tools when they match the request. "
-    "Cite document titles and ids from knowledge-base tool results."
+    "You are a helpful assistant with access to MCP tools from the gateway "
+    "and any additional MCP servers the user has connected. "
+    "Use those tools when they help answer the user."
 )
+
+
+def _session_user() -> Any:
+    return cl.user_session.get("user") or getattr(cl.context.session, "user", None)
 
 
 @cl.on_chat_start
 async def on_chat_start() -> None:
     cl.user_session.set("messages", [{"role": "system", "content": SYSTEM_PROMPT}])
     cl.user_session.set("mcp_tools", {})
+    cl.user_session.set("gateway_tools", [])
+    cl.user_session.set("gateway_targets", {})
+    user = _session_user()
+    subject = (getattr(user, "metadata", None) or {}).get("keycloak_sub")
+    if subject:
+        await token_manager.bind_session(str(subject), cl.context.session.id)
+        token = await token_manager.get_access_token(cl.context.session.id)
+        if token:
+            tools, targets = await load_gateway_catalog(gateway_client, token)
+            cl.user_session.set("gateway_catalog_tools", tools)
+            cl.user_session.set("gateway_catalog_targets", targets)
+            disabled = set(cl.user_session.get("gateway_disabled") or set())
+            enabled = {ref[0] for ref in targets.values()} - disabled
+            filtered_tools, filtered_targets = filter_gateway_catalog(
+                tools, targets, enabled
+            )
+            cl.user_session.set("gateway_tools", filtered_tools)
+            cl.user_session.set("gateway_targets", filtered_targets)
+            cl.user_session.set("gateway_enabled", enabled)
+            cl.user_session.set("gateway_disabled", disabled)
 
 
 @cl.on_mcp_connect
@@ -64,20 +101,30 @@ async def on_mcp_disconnect(name: str, _session: Any) -> None:
 
 def _llm_tools() -> list[dict[str, Any]]:
     return collect_openai_tools(
-        [SEARCH_TOOL, GET_DOCUMENT_TOOL],
+        cl.user_session.get("gateway_tools") or [],
         cl.user_session.get("mcp_tools") or {},
     )
 
 
 async def _dispatch_tool(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
     session_tools = cl.user_session.get("mcp_tools") or {}
-    kind, session_name = resolve_tool_target(name, session_tools)
-    if kind == "default":
-        return await mcp_bridge.call_tool(name, arguments)
-    if kind == "session" and session_name:
-        entry = cl.context.session.mcp_sessions.get(session_name)
+    targets = cl.user_session.get("gateway_targets") or {}
+    kind, target = resolve_tool_target(name, session_tools, targets)
+    if kind == "gateway" and target:
+        mapped = targets.get(name)
+        mcp_name = mapped[1] if isinstance(mapped, tuple) else name
+        return await call_gateway_tool(
+            gateway_client,
+            token_manager,
+            cl.context.session.id,
+            mcp_name,
+            arguments,
+            server_id=target,
+        )
+    if kind == "session" and target:
+        entry = cl.context.session.mcp_sessions.get(target)
         if not entry:
-            return {"error": f"MCP session not found: {session_name}"}
+            return {"error": f"MCP session not found: {target}"}
         mcp_session, _ = entry
         return await call_session_tool(mcp_session, name, arguments)
     return {"error": f"Unknown tool: {name}"}

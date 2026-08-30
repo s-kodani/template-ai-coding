@@ -9,9 +9,7 @@ from knowledge_mcp.tracing import (
     tool_observation,
 )
 
-DEFAULT_TOOL_NAMES = frozenset({"search_knowledge", "get_document"})
-
-ToolTarget = tuple[Literal["default", "session", "unknown"], str | None]
+ToolTarget = tuple[Literal["gateway", "session", "unknown"], str | None]
 
 
 def openai_tool_from_mcp(tool: dict[str, Any]) -> dict[str, Any]:
@@ -51,11 +49,71 @@ def find_session_for_tool(
     return None
 
 
+def llm_tool_name(server_id: str, tool_name: str) -> str:
+    return f"{server_id}__{tool_name}"
+
+
+def filter_gateway_catalog(
+    tools: list[dict[str, Any]],
+    targets: dict[str, tuple[str, str]],
+    enabled_server_ids: set[str],
+) -> tuple[list[dict[str, Any]], dict[str, tuple[str, str]]]:
+    kept = {
+        name: ref for name, ref in targets.items() if ref[0] in enabled_server_ids
+    }
+    kept_tools = [
+        tool for tool in tools if tool.get("function", {}).get("name") in kept
+    ]
+    return kept_tools, kept
+
+
+def apply_gateway_toggle(
+    catalog_tools: list[dict[str, Any]],
+    catalog_targets: dict[str, tuple[str, str]],
+    enabled: set[str] | None,
+    server_id: str,
+    enable: bool,
+) -> tuple[list[dict[str, Any]], dict[str, tuple[str, str]], set[str]]:
+    current = (
+        set(enabled)
+        if enabled is not None
+        else {ref[0] for ref in catalog_targets.values()}
+    )
+    if enable:
+        current.add(server_id)
+    else:
+        current.discard(server_id)
+    tools, targets = filter_gateway_catalog(catalog_tools, catalog_targets, current)
+    return tools, targets, current
+
+
+def catalog_from_listed_tools(
+    servers: list[tuple[str, list[dict[str, Any]]]],
+) -> tuple[list[dict[str, Any]], dict[str, tuple[str, str]]]:
+    openai_tools: list[dict[str, Any]] = []
+    targets: dict[str, tuple[str, str]] = {}
+    for server_id, tools in servers:
+        for tool in tools:
+            mcp_name = tool.get("name")
+            if not mcp_name:
+                continue
+            name = llm_tool_name(server_id, mcp_name)
+            if name in targets:
+                continue
+            targets[name] = (server_id, mcp_name)
+            openai_tools.append(openai_tool_from_mcp({**tool, "name": name}))
+    return openai_tools, targets
+
+
 def resolve_tool_target(
-    name: str, session_tools: dict[str, list[dict[str, Any]]]
+    name: str,
+    session_tools: dict[str, list[dict[str, Any]]],
+    gateway_targets: dict[str, str] | dict[str, tuple[str, str]] | None = None,
 ) -> ToolTarget:
-    if name in DEFAULT_TOOL_NAMES:
-        return ("default", None)
+    if gateway_targets and name in gateway_targets:
+        mapped = gateway_targets[name]
+        server_id = mapped[0] if isinstance(mapped, tuple) else mapped
+        return ("gateway", server_id)
     session_name = find_session_for_tool(name, session_tools)
     if session_name is None:
         return ("unknown", None)

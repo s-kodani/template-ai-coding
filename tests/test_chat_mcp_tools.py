@@ -7,8 +7,11 @@ import pytest
 from opentelemetry import trace
 
 from chat_ui.mcp_tools import (
+    apply_gateway_toggle,
     call_session_tool,
+    catalog_from_listed_tools,
     collect_openai_tools,
+    filter_gateway_catalog,
     find_session_for_tool,
     openai_tool_from_mcp,
     parse_tool_result,
@@ -129,12 +132,85 @@ def test_find_session_for_tool_returns_owning_connection() -> None:
     assert find_session_for_tool("missing", session_tools) is None
 
 
-def test_resolve_tool_target_prefers_default_knowledge_tools() -> None:
+def test_resolve_tool_target_prefers_gateway_catalog() -> None:
     session_tools = {"ui": [{"name": "search_knowledge"}, {"name": "list_buckets"}]}
+    targets = {"knowledge__search_knowledge": ("knowledge", "search_knowledge")}
 
-    assert resolve_tool_target("search_knowledge", session_tools) == ("default", None)
-    assert resolve_tool_target("list_buckets", session_tools) == ("session", "ui")
-    assert resolve_tool_target("unknown", session_tools) == ("unknown", None)
+    assert resolve_tool_target("knowledge__search_knowledge", session_tools, targets) == (
+        "gateway",
+        "knowledge",
+    )
+    assert resolve_tool_target("list_buckets", session_tools, targets) == ("session", "ui")
+    assert resolve_tool_target("unknown", session_tools, targets) == ("unknown", None)
+
+
+def test_catalog_from_listed_tools_prefixes_server_id_and_keeps_collisions() -> None:
+    tools, targets = catalog_from_listed_tools(
+        [
+            (
+                "knowledge",
+                [{"name": "search_knowledge", "description": "kb", "inputSchema": {}}],
+            ),
+            (
+                "other",
+                [
+                    {"name": "search_knowledge", "description": "dup", "inputSchema": {}},
+                    {"name": "ping", "description": "p", "inputSchema": {}},
+                ],
+            ),
+        ]
+    )
+    assert [tool["function"]["name"] for tool in tools] == [
+        "knowledge__search_knowledge",
+        "other__search_knowledge",
+        "other__ping",
+    ]
+    assert tools[0]["function"]["description"] == "kb"
+    assert tools[1]["function"]["description"] == "dup"
+    assert targets == {
+        "knowledge__search_knowledge": ("knowledge", "search_knowledge"),
+        "other__search_knowledge": ("other", "search_knowledge"),
+        "other__ping": ("other", "ping"),
+    }
+
+
+def test_filter_gateway_catalog_keeps_enabled_servers_only() -> None:
+    tools, targets = catalog_from_listed_tools(
+        [
+            ("knowledge", [{"name": "search_knowledge", "inputSchema": {}}]),
+            ("other", [{"name": "ping", "inputSchema": {}}]),
+        ]
+    )
+    filtered_tools, filtered_targets = filter_gateway_catalog(
+        tools, targets, {"other"}
+    )
+    assert [tool["function"]["name"] for tool in filtered_tools] == ["other__ping"]
+    assert filtered_targets == {"other__ping": ("other", "ping")}
+
+
+def test_apply_gateway_toggle_disables_and_reenables_server() -> None:
+    tools, targets = catalog_from_listed_tools(
+        [
+            ("knowledge", [{"name": "search_knowledge", "inputSchema": {}}]),
+            ("other", [{"name": "ping", "inputSchema": {}}]),
+        ]
+    )
+    disabled_tools, disabled_targets, enabled = apply_gateway_toggle(
+        tools, targets, None, "knowledge", False
+    )
+    assert enabled == {"other"}
+    assert [tool["function"]["name"] for tool in disabled_tools] == ["other__ping"]
+    assert disabled_targets == {"other__ping": ("other", "ping")}
+
+    enabled_tools, enabled_targets, enabled = apply_gateway_toggle(
+        tools, targets, enabled, "knowledge", True
+    )
+    assert enabled == {"knowledge", "other"}
+    assert [tool["function"]["name"] for tool in enabled_tools] == [
+        "knowledge__search_knowledge",
+        "other__ping",
+    ]
+    assert enabled_targets == targets
 
 
 def test_parse_tool_result_json_text() -> None:

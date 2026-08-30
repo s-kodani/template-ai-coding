@@ -2,6 +2,17 @@
 
 ## v?.?.? (未確定)
 
+- **Changed**: knowledge-mcp の realm role を `mcp-reader` から `knowledge-mcp-reader` に改名した。次の Gateway MCP は別 role を Registry `required_roles` に書く（[認証認可](/current/features/authentication.md)、[ADR-0012](/decisions/ADR-0012-mcp-gateway-resource-server.md)）
+- **Changed**: プラグ UI で Gateway MCP を切断すると、そのサーバーのツールを LLM / 実行から外す。再接続で戻る（[UI 機能](/current/features/ui.md)、[ADR-0012](/decisions/ADR-0012-mcp-gateway-resource-server.md)）
+- **Changed**: Gateway LLM ツール名を `{server_id}__{mcp_tool_name}` にした。Token Exchange は Registry の `authentication.mode` / `resource` / `scopes` を必須とし、knowledge 向けデフォルトは使わない（[UI 機能](/current/features/ui.md)、[API 契約](/current/features/api.md)、[ADR-0012](/decisions/ADR-0012-mcp-gateway-resource-server.md)）
+- **Added**: ログインから Gateway Token Exchange、knowledge-mcp 検証までの認証認可シーケンスを Current-state に記録（[認証認可](/current/features/authentication.md)）
+- **Changed**: `GET /v1/mcp` は JWT の realm role が `authorization.required_roles` を満たすサーバーだけ返す（[API 契約](/current/features/api.md)、[ADR-0012](/decisions/ADR-0012-mcp-gateway-resource-server.md)）
+- **Changed**: Chainlit の Gateway ツール配線を Registry / `GET /v1/mcp` ベースにした。LLM schema は knowledge 専用ハードコードではない（[UI 機能](/current/features/ui.md)、[ADR-0012](/decisions/ADR-0012-mcp-gateway-resource-server.md)）
+- **Changed**: Chainlit のプラグ UI に knowledge-mcp を Gateway 表示専用で載せる。実 MCP セッションは張らない（[UI 機能](/current/features/ui.md)、[ADR-0012](/decisions/ADR-0012-mcp-gateway-resource-server.md)）
+- **Added**: MCP Gateway を導入し、Chainlit の既定 knowledge-mcp 呼び出しを Keycloak Token Exchange 経由にした。knowledge-mcp は Resource Server として JWT を検証する（[アーキテクチャ](/current/architecture.md)、[ADR-0012](/decisions/ADR-0012-mcp-gateway-resource-server.md)）
+- **Fixed**: Keycloak 26 standard token exchange（V2）では `audience=knowledge-mcp` を送らず、`mcp-tools` の custom audience mapper で `aud=http://localhost:8000/mcp` を付ける。realm import が `basic` / `profile` / `email` / `roles` を消さないようにした
+- **Fixed**: refresh token が無いとき Postgres の token store が `AmbiguousParameterError` になる問題（`$5::text`）
+- **Added**: Cloud Agent 向けホスト CONNECT プロキシ（`.cursor/egress-proxy.py`）。ネスト Docker ではコンテナから `api.openai.com` へ直接出られない
 - **Added**: Keycloak をアプリ Compose に追加し、Chainlit を OAuth ログイン必須にした（[UI 機能](/current/features/ui.md)、[インフラ](/current/infrastructure.md)、[ADR-0011](/decisions/ADR-0011-keycloak-chainlit-oauth.md)）
 - **Changed**: APM 管理 Skill（`ponytail`、`test-driven-development`）を upstream 内容へ復元。リポジトリ固有ルールは `AGENTS.md` / `test-strategy` へ集約
 - **Changed**: `AGENTS.md` の workflow / OKF 共通ルールを `implementation-workflow` references へ委譲し、リポジトリ固有設定に slim 化（~496行 → ~220行）

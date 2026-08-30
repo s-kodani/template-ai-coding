@@ -31,3 +31,7 @@ end-to-end トレーシングには、ツール呼び出し時の MCP `_meta` �
 - 起動直後から knowledge-mcp を使え、追加 MCP は画面から接続できる
 - プロセスが分離された環境（Docker compose）では、ツール呼び出しをまたいだ親子トレース結合が機能する
 - 追加 MCP 接続は Chainlit サーバから行われるため、Docker 内ではコンテナから到達でき、かつ allowlist に含まれる URL が必要（[ADR-0009](/decisions/ADR-0009-chainlit-mcp-user-servers-allowlist.md)）
+
+## 改訂
+
+既定の knowledge-mcp ツール実行は FastMCP Client 直接呼び出しから **MCP Gateway** 経由へ移した（[ADR-0012](/decisions/ADR-0012-mcp-gateway-resource-server.md)）。LLM schema は Gateway の list API から組み立てる。追加 MCP の内蔵 UI と `_meta` 注入はこの ADR のまま。Gateway MCP はプラグ UI に表示専用で載せ、Chainlit MCP セッションは張らない。

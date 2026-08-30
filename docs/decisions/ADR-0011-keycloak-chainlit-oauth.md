@@ -6,7 +6,7 @@ tags: [decision, architecture, authentication, keycloak, chainlit]
 status: stable
 decision_status: accepted
 generated:
-  at: "2026-08-29T12:00:00Z"
+  at: "2026-08-29T14:30:00Z"
   by: process:cursor-agent
 ---
 
@@ -32,6 +32,10 @@ Chainlit は認証なしでホストに公開されていた。ローカルで�
 - 対象は Chainlit のみ。FastMCP、Langfuse、Langflow の SSO は導入しない
 - 認可は「Keycloak でログインできた利用者はチャット可能」とし、RBAC は持たない
 - realm / client / 開発ユーザーは Git 上の realm JSON を Source of Truth とし、専用 Postgres は持たない
+
+## 改訂
+
+knowledge-mcp を Keycloak Resource Server とし、Chainlit トークンのパススルーを禁止する決定は [ADR-0012](/decisions/ADR-0012-mcp-gateway-resource-server.md)。Chainlit ログインの IdP としての Keycloak 採用は本 ADR のまま。
 
 ## 結果
 
