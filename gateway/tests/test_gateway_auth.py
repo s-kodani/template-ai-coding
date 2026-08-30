@@ -295,6 +295,82 @@ def test_list_servers_returns_enabled_registry_entries(
     }
 
 
+def _write_auth_registry(
+    path: Path,
+    *,
+    mode: str | None = "keycloak_token_exchange",
+    resource: str | None = RESOURCE,
+    scopes: list[str] | None = None,
+) -> None:
+    auth: dict[str, object] = {}
+    if mode is not None:
+        auth["mode"] = mode
+    if resource is not None:
+        auth["resource"] = resource
+    if scopes is not None:
+        auth["scopes"] = scopes
+    servers = {
+        "other": {
+            "enabled": True,
+            "transport": {"type": "streamable_http", "url": "http://mcp-other:8000/mcp"},
+            "authentication": auth,
+            "authorization": {"allowed_tools": ["ping"]},
+        }
+    }
+    path.write_text(yaml.safe_dump({"servers": servers}), encoding="utf-8")
+
+
+def test_list_tools_fails_closed_without_registry_resource(
+    rsa_keys: tuple[object, str], tmp_path: Path
+) -> None:
+    registry = tmp_path / "registry.yml"
+    _write_auth_registry(registry, resource=None, scopes=["mcp-tools"])
+    private_key, _ = rsa_keys
+    settings = Settings(registry_path=str(registry), keycloak_issuer=ISSUER)
+    app = create_app(settings, jwt_signing_key=private_key)
+    client = TestClient(app)
+    response = client.get(
+        "/v1/mcp/other/tools",
+        headers={"Authorization": f"Bearer {_token(private_key)}"},
+    )
+    assert response.status_code == 500
+    assert response.json()["code"] == "INVALID_REGISTRY"
+
+
+def test_list_tools_fails_closed_without_registry_scopes(
+    rsa_keys: tuple[object, str], tmp_path: Path
+) -> None:
+    registry = tmp_path / "registry.yml"
+    _write_auth_registry(registry, scopes=None)
+    private_key, _ = rsa_keys
+    settings = Settings(registry_path=str(registry), keycloak_issuer=ISSUER)
+    app = create_app(settings, jwt_signing_key=private_key)
+    client = TestClient(app)
+    response = client.get(
+        "/v1/mcp/other/tools",
+        headers={"Authorization": f"Bearer {_token(private_key)}"},
+    )
+    assert response.status_code == 500
+    assert response.json()["code"] == "INVALID_REGISTRY"
+
+
+def test_list_tools_rejects_unknown_auth_mode(
+    rsa_keys: tuple[object, str], tmp_path: Path
+) -> None:
+    registry = tmp_path / "registry.yml"
+    _write_auth_registry(registry, mode="passthrough", scopes=["mcp-tools"])
+    private_key, _ = rsa_keys
+    settings = Settings(registry_path=str(registry), keycloak_issuer=ISSUER)
+    app = create_app(settings, jwt_signing_key=private_key)
+    client = TestClient(app)
+    response = client.get(
+        "/v1/mcp/other/tools",
+        headers={"Authorization": f"Bearer {_token(private_key)}"},
+    )
+    assert response.status_code == 500
+    assert response.json()["code"] == "UNSUPPORTED_AUTH_MODE"
+
+
 def test_list_servers_hides_servers_missing_required_roles(
     rsa_keys: tuple[object, str], tmp_path: Path
 ) -> None:

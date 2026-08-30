@@ -132,9 +132,9 @@ def test_find_session_for_tool_returns_owning_connection() -> None:
 
 def test_resolve_tool_target_prefers_gateway_catalog() -> None:
     session_tools = {"ui": [{"name": "search_knowledge"}, {"name": "list_buckets"}]}
-    targets = {"search_knowledge": "knowledge"}
+    targets = {"knowledge__search_knowledge": ("knowledge", "search_knowledge")}
 
-    assert resolve_tool_target("search_knowledge", session_tools, targets) == (
+    assert resolve_tool_target("knowledge__search_knowledge", session_tools, targets) == (
         "gateway",
         "knowledge",
     )
@@ -142,7 +142,7 @@ def test_resolve_tool_target_prefers_gateway_catalog() -> None:
     assert resolve_tool_target("unknown", session_tools, targets) == ("unknown", None)
 
 
-def test_catalog_from_listed_tools_first_server_wins_on_collision() -> None:
+def test_catalog_from_listed_tools_prefixes_server_id_and_keeps_collisions() -> None:
     tools, targets = catalog_from_listed_tools(
         [
             (
@@ -158,9 +158,18 @@ def test_catalog_from_listed_tools_first_server_wins_on_collision() -> None:
             ),
         ]
     )
-    assert [tool["function"]["name"] for tool in tools] == ["search_knowledge", "ping"]
+    assert [tool["function"]["name"] for tool in tools] == [
+        "knowledge__search_knowledge",
+        "other__search_knowledge",
+        "other__ping",
+    ]
     assert tools[0]["function"]["description"] == "kb"
-    assert targets == {"search_knowledge": "knowledge", "ping": "other"}
+    assert tools[1]["function"]["description"] == "dup"
+    assert targets == {
+        "knowledge__search_knowledge": ("knowledge", "search_knowledge"),
+        "other__search_knowledge": ("other", "search_knowledge"),
+        "other__ping": ("other", "ping"),
+    }
 
 
 def test_parse_tool_result_json_text() -> None:

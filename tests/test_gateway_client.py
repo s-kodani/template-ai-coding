@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock
 import httpx
 import pytest
 
-from chat_ui.gateway_client import MCPGatewayClient, call_default_tool
+from chat_ui.gateway_client import MCPGatewayClient, call_gateway_tool
 
 
 class _FakeManager:
@@ -42,7 +42,32 @@ async def test_call_tool_returns_token_expired_on_401(monkeypatch: pytest.Monkey
 
 
 @pytest.mark.asyncio
-async def test_call_default_tool_retries_once_after_401(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_call_gateway_tool_requires_server_id() -> None:
+    with pytest.raises(TypeError):
+        await call_gateway_tool(  # type: ignore[misc]
+            MCPGatewayClient("http://gateway:8082"),
+            _FakeManager(["tok"]),
+            "sess",
+            "search_knowledge",
+            {"query": "docs"},
+        )
+
+
+@pytest.mark.asyncio
+async def test_call_gateway_tool_unauthenticated_is_generic() -> None:
+    result = await call_gateway_tool(
+        MCPGatewayClient("http://gateway:8082"),
+        _FakeManager([None]),
+        "sess",
+        "search_knowledge",
+        {"query": "docs"},
+        server_id="other",
+    )
+    assert result == {"error": "Not authenticated for MCP tools"}
+
+
+@pytest.mark.asyncio
+async def test_call_gateway_tool_retries_once_after_401(monkeypatch: pytest.MonkeyPatch) -> None:
     seen: list[str] = []
 
     class FakeResponse:
@@ -64,13 +89,13 @@ async def test_call_default_tool_retries_once_after_401(monkeypatch: pytest.Monk
 
     monkeypatch.setattr("httpx.AsyncClient.post", fake_post)
 
-    result = await call_default_tool(
+    result = await call_gateway_tool(
         MCPGatewayClient("http://gateway:8082"),
         _FakeManager(["first", "second"]),
         "sess",
         "search_knowledge",
         {"query": "docs"},
-        server_id="knowledge",
+        server_id="other",
     )
     assert result == {"hits": []}
     assert seen == ["Bearer first", "Bearer second"]
@@ -161,5 +186,11 @@ async def test_load_gateway_catalog_maps_tools_to_server_id(
     monkeypatch.setattr(client, "list_servers", fake_list_servers)
     monkeypatch.setattr(client, "list_tools", fake_list_tools)
     tools, targets = await load_gateway_catalog(client, "tok")
-    assert [tool["function"]["name"] for tool in tools] == ["search_knowledge", "ping"]
-    assert targets == {"search_knowledge": "knowledge", "ping": "other"}
+    assert [tool["function"]["name"] for tool in tools] == [
+        "knowledge__search_knowledge",
+        "other__ping",
+    ]
+    assert targets == {
+        "knowledge__search_knowledge": ("knowledge", "search_knowledge"),
+        "other__ping": ("other", "ping"),
+    }

@@ -7,16 +7,16 @@ import subprocess
 from pathlib import Path
 
 from chat_ui.mcp_ui import (
-    DEFAULT_MCP_NAME,
     GATEWAY_MCP_TYPE,
     GATEWAY_MCP_URL_LABEL,
     render_mcp_autoload_js,
     write_mcp_autoload_script,
 )
 
-_KNOWLEDGE_ENTRY = {
-    "name": DEFAULT_MCP_NAME,
-    "tools": [{"name": "search_knowledge"}, {"name": "get_document"}],
+_SAMPLE_GATEWAY_NAME = "docs-mcp"
+_SAMPLE_ENTRY = {
+    "name": _SAMPLE_GATEWAY_NAME,
+    "tools": [{"name": "search_docs"}, {"name": "get_document"}],
 }
 
 HARNESS = r"""
@@ -61,7 +61,7 @@ sandbox.globalThis = sandbox;
 
 store.mcp_storage_key = JSON.stringify([
   {
-    name: "knowledge-mcp",
+    name: "docs-mcp",
     tools: [],
     status: "failed",
     clientType: "streamable-http",
@@ -84,7 +84,7 @@ vm.runInNewContext(script, sandbox);
   const stored = JSON.parse(store.mcp_storage_key);
   const gateway = await sandbox.fetch("http://localhost:8080/mcp", {
     method: "POST",
-    body: JSON.stringify({ sessionId: "s", name: "knowledge-mcp" }),
+    body: JSON.stringify({ sessionId: "s", name: "docs-mcp" }),
   });
   const other = await sandbox.fetch("http://localhost:8080/mcp", {
     method: "POST",
@@ -92,7 +92,7 @@ vm.runInNewContext(script, sandbox);
   });
   const removed = await sandbox.fetch("http://localhost:8080/mcp", {
     method: "DELETE",
-    body: JSON.stringify({ sessionId: "s", name: "knowledge-mcp" }),
+    body: JSON.stringify({ sessionId: "s", name: "docs-mcp" }),
   });
   const result = {
     stored,
@@ -110,14 +110,14 @@ vm.runInNewContext(script, sandbox);
 
 
 def test_render_mcp_autoload_js_seeds_gateway_display_entry() -> None:
-    script = render_mcp_autoload_js([_KNOWLEDGE_ENTRY])
+    script = render_mcp_autoload_js([_SAMPLE_ENTRY])
 
     assert "mcp_storage_key" in script
-    assert DEFAULT_MCP_NAME in script
+    assert _SAMPLE_GATEWAY_NAME in script
     assert "unshift" in script
     assert GATEWAY_MCP_TYPE in script
     assert GATEWAY_MCP_URL_LABEL in script
-    assert "search_knowledge" in script
+    assert "search_docs" in script
     assert "get_document" in script
     assert "http://mcp-server" not in script
     assert "Authorization" not in script
@@ -125,14 +125,14 @@ def test_render_mcp_autoload_js_seeds_gateway_display_entry() -> None:
 
 
 def test_write_mcp_autoload_script_creates_public_js(tmp_path: Path) -> None:
-    path = write_mcp_autoload_script(tmp_path, [_KNOWLEDGE_ENTRY])
+    path = write_mcp_autoload_script(tmp_path, [_SAMPLE_ENTRY])
 
     assert path == tmp_path / "mcp-autoload.js"
-    assert DEFAULT_MCP_NAME in path.read_text(encoding="utf-8")
+    assert _SAMPLE_GATEWAY_NAME in path.read_text(encoding="utf-8")
     assert GATEWAY_MCP_TYPE in path.read_text(encoding="utf-8")
 
 
-def test_autoload_script_replaces_legacy_entry_and_intercepts_knowledge_mcp(
+def test_autoload_script_replaces_legacy_entry_and_intercepts_gateway_mcp(
     tmp_path: Path,
 ) -> None:
     node = shutil.which("node")
@@ -141,7 +141,7 @@ def test_autoload_script_replaces_legacy_entry_and_intercepts_knowledge_mcp(
     if not Path(node).exists():
         raise RuntimeError("node is required to execute mcp-autoload.js")
 
-    script_path = write_mcp_autoload_script(tmp_path, [_KNOWLEDGE_ENTRY])
+    script_path = write_mcp_autoload_script(tmp_path, [_SAMPLE_ENTRY])
     harness_path = tmp_path / "harness.js"
     harness_path.write_text(HARNESS, encoding="utf-8")
 
@@ -157,21 +157,21 @@ def test_autoload_script_replaces_legacy_entry_and_intercepts_knowledge_mcp(
     stored = result["stored"]
     names = [item["name"] for item in stored]
 
-    assert names.count(DEFAULT_MCP_NAME) == 1
+    assert names.count(_SAMPLE_GATEWAY_NAME) == 1
     assert "other-mcp" in names
-    gateway = next(item for item in stored if item["name"] == DEFAULT_MCP_NAME)
+    gateway = next(item for item in stored if item["name"] == _SAMPLE_GATEWAY_NAME)
     assert gateway["status"] == "connected"
     assert gateway["type"] == GATEWAY_MCP_TYPE
     assert gateway["url"] == GATEWAY_MCP_URL_LABEL
     assert gateway["isUserProvided"] is False
     assert [tool["name"] for tool in gateway["tools"]] == [
-        "search_knowledge",
+        "search_docs",
         "get_document",
     ]
     assert gateway.get("headers") in (None, {})
 
     assert result["gateway"]["success"] is True
-    assert result["gateway"]["mcp"]["name"] == DEFAULT_MCP_NAME
+    assert result["gateway"]["mcp"]["name"] == _SAMPLE_GATEWAY_NAME
     assert result["removed"]["success"] is True
     assert result["other"] == {"proxied": True}
     assert len(result["fetchCalls"]) == 1
@@ -188,11 +188,11 @@ def test_autoload_script_replaces_legacy_entry_and_intercepts_knowledge_mcp(
 def test_render_mcp_autoload_js_includes_all_gateway_entries() -> None:
     script = render_mcp_autoload_js(
         [
-            {"name": "knowledge-mcp", "tools": [{"name": "search_knowledge"}]},
+            {"name": "docs-mcp", "tools": [{"name": "search_docs"}]},
             {"name": "other", "tools": [{"name": "ping"}]},
         ]
     )
     assert script.count("unshift") == 1
-    assert "knowledge-mcp" in script
+    assert "docs-mcp" in script
     assert "other" in script
     assert "ping" in script

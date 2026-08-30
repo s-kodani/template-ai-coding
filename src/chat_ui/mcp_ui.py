@@ -4,7 +4,6 @@ import json
 from pathlib import Path
 from typing import Any
 
-DEFAULT_MCP_NAME = "knowledge-mcp"
 MCP_STORAGE_KEY = "mcp_storage_key"
 GATEWAY_MCP_TYPE = "gateway"
 GATEWAY_MCP_URL_LABEL = "via MCP Gateway"

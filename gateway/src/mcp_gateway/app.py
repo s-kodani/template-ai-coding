@@ -27,6 +27,25 @@ def _bearer(authorization: str | None) -> str:
     return authorization.removeprefix("Bearer ").strip()
 
 
+def _server_authentication(server: dict[str, Any]) -> dict[str, Any]:
+    auth = server.get("authentication") or {}
+    if auth.get("mode") != "keycloak_token_exchange":
+        raise GatewayError(
+            500,
+            "UNSUPPORTED_AUTH_MODE",
+            "Registry authentication.mode must be keycloak_token_exchange",
+        )
+    resource = auth.get("resource")
+    scopes = auth.get("scopes")
+    if not resource or not isinstance(scopes, list) or not scopes:
+        raise GatewayError(
+            500,
+            "INVALID_REGISTRY",
+            "Registry authentication.resource and scopes are required",
+        )
+    return auth
+
+
 async def _mcp_token(
     *,
     settings: Settings,
@@ -36,11 +55,11 @@ async def _mcp_token(
     server: dict[str, Any],
     signing_key: Any | None,
 ) -> str:
-    scopes = list(server.get("authentication", {}).get("scopes") or ["mcp-tools"])
+    auth = _server_authentication(server)
+    scopes = [str(scope) for scope in auth["scopes"]]
     cached = cache.get(source_token, server_id, scopes)
     if cached:
         return cached
-    auth = server.get("authentication") or {}
     payload = await exchange_token(
         token_url=settings.keycloak_token_url,
         client_id=settings.gateway_client_id,
@@ -53,7 +72,7 @@ async def _mcp_token(
     verify_exchanged_token(
         mcp_token,
         issuer=settings.keycloak_issuer,
-        expected_audience=auth.get("resource") or "http://localhost:8000/mcp",
+        expected_audience=str(auth["resource"]),
         signing_key=signing_key,
         jwks_uri=settings.keycloak_jwks_uri,
     )

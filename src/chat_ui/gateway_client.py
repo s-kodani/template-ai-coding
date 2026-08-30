@@ -81,7 +81,7 @@ class MCPGatewayClient:
 async def load_gateway_catalog(
     client: MCPGatewayClient,
     access_token: str,
-) -> tuple[list[dict[str, Any]], dict[str, str]]:
+) -> tuple[list[dict[str, Any]], dict[str, tuple[str, str]]]:
     listed: list[tuple[str, list[dict[str, Any]]]] = []
     for server in await client.list_servers(access_token):
         server_id = str(server.get("id") or "")
@@ -93,17 +93,17 @@ async def load_gateway_catalog(
     return catalog_from_listed_tools(listed)
 
 
-async def call_default_tool(
+async def call_gateway_tool(
     client: MCPGatewayClient,
     token_source: AccessTokenSource,
     session_id: str,
     name: str,
     arguments: dict[str, Any],
-    server_id: str = "knowledge",
+    server_id: str,
 ) -> dict[str, Any]:
     token = await token_source.get_access_token(session_id)
     if not token:
-        return {"error": "Not authenticated for knowledge tools"}
+        return {"error": "Not authenticated for MCP tools"}
     result = await client.call_tool(server_id, name, arguments, token)
     if result.get("status_code") == 401:
         token = await token_source.get_access_token(session_id, force_refresh=True)

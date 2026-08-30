@@ -9,7 +9,7 @@ import chainlit as cl
 from langfuse import observe
 
 from chat_ui.auth import register_oauth_callback, set_token_manager
-from chat_ui.gateway_client import MCPGatewayClient, call_default_tool, load_gateway_catalog
+from chat_ui.gateway_client import MCPGatewayClient, call_gateway_tool, load_gateway_catalog
 from chat_ui.gateway_registry import load_ui_servers
 from chat_ui.mcp_bridge import build_openai_client
 from chat_ui.mcp_tools import call_session_tool, collect_openai_tools, resolve_tool_target
@@ -33,10 +33,9 @@ write_mcp_autoload_script(
 register_oauth_callback()
 
 SYSTEM_PROMPT = (
-    "You are a helpful assistant with access to MCP tools from the knowledge "
-    "gateway and any additional MCP servers the user has connected. "
-    "Use search tools when the user asks about project documentation. "
-    "Cite document titles and ids from knowledge-base tool results."
+    "You are a helpful assistant with access to MCP tools from the gateway "
+    "and any additional MCP servers the user has connected. "
+    "Use those tools when they help answer the user."
 )
 
 
@@ -93,17 +92,16 @@ def _llm_tools() -> list[dict[str, Any]]:
 
 async def _dispatch_tool(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
     session_tools = cl.user_session.get("mcp_tools") or {}
-    kind, target = resolve_tool_target(
-        name,
-        session_tools,
-        cl.user_session.get("gateway_targets") or {},
-    )
+    targets = cl.user_session.get("gateway_targets") or {}
+    kind, target = resolve_tool_target(name, session_tools, targets)
     if kind == "gateway" and target:
-        return await call_default_tool(
+        mapped = targets.get(name)
+        mcp_name = mapped[1] if isinstance(mapped, tuple) else name
+        return await call_gateway_tool(
             gateway_client,
             token_manager,
             cl.context.session.id,
-            name,
+            mcp_name,
             arguments,
             server_id=target,
         )

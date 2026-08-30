@@ -49,28 +49,37 @@ def find_session_for_tool(
     return None
 
 
+def llm_tool_name(server_id: str, tool_name: str) -> str:
+    return f"{server_id}__{tool_name}"
+
+
 def catalog_from_listed_tools(
     servers: list[tuple[str, list[dict[str, Any]]]],
-) -> tuple[list[dict[str, Any]], dict[str, str]]:
+) -> tuple[list[dict[str, Any]], dict[str, tuple[str, str]]]:
     openai_tools: list[dict[str, Any]] = []
-    targets: dict[str, str] = {}
+    targets: dict[str, tuple[str, str]] = {}
     for server_id, tools in servers:
         for tool in tools:
-            name = tool.get("name")
-            if not name or name in targets:
+            mcp_name = tool.get("name")
+            if not mcp_name:
                 continue
-            targets[name] = server_id
-            openai_tools.append(openai_tool_from_mcp(tool))
+            name = llm_tool_name(server_id, mcp_name)
+            if name in targets:
+                continue
+            targets[name] = (server_id, mcp_name)
+            openai_tools.append(openai_tool_from_mcp({**tool, "name": name}))
     return openai_tools, targets
 
 
 def resolve_tool_target(
     name: str,
     session_tools: dict[str, list[dict[str, Any]]],
-    gateway_targets: dict[str, str] | None = None,
+    gateway_targets: dict[str, str] | dict[str, tuple[str, str]] | None = None,
 ) -> ToolTarget:
     if gateway_targets and name in gateway_targets:
-        return ("gateway", gateway_targets[name])
+        mapped = gateway_targets[name]
+        server_id = mapped[0] if isinstance(mapped, tuple) else mapped
+        return ("gateway", server_id)
     session_name = find_session_for_tool(name, session_tools)
     if session_name is None:
         return ("unknown", None)
