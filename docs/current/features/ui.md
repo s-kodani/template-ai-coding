@@ -5,7 +5,7 @@ description: Keycloak OAuth 付きの Chainlit チャット UI。既定 knowledg
 tags: [chainlit, ui, mcp, oauth, keycloak, gateway]
 status: stable
 generated:
-  at: "2026-08-30T07:05:00Z"
+  at: "2026-08-30T10:35:00Z"
   by: process:cursor-agent
 ---
 
@@ -21,7 +21,7 @@ generated:
 ## 動作
 
 - 未ログインではチャットできない。Keycloak（`knowledge` realm）でログインする
-- 開発ユーザーは `dev` / `dev`（email `dev@localhost`、role `mcp-reader`）。`readerless` はログインできるが `GET /v1/mcp` に knowledge が出ず、ツール実行も Gateway が拒否する。管理者コンソールは http://localhost:8081
+- 開発ユーザーは `dev` / `dev`（email `dev@localhost`、role `knowledge-mcp-reader`）。`readerless` はログインできるが `GET /v1/mcp` に knowledge が出ず、ツール実行も Gateway が拒否する。管理者コンソールは http://localhost:8081
 - チャット開始時に Gateway の `GET /v1/mcp`（role でフィルタ）と各 `GET /v1/mcp/{server_id}/tools` から LLM ツールを載せる。LLM 名は `{server_id}__{mcp_tool_name}`。実行時は unprefixed の MCP 名を `server_id` 付きで Gateway へ送る
 - Chainlit の Keycloak トークンを knowledge-mcp へ渡さない
 - refresh token はアプリ Postgres（`TOKEN_STORE_DATABASE_URL` + pgcrypto）に保存する。Chainlit 内蔵 data layer の `DATABASE_URL` は空

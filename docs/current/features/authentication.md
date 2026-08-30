@@ -5,7 +5,7 @@ description: 未ログインの Chainlit アクセスから knowledge-mcp ツー
 tags: [authentication, authorization, keycloak, gateway, mcp, chainlit]
 status: stable
 generated:
-  at: "2026-08-30T07:05:00Z"
+  at: "2026-08-30T10:35:00Z"
   by: process:cursor-agent
 ---
 
@@ -30,8 +30,8 @@ Chainlit の Keycloak トークンは knowledge-mcp に渡さない。
 
 | ユーザー | パスワード | realm role | Gateway での knowledge |
 |---|---|---|---|
-| `dev` | `dev` | `mcp-reader` あり | 一覧に出る。ツール実行可 |
-| `readerless` | `readerless` | `mcp-reader` なし | `GET /v1/mcp` から消える。`POST ...:call` は 403 |
+| `dev` | `dev` | `knowledge-mcp-reader` あり | 一覧に出る。ツール実行可 |
+| `readerless` | `readerless` | `knowledge-mcp-reader` なし | `GET /v1/mcp` から消える。`POST ...:call` は 403 |
 
 サーバーごとの実行条件は Registry の `authorization.required_roles` と Keycloak の `users[].realmRoles` を揃える。ユーザー → サーバーの個別 allowlist は持たない。
 
@@ -84,7 +84,7 @@ sequenceDiagram
     Gateway->>Gateway: JWT 検証 + allowed_tools + required_roles
     Gateway->>Keycloak: Token Exchange（キャッシュ可）
     Gateway->>MCP: tools/call（Bearer 交換後 JWT）
-    MCP->>MCP: aud/scope/mcp-reader を検証
+    MCP->>MCP: aud/scope/knowledge-mcp-reader を検証
     MCP-->>Chainlit: ツール結果
 ```
 
@@ -105,7 +105,7 @@ sequenceDiagram
 - `aud` に `mcp-gateway`（scope `chainlit-mcp-gateway`）
 - `azp` = `chainlit`
 - `sub`（scope `basic`）
-- `realm_access.roles`（scope `roles`）。`dev` は `mcp-reader` を含む
+- `realm_access.roles`（scope `roles`）。`dev` は `knowledge-mcp-reader` を含む
 - `email` / 表示名（scope `email` / `profile`）
 
 ## フェーズ 2 — チャット開始とカタログ（認可の発見）
@@ -124,7 +124,7 @@ Gateway の `GET /v1/mcp`:
 4. 各サーバーの `authorization.required_roles` が空でなければ、JWT の `realm_access.roles` がそれをすべて含むこと。満たさないサーバーは **返さない**（404 にはしない。一覧から消す）。
 5. 下流 MCP は呼ばない。返すのは `{id, name, tools}`（`allowed_tools`）。
 
-いまの knowledge エントリは `required_roles: [mcp-reader]`。`readerless` の応答は knowledge を含まない。そのため Chainlit は `GET /v1/mcp/knowledge/tools` を呼ばず、LLM にも knowledge ツールを載せない。
+いまの knowledge エントリは `required_roles: [knowledge-mcp-reader]`。`readerless` の応答は knowledge を含まない。そのため Chainlit は `GET /v1/mcp/knowledge/tools` を呼ばず、LLM にも knowledge ツールを載せない。次の Gateway MCP を足すときは、そのサーバー用の realm role を作り Registry の `required_roles` に書く。
 
 `required_roles` が空のサーバーは、有効な Chainlit JWT を持つ全員に出る。
 
@@ -174,7 +174,7 @@ Compose では `MCP_JWKS_URI` があるので HTTP Bearer 必須。
 
 1. FastMCP `JWTVerifier`: JWKS、`iss`、`aud=http://localhost:8000/mcp`、必須 scope `mcp-tools`。
 2. PRM の `resource` も `http://localhost:8000/mcp`（JWT `aud` と同じ）。
-3. 各ツール `auth=require_mcp_reader`: 交換後 JWT の `realm_access.roles` に `mcp-reader`。無ければツール拒否。
+3. 各ツール `auth=require_mcp_reader`: 交換後 JWT の `realm_access.roles` に `knowledge-mcp-reader`。無ければツール拒否。
 4. 通れば SearchService（埋め込み + pgvector）。
 
 `MCP_JWKS_URI` 未設定の in-process テストだけ Bearer を要求しない。`token is None` のとき `require_mcp_reader` は通す。
@@ -187,8 +187,8 @@ Compose では `MCP_JWKS_URI` があるので HTTP Bearer 必須。
 | Gateway に Bearer なし | 401 `INVALID_TOKEN` |
 | `aud` に `mcp-gateway` がない / `azp` が `chainlit` でない | 403 `INVALID_AUDIENCE` |
 | 期限切れ JWT | 401 `TOKEN_EXPIRED`（Chainlit は refresh して再試行） |
-| `mcp-reader` なしで `GET /v1/mcp` | knowledge が配列に無い（200） |
-| `mcp-reader` なしで `POST ...:call` | 403 `ACCESS_DENIED` |
+| `knowledge-mcp-reader` なしで `GET /v1/mcp` | knowledge が配列に無い（200） |
+| `knowledge-mcp-reader` なしで `POST ...:call` | 403 `ACCESS_DENIED` |
 | 未知 / disabled の `server_id` | 404 `MCP_SERVER_NOT_FOUND` |
 | Registry に `authentication.resource` / `scopes` が無い | 500 `INVALID_REGISTRY` |
 | `authentication.mode` が `keycloak_token_exchange` でない | 500 `UNSUPPORTED_AUTH_MODE` |

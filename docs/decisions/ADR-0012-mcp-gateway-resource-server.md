@@ -6,7 +6,7 @@ tags: [decision, architecture, authentication, mcp, keycloak, gateway]
 status: stable
 decision_status: accepted
 generated:
-  at: "2026-08-30T07:05:00Z"
+  at: "2026-08-30T10:35:00Z"
   by: process:cursor-agent
 ---
 
@@ -26,7 +26,7 @@ MCP の Authorization では、下流サーバーへ上流 Access Token をパ�
 - Chainlit の Gateway ツールは `GET /v1/mcp` と `GET /v1/mcp/{server_id}/tools` で発見し、`POST /v1/mcp/{server_id}/tools/{name}:call` で実行する。`GET /v1/mcp` は JWT の realm role が各サーバーの `required_roles` を満たすものだけ返す。LLM schema は knowledge 専用にハードコードしない。LLM 名は `{server_id}__{mcp_tool_name}`（OpenAI の `^[a-zA-Z0-9_-]{1,64}$`）。Token Exchange は各サーバーの `authentication.mode=keycloak_token_exchange` と `resource` / `scopes` を必須とし、knowledge 向けデフォルトは持たない
 - knowledge-mcp は Keycloak の Resource Server とする（FastMCP `JWTVerifier` + `RemoteAuthProvider`）。検証する `aud` と PRM `resource` は `http://localhost:8000/mcp`。Keycloak 26 の standard token exchange（V2）では `audience` パラメータを付けない（付けると `Requested audience not available: knowledge-mcp`）。Resource `aud` は `mcp-gateway` の default scope `mcp-tools` の custom audience mapper が付与する
 - Gateway は Chainlit トークンを検証し（`aud=mcp-gateway`、`azp=chainlit`）、`mcp-gateway` クライアントで Token Exchange する。ユーザー識別は JWT `sub` のみ。リクエスト body の `user_id` は拒否する
-- ツール認可は realm role `mcp-reader`。scope 名は `mcp-tools`
+- ツール認可はサーバーごとの realm role。knowledge-mcp は `knowledge-mcp-reader`。scope 名は `mcp-tools`
 - Chainlit の refresh token はアプリ Postgres に pgcrypto で保存する（`TOKEN_STORE_DATABASE_URL`）。Chainlit 内蔵 data layer の `DATABASE_URL` は空のまま
 - Chainlit MCP 接続 UI には Registry の enabled サーバーを載せる。`POST /mcp` による実セッションは張らず、トークンも渡さない。プラグ UI の切断 / 再接続は `/gateway-mcp` でそのサーバーのツールをセッションから外す / 戻す。追加の未認証 MCP は `user_servers` allowlist のまま
 - ローカル HTTP を許容する。TLS / mTLS / CIMD / Redis / 第 2 MCP はこの垂直スライスの対象外

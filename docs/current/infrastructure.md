@@ -78,7 +78,7 @@ MCP `_meta` には FastMCP 既定の `traceparent` に加え、Langfuse の `lan
 Chainlit は Keycloak の `knowledge` realm で OAuth する（[ADR-0011](/decisions/ADR-0011-keycloak-chainlit-oauth.md)）。既定 knowledge-mcp 呼び出しは MCP Gateway が Token Exchange する（[ADR-0012](/decisions/ADR-0012-mcp-gateway-resource-server.md)）。シーケンスは [認証認可](/current/features/authentication.md)。
 
 - 管理 UI: http://localhost:8081 （`admin` / `admin`）
-- チャットログイン: Chainlit の Keycloak ボタンから。開発ユーザーは `dev` / `dev`（role `mcp-reader`）
+- チャットログイン: Chainlit の Keycloak ボタンから。開発ユーザーは `dev` / `dev`（role `knowledge-mcp-reader`）
 - Chainlit コンテナはアプリ Postgres の `DATABASE_URL` を使わない（Chainlit 内蔵 data layer の `User` テーブルは持たない）。refresh token は `TOKEN_STORE_DATABASE_URL` で同じ Postgres の `chainlit_oauth_tokens` に保存する
 - MCP Gateway はホストポートを公開しない。Chainlit から `http://mcp-gateway:8082` へ到達する
 - knowledge-mcp は `MCP_JWKS_URI` 設定時に Bearer 必須。Inspector は `uv run python scripts/mcp_dev_token.py` でトークンを取る

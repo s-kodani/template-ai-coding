@@ -89,7 +89,7 @@ Keycloak ログイン（client=chainlit）
   -> チャット開始時、Chainlit は GET /v1/mcp（role でフィルタ）と GET /v1/mcp/{id}/tools でツールを発見する
   -> 既定ツール実行時、Chainlit は Gateway へ Bearer（aud に mcp-gateway）
   -> Gateway が Token Exchange（client=mcp-gateway、scope=mcp-tools。Keycloak 26 V2 では audience パラメータなし）
-  -> knowledge-mcp が JWT を検証（aud に http://localhost:8000/mcp、role mcp-reader）
+  -> knowledge-mcp が JWT を検証（aud に http://localhost:8000/mcp、role knowledge-mcp-reader）
 ```
 
 Chainlit トークンは knowledge-mcp に渡さない（[ADR-0012](/decisions/ADR-0012-mcp-gateway-resource-server.md)）。
