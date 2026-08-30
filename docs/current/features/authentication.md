@@ -5,7 +5,7 @@ description: 未ログインの Chainlit アクセスから knowledge-mcp ツー
 tags: [authentication, authorization, keycloak, gateway, mcp, chainlit]
 status: stable
 generated:
-  at: "2026-08-30T06:40:00Z"
+  at: "2026-08-30T07:05:00Z"
   by: process:cursor-agent
 ---
 
@@ -201,7 +201,7 @@ Compose では `MCP_JWKS_URI` があるので HTTP Bearer 必須。
 
 **プラグ UI（MCP Servers）**
 
-Registry の enabled サーバーを `mcp-autoload.js` が **表示専用** で載せる。role では隠さない。`POST /mcp` はブラウザ側で成功応答し、Chainlit プロセスは Streamable HTTP セッションを張らない。トークンも渡さない。
+Registry の enabled サーバーを `mcp-autoload.js` が載せる。role では隠さない。プラグ UI の接続 / 切断は `/gateway-mcp` でセッションの利用フラグだけを更新する（実 MCP セッションは張らない。トークンも渡さない）。切断したサーバーのツールは次のチャットターンから LLM に載らない。新しいチャットでは再び有効。
 
 **追加 MCP（allowlist）**
 

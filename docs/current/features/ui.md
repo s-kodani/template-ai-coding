@@ -5,7 +5,7 @@ description: Keycloak OAuth 付きの Chainlit チャット UI。既定 knowledg
 tags: [chainlit, ui, mcp, oauth, keycloak, gateway]
 status: stable
 generated:
-  at: "2026-08-30T06:40:00Z"
+  at: "2026-08-30T07:05:00Z"
   by: process:cursor-agent
 ---
 
@@ -26,7 +26,7 @@ generated:
 - Chainlit の Keycloak トークンを knowledge-mcp へ渡さない
 - refresh token はアプリ Postgres（`TOKEN_STORE_DATABASE_URL` + pgcrypto）に保存する。Chainlit 内蔵 data layer の `DATABASE_URL` は空
 - Chainlit 内蔵 MCP 接続 UI で Streamable HTTP / SSE サーバを追加接続できる。接続先は `.chainlit/config.toml` の `user_servers.allowed_urls` に含まれる origin に限る（[ADR-0009](/decisions/ADR-0009-chainlit-mcp-user-servers-allowlist.md)）
-- Registry の enabled Gateway MCP はプラグ UI（MCP Servers）に **表示専用** で載せる。Chainlit はそれらへ MCP セッションを張らない
+- Registry の enabled Gateway MCP はプラグ UI（MCP Servers）に載せる。Chainlit はそれらへ MCP セッションを張らない。切断するとそのサーバーのツールを LLM / 実行から外し、再接続で戻す（チャットを開き直すと再び有効）
 - 追加接続したサーバのツールはセッションに載り、LLM の function tools に動的追加される
 - 追加サーバへの `tools/call` では `_meta` へ W3C `traceparent` と Langfuse `baggage` を注入する
 - Gateway ツールの同名衝突は `{server_id}__` 接頭辞で共存する。追加 MCP セッション同士の同名は先に接続した方を優先する
@@ -39,7 +39,7 @@ generated:
 
 - 追加 MCP へは、Chainlit コンテナから到達でき、allowlist に含まれる URL を指定する
 - 既定 allowlist: `http://mcp-server:8000`、`http://localhost:8000`、`http://127.0.0.1:8000`、`http://host.docker.internal:8000`
-- Gateway MCP は `mcp-autoload.js` が Registry から一覧へ載せる。`POST /mcp` はブラウザ側で成功応答し、Chainlit プロセスは接続しない
+- Gateway MCP は `mcp-autoload.js` が Registry から一覧へ載せる。プラグ UI の `POST|DELETE /mcp` は `/gateway-mcp` に書き換わり、セッションの利用フラグだけを更新する。Chainlit プロセスは Streamable HTTP セッションを張らない
 - knowledge-mcp へ UI からヘッダーなしで実接続しようとすると JWT 必須のため失敗する。ツール実行は Gateway 経由のまま
 
 ## 設定
