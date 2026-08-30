@@ -34,10 +34,11 @@ servers:
 
     assert load_ui_servers(path) == [
         {
+            "id": "knowledge",
             "name": "knowledge-mcp",
             "tools": [{"name": "search_knowledge"}, {"name": "get_document"}],
         },
-        {"name": "other", "tools": [{"name": "ping"}]},
+        {"id": "other", "name": "other", "tools": [{"name": "ping"}]},
     ]
 
 

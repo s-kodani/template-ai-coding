@@ -6,13 +6,20 @@ from pathlib import Path
 from typing import Any
 
 import chainlit as cl
+from chainlit.server import app as chainlit_app
 from langfuse import observe
 
 from chat_ui.auth import register_oauth_callback, set_token_manager
 from chat_ui.gateway_client import MCPGatewayClient, call_gateway_tool, load_gateway_catalog
 from chat_ui.gateway_registry import load_ui_servers
+from chat_ui.gateway_routes import register_gateway_mcp_routes
 from chat_ui.mcp_bridge import build_openai_client
-from chat_ui.mcp_tools import call_session_tool, collect_openai_tools, resolve_tool_target
+from chat_ui.mcp_tools import (
+    call_session_tool,
+    collect_openai_tools,
+    filter_gateway_catalog,
+    resolve_tool_target,
+)
 from chat_ui.mcp_ui import write_mcp_autoload_script
 from chat_ui.token_manager import build_token_manager
 from knowledge_mcp.config import get_settings
@@ -26,11 +33,11 @@ openai_client = build_openai_client(settings)
 gateway_client = MCPGatewayClient(settings.mcp_gateway_url)
 token_manager = build_token_manager(settings)
 set_token_manager(token_manager)
-write_mcp_autoload_script(
-    Path.cwd() / "public",
-    load_ui_servers(Path(settings.mcp_gateway_registry_path)),
-)
+_ui_servers = load_ui_servers(Path(settings.mcp_gateway_registry_path))
+_ui_name_to_id = {str(entry["name"]): str(entry["id"]) for entry in _ui_servers}
+write_mcp_autoload_script(Path.cwd() / "public", _ui_servers)
 register_oauth_callback()
+register_gateway_mcp_routes(chainlit_app, name_to_id=_ui_name_to_id)
 
 SYSTEM_PROMPT = (
     "You are a helpful assistant with access to MCP tools from the gateway "
@@ -56,8 +63,17 @@ async def on_chat_start() -> None:
         token = await token_manager.get_access_token(cl.context.session.id)
         if token:
             tools, targets = await load_gateway_catalog(gateway_client, token)
-            cl.user_session.set("gateway_tools", tools)
-            cl.user_session.set("gateway_targets", targets)
+            cl.user_session.set("gateway_catalog_tools", tools)
+            cl.user_session.set("gateway_catalog_targets", targets)
+            disabled = set(cl.user_session.get("gateway_disabled") or set())
+            enabled = {ref[0] for ref in targets.values()} - disabled
+            filtered_tools, filtered_targets = filter_gateway_catalog(
+                tools, targets, enabled
+            )
+            cl.user_session.set("gateway_tools", filtered_tools)
+            cl.user_session.set("gateway_targets", filtered_targets)
+            cl.user_session.set("gateway_enabled", enabled)
+            cl.user_session.set("gateway_disabled", disabled)
 
 
 @cl.on_mcp_connect

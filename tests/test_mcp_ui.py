@@ -29,11 +29,33 @@ const script = fs.readFileSync(scriptPath, "utf8");
 const store = {};
 const fetchCalls = [];
 const originalFetch = async (input, init = {}) => {
+  const url = typeof input === "string" ? input : input.url;
   fetchCalls.push({
-    url: typeof input === "string" ? input : input.url,
+    url,
     method: init.method || "GET",
     body: init.body || null,
   });
+  if (String(url).includes("/gateway-mcp")) {
+    const payload = JSON.parse(init.body || "{}");
+    if ((init.method || "GET").toUpperCase() === "DELETE") {
+      return new Response(JSON.stringify({ success: true }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+    return new Response(JSON.stringify({
+      success: true,
+      mcp: {
+        name: payload.name,
+        tools: [{ name: "search_docs" }, { name: "get_document" }],
+        clientType: "gateway",
+        url: "via MCP Gateway",
+      },
+    }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
   return new Response(JSON.stringify({ proxied: true }), {
     status: 200,
     headers: { "Content-Type": "application/json" },
@@ -174,9 +196,19 @@ def test_autoload_script_replaces_legacy_entry_and_intercepts_gateway_mcp(
     assert result["gateway"]["mcp"]["name"] == _SAMPLE_GATEWAY_NAME
     assert result["removed"]["success"] is True
     assert result["other"] == {"proxied": True}
-    assert len(result["fetchCalls"]) == 1
-    forwarded = result["fetchCalls"][0]
-    assert forwarded["url"] == "http://localhost:8080/mcp"
+    assert result["gateway"]["mcp"]["clientType"] == GATEWAY_MCP_TYPE
+    assert [call["url"] for call in result["fetchCalls"]] == [
+        "http://localhost:8080/gateway-mcp",
+        "http://localhost:8080/mcp",
+        "http://localhost:8080/gateway-mcp",
+    ]
+    assert result["fetchCalls"][0]["method"] == "POST"
+    assert result["fetchCalls"][2]["method"] == "DELETE"
+    assert json.loads(result["fetchCalls"][0]["body"]) == {
+        "sessionId": "s",
+        "name": "docs-mcp",
+    }
+    forwarded = result["fetchCalls"][1]
     assert forwarded["method"] == "POST"
     assert json.loads(forwarded["body"]) == {
         "sessionId": "s",

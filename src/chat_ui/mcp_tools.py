@@ -53,6 +53,40 @@ def llm_tool_name(server_id: str, tool_name: str) -> str:
     return f"{server_id}__{tool_name}"
 
 
+def filter_gateway_catalog(
+    tools: list[dict[str, Any]],
+    targets: dict[str, tuple[str, str]],
+    enabled_server_ids: set[str],
+) -> tuple[list[dict[str, Any]], dict[str, tuple[str, str]]]:
+    kept = {
+        name: ref for name, ref in targets.items() if ref[0] in enabled_server_ids
+    }
+    kept_tools = [
+        tool for tool in tools if tool.get("function", {}).get("name") in kept
+    ]
+    return kept_tools, kept
+
+
+def apply_gateway_toggle(
+    catalog_tools: list[dict[str, Any]],
+    catalog_targets: dict[str, tuple[str, str]],
+    enabled: set[str] | None,
+    server_id: str,
+    enable: bool,
+) -> tuple[list[dict[str, Any]], dict[str, tuple[str, str]], set[str]]:
+    current = (
+        set(enabled)
+        if enabled is not None
+        else {ref[0] for ref in catalog_targets.values()}
+    )
+    if enable:
+        current.add(server_id)
+    else:
+        current.discard(server_id)
+    tools, targets = filter_gateway_catalog(catalog_tools, catalog_targets, current)
+    return tools, targets, current
+
+
 def catalog_from_listed_tools(
     servers: list[tuple[str, list[dict[str, Any]]]],
 ) -> tuple[list[dict[str, Any]], dict[str, tuple[str, str]]]:

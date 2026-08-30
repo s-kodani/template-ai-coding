@@ -7,9 +7,11 @@ import pytest
 from opentelemetry import trace
 
 from chat_ui.mcp_tools import (
+    apply_gateway_toggle,
     call_session_tool,
     catalog_from_listed_tools,
     collect_openai_tools,
+    filter_gateway_catalog,
     find_session_for_tool,
     openai_tool_from_mcp,
     parse_tool_result,
@@ -170,6 +172,45 @@ def test_catalog_from_listed_tools_prefixes_server_id_and_keeps_collisions() -> 
         "other__search_knowledge": ("other", "search_knowledge"),
         "other__ping": ("other", "ping"),
     }
+
+
+def test_filter_gateway_catalog_keeps_enabled_servers_only() -> None:
+    tools, targets = catalog_from_listed_tools(
+        [
+            ("knowledge", [{"name": "search_knowledge", "inputSchema": {}}]),
+            ("other", [{"name": "ping", "inputSchema": {}}]),
+        ]
+    )
+    filtered_tools, filtered_targets = filter_gateway_catalog(
+        tools, targets, {"other"}
+    )
+    assert [tool["function"]["name"] for tool in filtered_tools] == ["other__ping"]
+    assert filtered_targets == {"other__ping": ("other", "ping")}
+
+
+def test_apply_gateway_toggle_disables_and_reenables_server() -> None:
+    tools, targets = catalog_from_listed_tools(
+        [
+            ("knowledge", [{"name": "search_knowledge", "inputSchema": {}}]),
+            ("other", [{"name": "ping", "inputSchema": {}}]),
+        ]
+    )
+    disabled_tools, disabled_targets, enabled = apply_gateway_toggle(
+        tools, targets, None, "knowledge", False
+    )
+    assert enabled == {"other"}
+    assert [tool["function"]["name"] for tool in disabled_tools] == ["other__ping"]
+    assert disabled_targets == {"other__ping": ("other", "ping")}
+
+    enabled_tools, enabled_targets, enabled = apply_gateway_toggle(
+        tools, targets, enabled, "knowledge", True
+    )
+    assert enabled == {"knowledge", "other"}
+    assert [tool["function"]["name"] for tool in enabled_tools] == [
+        "knowledge__search_knowledge",
+        "other__ping",
+    ]
+    assert enabled_targets == targets
 
 
 def test_parse_tool_result_json_text() -> None:

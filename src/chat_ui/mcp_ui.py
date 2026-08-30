@@ -70,25 +70,8 @@ def render_mcp_autoload_js(entries: list[dict[str, Any]] | None = None) -> str:
       try {{
         const payload = JSON.parse(body);
         if (payload && NAMES.has(payload.name)) {{
-          const entry = ENTRIES.find((item) => item.name === payload.name) || ENTRIES[0];
-          if (method === "DELETE") {{
-            return Promise.resolve(new Response(JSON.stringify({{ success: true }}), {{
-              status: 200,
-              headers: {{ "Content-Type": "application/json" }},
-            }}));
-          }}
-          return Promise.resolve(new Response(JSON.stringify({{
-            success: true,
-            mcp: {{
-              name: payload.name,
-              tools: entry ? entry.tools : [],
-              clientType: {json.dumps(GATEWAY_MCP_TYPE)},
-              url: {json.dumps(GATEWAY_MCP_URL_LABEL)},
-            }},
-          }}), {{
-            status: 200,
-            headers: {{ "Content-Type": "application/json" }},
-          }}));
+          const target = new URL("/gateway-mcp", location.origin).href;
+          return originalFetch(target, init);
         }}
       }} catch (_error) {{}}
     }}

@@ -21,6 +21,7 @@ def load_ui_servers(path: Path) -> list[dict[str, Any]]:
         allowed = list((server.get("authorization") or {}).get("allowed_tools") or [])
         listed.append(
             {
+                "id": server_id,
                 "name": str(ui.get("name") or server_id),
                 "tools": [{"name": str(name)} for name in allowed],
             }
