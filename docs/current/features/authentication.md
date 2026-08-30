@@ -5,7 +5,7 @@ description: 未ログインの Chainlit アクセスから knowledge-mcp ツー
 tags: [authentication, authorization, keycloak, gateway, mcp, chainlit]
 status: stable
 generated:
-  at: "2026-08-30T05:55:00Z"
+  at: "2026-08-30T06:40:00Z"
   by: process:cursor-agent
 ---
 
@@ -77,7 +77,7 @@ sequenceDiagram
         Gateway->>MCP: MCP list tools（Bearer 交換後 JWT）
         MCP-->>Gateway: schema（allowed_tools でフィルタ）
     end
-    Chainlit-->>User: LLM に載るツール = 許可サーバー分
+    Chainlit-->>User: LLM 名は server_id__mcp_tool_name
 
     User->>Chainlit: 質問
     Chainlit->>Gateway: POST /v1/mcp/knowledge/tools/{name}:call
@@ -135,11 +135,11 @@ Gateway の `GET /v1/mcp`:
 1. 同じ Chainlit JWT を検証する。
 2. `enabled` でなければ 404 `MCP_SERVER_NOT_FOUND`。
 3. **この GET は `required_roles` を再検査しない**（一覧で既に落としている。直接 URL を叩けば schema は取れる）。
-4. Token Exchange して knowledge-mcp に list tools する。応答は `allowed_tools` でフィルタする。
+4. Token Exchange してそのサーバーの MCP に list tools する。`authentication.mode` / `resource` / `scopes` が無ければ 500。応答は `allowed_tools` でフィルタする。
 
 ## フェーズ 4 — ツール実行（認可の強制）
 
-LLM がツールを選ぶと `POST /v1/mcp/{server_id}/tools/{name}:call`。body は `{ "arguments": {...} }` だけ。`user_id` は 422。主体は JWT `sub`。
+LLM が `{server_id}__{name}` を選ぶと `POST /v1/mcp/{server_id}/tools/{name}:call`（パスの `{name}` は MCP 名）。body は `{ "arguments": {...} }` だけ。`user_id` は 422。主体は JWT `sub`。
 
 Gateway:
 
@@ -161,12 +161,12 @@ Gateway client `mcp-gateway`（secret、`standard.token.exchange.enabled`）:
 | `grant_type` | `urn:ietf:params:oauth:grant-type:token-exchange` |
 | `subject_token` | Chainlit access token |
 | `subject_token_type` | `urn:ietf:params:oauth:token-type:access_token` |
-| `scope` | `mcp-tools`（Registry `authentication.scopes`） |
+| `scope` | そのサーバーの Registry `authentication.scopes`（knowledge は `mcp-tools`） |
 | `audience` | **送らない** |
 
 V2 の `audience` は「すでに付く aud の制限」であり、client id `knowledge-mcp` 向けの交換ではない。`audience=knowledge-mcp` は `Requested audience not available`（400）。Resource `aud` は `mcp-gateway` の default scope `mcp-tools` の custom audience mapper（`http://localhost:8000/mcp`）が付ける。
 
-Gateway は交換後 JWT を再検証する。`aud` に Registry の `authentication.resource`（既定 `http://localhost:8000/mcp`）が無ければ 502 `TOKEN_AUDIENCE_MISMATCH`。
+Gateway は交換後 JWT を再検証する。`aud` にそのサーバーの Registry `authentication.resource` が無ければ 502 `TOKEN_AUDIENCE_MISMATCH`。`resource` / `scopes` / `mode` の欠落を knowledge 向け値で補完しない。
 
 ## フェーズ 6 — knowledge-mcp（Resource Server）
 
@@ -190,6 +190,8 @@ Compose では `MCP_JWKS_URI` があるので HTTP Bearer 必須。
 | `mcp-reader` なしで `GET /v1/mcp` | knowledge が配列に無い（200） |
 | `mcp-reader` なしで `POST ...:call` | 403 `ACCESS_DENIED` |
 | 未知 / disabled の `server_id` | 404 `MCP_SERVER_NOT_FOUND` |
+| Registry に `authentication.resource` / `scopes` が無い | 500 `INVALID_REGISTRY` |
+| `authentication.mode` が `keycloak_token_exchange` でない | 500 `UNSUPPORTED_AUTH_MODE` |
 | 許可外ツール名 | 404 `TOOL_NOT_FOUND` |
 | Token Exchange が `audience=knowledge-mcp` | Keycloak 400。現行実装は送らない |
 | knowledge-mcp に Chainlit JWT または無認証 | JWT / scope / role 検証で拒否 |

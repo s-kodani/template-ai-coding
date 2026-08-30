@@ -18,7 +18,11 @@ Chainlit は `MCP_GATEWAY_URL` へ次を呼ぶ（Bearer は `aud=mcp-gateway` �
 |---|---|---|
 | GET | `/v1/mcp` | enabled かつ JWT の `realm_access.roles` が `required_roles` を満たす `{id, name, tools}`。Registry のみ。下流 MCP は呼ばない |
 | GET | `/v1/mcp/{server_id}/tools` | そのサーバーの tool schema（`allowed_tools` でフィルタ） |
-| POST | `/v1/mcp/{server_id}/tools/{name}:call` | ツール実行 |
+| POST | `/v1/mcp/{server_id}/tools/{name}:call` | ツール実行。`{name}` は MCP ツール名（接頭辞なし） |
+
+Chainlit が LLM に載せる function 名は `{server_id}__{name}`。Gateway のパスは MCP 名のまま。
+
+Token Exchange は Registry の `authentication.mode`（`keycloak_token_exchange`）、`resource`、`scopes` が必須。欠けると 500。knowledge 向けのデフォルト `resource` / `scopes` は使わない。
 
 ## ツール
 
