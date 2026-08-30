@@ -5,7 +5,7 @@ description: Keycloak OAuth 付きの Chainlit チャット UI。既定 knowledg
 tags: [chainlit, ui, mcp, oauth, keycloak, gateway]
 status: stable
 generated:
-  at: "2026-08-30T04:30:00Z"
+  at: "2026-08-30T05:50:00Z"
   by: process:cursor-agent
 ---
 
@@ -21,8 +21,8 @@ generated:
 ## 動作
 
 - 未ログインではチャットできない。Keycloak（`knowledge` realm）でログインする
-- 開発ユーザーは `dev` / `dev`（email `dev@localhost`、role `mcp-reader`）。`readerless` はログインできるが knowledge ツールは Gateway が拒否する。管理者コンソールは http://localhost:8081
-- チャット開始時に Gateway の `GET /v1/mcp` と各 `GET /v1/mcp/{server_id}/tools` から LLM ツールを載せる。呼び出しは `server_id` 付きで Gateway へ送る
+- 開発ユーザーは `dev` / `dev`（email `dev@localhost`、role `mcp-reader`）。`readerless` はログインできるが `GET /v1/mcp` に knowledge が出ず、ツール実行も Gateway が拒否する。管理者コンソールは http://localhost:8081
+- チャット開始時に Gateway の `GET /v1/mcp`（role でフィルタ）と各 `GET /v1/mcp/{server_id}/tools` から LLM ツールを載せる。呼び出しは `server_id` 付きで Gateway へ送る
 - Chainlit の Keycloak トークンを knowledge-mcp へ渡さない
 - refresh token はアプリ Postgres（`TOKEN_STORE_DATABASE_URL` + pgcrypto）に保存する。Chainlit 内蔵 data layer の `DATABASE_URL` は空
 - Chainlit 内蔵 MCP 接続 UI で Streamable HTTP / SSE サーバを追加接続できる。接続先は `.chainlit/config.toml` の `user_servers.allowed_urls` に含まれる origin に限る（[ADR-0009](/decisions/ADR-0009-chainlit-mcp-user-servers-allowlist.md)）

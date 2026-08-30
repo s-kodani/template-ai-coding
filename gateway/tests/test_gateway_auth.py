@@ -241,11 +241,8 @@ def test_list_servers_requires_chainlit_token(rsa_keys: tuple[object, str]) -> N
     assert response.status_code == 401
 
 
-def test_list_servers_returns_enabled_registry_entries(
-    rsa_keys: tuple[object, str], tmp_path: Path
-) -> None:
-    registry = tmp_path / "registry.yml"
-    registry.write_text(
+def _write_role_registry(path: Path) -> None:
+    path.write_text(
         """
 servers:
   knowledge:
@@ -256,6 +253,8 @@ servers:
       allowed_tools:
         - search_knowledge
         - get_document
+      required_roles:
+        - mcp-reader
   other:
     enabled: true
     authorization:
@@ -266,9 +265,18 @@ servers:
     authorization:
       allowed_tools:
         - hidden
+      required_roles:
+        - mcp-reader
 """,
         encoding="utf-8",
     )
+
+
+def test_list_servers_returns_enabled_registry_entries(
+    rsa_keys: tuple[object, str], tmp_path: Path
+) -> None:
+    registry = tmp_path / "registry.yml"
+    _write_role_registry(registry)
     private_key, _ = rsa_keys
     settings = Settings(registry_path=str(registry), keycloak_issuer=ISSUER)
     app = create_app(settings, jwt_signing_key=private_key)
@@ -285,3 +293,18 @@ servers:
             {"id": "other", "name": "other", "tools": ["ping"]},
         ]
     }
+
+
+def test_list_servers_hides_servers_missing_required_roles(
+    rsa_keys: tuple[object, str], tmp_path: Path
+) -> None:
+    registry = tmp_path / "registry.yml"
+    _write_role_registry(registry)
+    private_key, _ = rsa_keys
+    settings = Settings(registry_path=str(registry), keycloak_issuer=ISSUER)
+    app = create_app(settings, jwt_signing_key=private_key)
+    client = TestClient(app)
+    token = _token(private_key, realm_access={"roles": ["default-roles-knowledge"]})
+    response = client.get("/v1/mcp", headers={"Authorization": f"Bearer {token}"})
+    assert response.status_code == 200
+    assert response.json() == {"servers": [{"id": "other", "name": "other", "tools": ["ping"]}]}

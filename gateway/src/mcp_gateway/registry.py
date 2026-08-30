@@ -23,10 +23,16 @@ def get_server(registry: dict[str, Any], server_id: str) -> dict[str, Any]:
     return server
 
 
-def list_enabled_servers(registry: dict[str, Any]) -> list[dict[str, Any]]:
+def list_enabled_servers(
+    registry: dict[str, Any], roles: frozenset[str] | set[str] | None = None
+) -> list[dict[str, Any]]:
     listed: list[dict[str, Any]] = []
+    caller_roles = set(roles or [])
     for server_id, server in registry.items():
         if not isinstance(server, dict) or not server.get("enabled", True):
+            continue
+        required = set((server.get("authorization") or {}).get("required_roles") or [])
+        if required and not required.issubset(caller_roles):
             continue
         ui = server.get("ui") or {}
         allowed = list((server.get("authorization") or {}).get("allowed_tools") or [])

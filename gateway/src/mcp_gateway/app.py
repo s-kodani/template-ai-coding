@@ -93,7 +93,7 @@ def create_app(
         authorization: str | None = Header(default=None),
     ) -> dict[str, Any]:
         token = _bearer(authorization)
-        verify_chainlit_token(
+        principal = verify_chainlit_token(
             token,
             issuer=settings.keycloak_issuer,
             jwks_uri=settings.keycloak_jwks_uri,
@@ -101,7 +101,7 @@ def create_app(
             azp=settings.gateway_azp,
             signing_key=jwt_signing_key,
         )
-        return {"servers": list_enabled_servers(registry)}
+        return {"servers": list_enabled_servers(registry, principal.roles)}
 
     @app.get("/v1/mcp/{server_id}/tools")
     async def list_tools(

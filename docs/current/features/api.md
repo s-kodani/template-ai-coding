@@ -16,7 +16,7 @@ Chainlit は `MCP_GATEWAY_URL` へ次を呼ぶ（Bearer は `aud=mcp-gateway` �
 
 | メソッド | パス | 用途 |
 |---|---|---|
-| GET | `/v1/mcp` | enabled な `{id, name, tools}`。Registry のみ。下流 MCP は呼ばない |
+| GET | `/v1/mcp` | enabled かつ JWT の `realm_access.roles` が `required_roles` を満たす `{id, name, tools}`。Registry のみ。下流 MCP は呼ばない |
 | GET | `/v1/mcp/{server_id}/tools` | そのサーバーの tool schema（`allowed_tools` でフィルタ） |
 | POST | `/v1/mcp/{server_id}/tools/{name}:call` | ツール実行 |
 

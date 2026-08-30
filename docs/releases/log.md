@@ -2,6 +2,7 @@
 
 ## v?.?.? (未確定)
 
+- **Changed**: `GET /v1/mcp` は JWT の realm role が `authorization.required_roles` を満たすサーバーだけ返す（[API 契約](/current/features/api.md)、[ADR-0012](/decisions/ADR-0012-mcp-gateway-resource-server.md)）
 - **Changed**: Chainlit の Gateway ツール配線を Registry / `GET /v1/mcp` ベースにした。LLM schema は knowledge 専用ハードコードではない（[UI 機能](/current/features/ui.md)、[ADR-0012](/decisions/ADR-0012-mcp-gateway-resource-server.md)）
 - **Changed**: Chainlit のプラグ UI に knowledge-mcp を Gateway 表示専用で載せる。実 MCP セッションは張らない（[UI 機能](/current/features/ui.md)、[ADR-0012](/decisions/ADR-0012-mcp-gateway-resource-server.md)）
 - **Added**: MCP Gateway を導入し、Chainlit の既定 knowledge-mcp 呼び出しを Keycloak Token Exchange 経由にした。knowledge-mcp は Resource Server として JWT を検証する（[アーキテクチャ](/current/architecture.md)、[ADR-0012](/decisions/ADR-0012-mcp-gateway-resource-server.md)）

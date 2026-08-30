@@ -6,7 +6,7 @@ tags: [decision, architecture, authentication, mcp, keycloak, gateway]
 status: stable
 decision_status: accepted
 generated:
-  at: "2026-08-30T04:30:00Z"
+  at: "2026-08-30T05:50:00Z"
   by: process:cursor-agent
 ---
 
@@ -23,7 +23,7 @@ MCP の Authorization では、下流サーバーへ上流 Access Token をパ�
 ## 決定
 
 - **mcp-gateway** を別プロセス / 別 Python プロジェクト（`gateway/`、`mcp>=2`）としてアプリ Compose に載せる。ホストポートは公開しない
-- Chainlit の Gateway ツールは `GET /v1/mcp` と `GET /v1/mcp/{server_id}/tools` で発見し、`POST /v1/mcp/{server_id}/tools/{name}:call` で実行する。LLM schema は knowledge 専用にハードコードしない。ツール名衝突は Registry 順の先勝ち
+- Chainlit の Gateway ツールは `GET /v1/mcp` と `GET /v1/mcp/{server_id}/tools` で発見し、`POST /v1/mcp/{server_id}/tools/{name}:call` で実行する。`GET /v1/mcp` は JWT の realm role が各サーバーの `required_roles` を満たすものだけ返す。LLM schema は knowledge 専用にハードコードしない。ツール名衝突は Registry 順の先勝ち
 - knowledge-mcp は Keycloak の Resource Server とする（FastMCP `JWTVerifier` + `RemoteAuthProvider`）。検証する `aud` と PRM `resource` は `http://localhost:8000/mcp`。Keycloak 26 の standard token exchange（V2）では `audience` パラメータを付けない（付けると `Requested audience not available: knowledge-mcp`）。Resource `aud` は `mcp-gateway` の default scope `mcp-tools` の custom audience mapper が付与する
 - Gateway は Chainlit トークンを検証し（`aud=mcp-gateway`、`azp=chainlit`）、`mcp-gateway` クライアントで Token Exchange する。ユーザー識別は JWT `sub` のみ。リクエスト body の `user_id` は拒否する
 - ツール認可は realm role `mcp-reader`。scope 名は `mcp-tools`
