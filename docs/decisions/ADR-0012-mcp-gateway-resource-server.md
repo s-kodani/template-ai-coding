@@ -6,7 +6,7 @@ tags: [decision, architecture, authentication, mcp, keycloak, gateway]
 status: stable
 decision_status: accepted
 generated:
-  at: "2026-08-30T05:50:00Z"
+  at: "2026-08-30T05:55:00Z"
   by: process:cursor-agent
 ---
 
@@ -36,7 +36,7 @@ MCP の Authorization では、下流サーバーへ上流 Access Token をパ�
 ## 結果
 
 - knowledge-mcp は Compose 上で JWKS 検証を必須にする。MCP Inspector も Bearer が必要（`scripts/mcp_dev_token.py`）
-- 既定ツールの実行は Gateway を経由し、Chainlit トークンは knowledge-mcp に届かない
+- 既定ツールの実行は Gateway を経由し、Chainlit トークンは knowledge-mcp に届かない。現行シーケンスは [認証認可](/current/features/authentication.md)
 - プラグ UI の Gateway MCP は表示専用であり、Chainlit の MCP セッションにはならない
 - 追加 MCP（allowlist 内）は従来どおり Chainlit 内蔵クライアントで接続できる
 - in-process FastMCP Client テストは `MCP_JWKS_URI` 未設定時に HTTP Bearer を要求しない

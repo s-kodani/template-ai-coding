@@ -5,7 +5,7 @@ description: Keycloak OAuth 付きの Chainlit チャット UI。既定 knowledg
 tags: [chainlit, ui, mcp, oauth, keycloak, gateway]
 status: stable
 generated:
-  at: "2026-08-30T05:50:00Z"
+  at: "2026-08-30T05:55:00Z"
   by: process:cursor-agent
 ---
 
@@ -16,7 +16,7 @@ generated:
 - モジュール: `src/chat_ui/app.py`
 - URL: http://localhost:8080
 - 設定: `.chainlit/config.toml`
-- 認証: Keycloak OAuth（[ADR-0011](/decisions/ADR-0011-keycloak-chainlit-oauth.md)）。既定ツールは [ADR-0012](/decisions/ADR-0012-mcp-gateway-resource-server.md)
+- 認証: Keycloak OAuth（[ADR-0011](/decisions/ADR-0011-keycloak-chainlit-oauth.md)）。既定ツールは [ADR-0012](/decisions/ADR-0012-mcp-gateway-resource-server.md)。シーケンスは [認証認可](/current/features/authentication.md)
 
 ## 動作
 

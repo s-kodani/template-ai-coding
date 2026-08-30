@@ -5,7 +5,7 @@ description: アプリ、Keycloak、MCP Gateway、Langfuse、任意 Langflow の
 tags: [docker, langfuse, langflow, postgres, keycloak, gateway, ci, devsecops]
 status: stable
 generated:
-  at: "2026-08-29T15:10:00Z"
+  at: "2026-08-30T05:55:00Z"
   by: process:cursor-agent
 ---
 
@@ -75,7 +75,7 @@ MCP `_meta` には FastMCP 既定の `traceparent` に加え、Langfuse の `lan
 
 ## 認証（Keycloak）
 
-Chainlit は Keycloak の `knowledge` realm で OAuth する（[ADR-0011](/decisions/ADR-0011-keycloak-chainlit-oauth.md)）。既定 knowledge-mcp 呼び出しは MCP Gateway が Token Exchange する（[ADR-0012](/decisions/ADR-0012-mcp-gateway-resource-server.md)）。
+Chainlit は Keycloak の `knowledge` realm で OAuth する（[ADR-0011](/decisions/ADR-0011-keycloak-chainlit-oauth.md)）。既定 knowledge-mcp 呼び出しは MCP Gateway が Token Exchange する（[ADR-0012](/decisions/ADR-0012-mcp-gateway-resource-server.md)）。シーケンスは [認証認可](/current/features/authentication.md)。
 
 - 管理 UI: http://localhost:8081 （`admin` / `admin`）
 - チャットログイン: Chainlit の Keycloak ボタンから。開発ユーザーは `dev` / `dev`（role `mcp-reader`）

@@ -5,7 +5,7 @@ description: Keycloak 認証付きチャット UI による MCP ベクトル検�
 tags: [requirements, local, auth]
 status: stable
 generated:
-  at: "2026-08-29T14:30:00Z"
+  at: "2026-08-30T05:55:00Z"
   by: process:cursor-agent
 ---
 
@@ -22,7 +22,7 @@ generated:
 
 ## 利用者
 
-- MCP ツール契約、検索品質、トレース伝播、ローカル OAuth / Token Exchange を検証する開発者
+- MCP ツール契約、検索品質、トレース伝播、ローカル OAuth / Token Exchange を検証する開発者。認証の現行シーケンスは [認証認可](/current/features/authentication.md)
 
 ## スコープ外
 

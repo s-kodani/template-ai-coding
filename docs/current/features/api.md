@@ -8,7 +8,7 @@ status: stable
 
 # MCP ツール契約
 
-トランスポート: **Streamable HTTP**、stateless、パス `/mcp`。Compose 上では Keycloak JWT（`aud=http://localhost:8000/mcp`、scope `mcp-tools`、role `mcp-reader`）が必要（[ADR-0012](/decisions/ADR-0012-mcp-gateway-resource-server.md)）。Inspector は `scripts/mcp_dev_token.py` で Bearer を発行する。
+トランスポート: **Streamable HTTP**、stateless、パス `/mcp`。Compose 上では Keycloak JWT（`aud=http://localhost:8000/mcp`、scope `mcp-tools`、role `mcp-reader`）が必要（[ADR-0012](/decisions/ADR-0012-mcp-gateway-resource-server.md)）。ログインからツール実行までのシーケンスは [認証認可](/current/features/authentication.md)。Inspector は `scripts/mcp_dev_token.py` で Bearer を発行する。
 
 ## Gateway HTTP
 

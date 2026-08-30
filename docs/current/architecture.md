@@ -5,7 +5,7 @@ description: FastMCP、MCP Gateway、Chainlit、pgvector、Keycloak、Langfuse �
 tags: [architecture, mcp, tracing, langflow, keycloak, gateway]
 status: stable
 generated:
-  at: "2026-08-30T05:50:00Z"
+  at: "2026-08-30T05:55:00Z"
   by: process:cursor-agent
 ---
 
@@ -80,6 +80,8 @@ flowchart TB
 ```
 
 ## 認証フロー（既定ツール）
+
+詳細なシーケンス（claim、role フィルタ、失敗時、Inspector / 追加 MCP）は [認証認可](/current/features/authentication.md)。
 
 ```text
 Keycloak ログイン（client=chainlit）

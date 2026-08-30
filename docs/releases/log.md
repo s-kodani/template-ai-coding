@@ -2,6 +2,7 @@
 
 ## v?.?.? (未確定)
 
+- **Added**: ログインから Gateway Token Exchange、knowledge-mcp 検証までの認証認可シーケンスを Current-state に記録（[認証認可](/current/features/authentication.md)）
 - **Changed**: `GET /v1/mcp` は JWT の realm role が `authorization.required_roles` を満たすサーバーだけ返す（[API 契約](/current/features/api.md)、[ADR-0012](/decisions/ADR-0012-mcp-gateway-resource-server.md)）
 - **Changed**: Chainlit の Gateway ツール配線を Registry / `GET /v1/mcp` ベースにした。LLM schema は knowledge 専用ハードコードではない（[UI 機能](/current/features/ui.md)、[ADR-0012](/decisions/ADR-0012-mcp-gateway-resource-server.md)）
 - **Changed**: Chainlit のプラグ UI に knowledge-mcp を Gateway 表示専用で載せる。実 MCP セッションは張らない（[UI 機能](/current/features/ui.md)、[ADR-0012](/decisions/ADR-0012-mcp-gateway-resource-server.md)）
