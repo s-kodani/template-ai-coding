@@ -8,7 +8,7 @@
   "roles": {
     "realm": [
       {
-        "name": "mcp-reader",
+        "name": "knowledge-mcp-reader",
         "description": "Call knowledge-mcp search tools",
         "composite": false,
         "clientRole": false
@@ -360,7 +360,7 @@
           "temporary": false
         }
       ],
-      "realmRoles": ["mcp-reader", "default-roles-knowledge"]
+      "realmRoles": ["knowledge-mcp-reader", "default-roles-knowledge"]
     },
     {
       "username": "readerless",

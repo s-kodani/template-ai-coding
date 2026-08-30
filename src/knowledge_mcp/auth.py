@@ -8,7 +8,7 @@ from knowledge_mcp.config import Settings
 
 KNOWLEDGE_MCP_RESOURCE = "http://localhost:8000/mcp"
 MCP_TOOLS_SCOPE = "mcp-tools"
-MCP_READER_ROLE = "mcp-reader"
+MCP_READER_ROLE = "knowledge-mcp-reader"
 
 
 def require_mcp_reader(ctx: AuthContext) -> bool:

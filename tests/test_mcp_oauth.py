@@ -14,6 +14,10 @@ RESOURCE = "http://localhost:8000/mcp"
 ISSUER = "http://localhost:8081/realms/knowledge"
 
 
+def test_mcp_reader_role_is_knowledge_mcp_specific() -> None:
+    assert MCP_READER_ROLE == "knowledge-mcp-reader"
+
+
 def test_require_mcp_reader_allows_role() -> None:
     token = AccessToken(
         token="t",

@@ -76,7 +76,8 @@ def test_realm_defines_chainlit_client_and_dev_user() -> None:
     assert dev["emailVerified"] is True
     passwords = [item["value"] for item in dev["credentials"] if item["type"] == "password"]
     assert passwords == ["dev"]
-    assert "mcp-reader" in (dev.get("realmRoles") or [])
+    assert "knowledge-mcp-reader" in (dev.get("realmRoles") or [])
+    assert "mcp-reader" not in (dev.get("realmRoles") or [])
 
 
 def _client_scope(realm: dict, name: str) -> dict:
@@ -155,9 +156,11 @@ def test_realm_audience_mappers_bind_gateway_and_mcp_resource() -> None:
 def test_realm_defines_mcp_reader_role_and_readerless_user() -> None:
     realm = _realm()
     role_names = [role["name"] for role in (realm.get("roles") or {}).get("realm") or []]
-    assert "mcp-reader" in role_names
+    assert "knowledge-mcp-reader" in role_names
+    assert "mcp-reader" not in role_names
 
     users = {user["username"]: user for user in realm["users"]}
+    assert "knowledge-mcp-reader" not in (users["readerless"].get("realmRoles") or [])
     assert "mcp-reader" not in (users["readerless"].get("realmRoles") or [])
     assert users["readerless"]["enabled"] is True
 

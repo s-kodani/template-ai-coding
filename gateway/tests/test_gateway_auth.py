@@ -41,7 +41,7 @@ def _token(private_key: object, **claims: object) -> str:
         "aud": ["chainlit", "mcp-gateway"],
         "exp": int(time.time()) + 3600,
         "nbf": int(time.time()) - 5,
-        "realm_access": {"roles": ["mcp-reader"]},
+        "realm_access": {"roles": ["knowledge-mcp-reader"]},
         "scope": "openid profile email",
         **claims,
     }
@@ -99,6 +99,9 @@ def test_registry_does_not_use_client_id_as_exchange_audience() -> None:
     assert "target_client" not in auth
     assert auth["resource"] == RESOURCE
     assert auth["scopes"] == ["mcp-tools"]
+    assert registry["servers"]["knowledge"]["authorization"]["required_roles"] == [
+        "knowledge-mcp-reader"
+    ]
 
 
 async def test_exchange_token_omits_audience_for_keycloak_v2() -> None:
@@ -254,7 +257,7 @@ servers:
         - search_knowledge
         - get_document
       required_roles:
-        - mcp-reader
+        - knowledge-mcp-reader
   other:
     enabled: true
     authorization:
