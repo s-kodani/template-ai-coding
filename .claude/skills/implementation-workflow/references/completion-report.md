@@ -4,7 +4,7 @@ Phase 7 と一時成果物ルール。
 
 ## Phase 7: Completion Report — 完了報告
 
-実装完了時は以下を報告する。
+Changes、Verification、Documentation 更新を Issue 最終コメントとして残す。**この時点では Issue を Close しない。** Close は Phase 8（`references/review-and-compliance.md`）で must-fix が無いことを確認したあと。
 
 ### Changes
 
@@ -20,7 +20,7 @@ Phase 7 と一時成果物ルール。
 
 ### GitHub Issue
 
-GitHub Issue を使用している場合は、最終コメントとして以下を残す。
+GitHub Issue を使用している場合は、最終コメントとして以下を残す。marker は `<!-- agent-completion:v1 -->`。
 
 - 実際に完了した Changes
 - Verification 結果
@@ -29,7 +29,7 @@ GitHub Issue を使用している場合は、最終コメントとして以下�
 - 残課題がある場合はその Issue への分離状況
 - 関連 PR / commit
 
-Acceptance Criteria を満たし、必要な恒久知識への昇格が完了したことを確認してから Issue を Close する。
+Phase 8 の Review で must-fix が無く、Acceptance Criteria を満たし、必要な恒久知識への昇格が完了したことを確認してから Issue を Close する。後続 PR や残作業がある場合は Close せず `Refs` のままにする。
 
 例:
 
@@ -64,4 +64,4 @@ Implementation Plan は会話だけに置かず `.plans/` へ書き出すが、�
 
 OKF を採用していても、一時的な Implementation Plan を Knowledge Bundle へ入れてはいけない。
 
-GitHub Issue の Checkpoint コメントは作業履歴として残して構わないが、恒久的な Architecture / Business / API knowledge の Source of Truth にはしない。最終的に残すべき知識は OKF Concept、ADR、Release Log へ昇格させる。
+GitHub Issue の Checkpoint / 進捗 / Review コメントは作業履歴として残して構わないが、恒久的な Architecture / Business / API knowledge の Source of Truth にはしない。最終的に残すべき知識は OKF Concept、ADR、Release Log へ昇格させる。

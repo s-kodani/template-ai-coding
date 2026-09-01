@@ -1,6 +1,6 @@
 ---
 name: implementation-workflow
-description: コードの実装・変更・リファクタリング・機能追加を行う際に、GitHub Issueによる作業トラッキングとSession Checkpoint、Implementation Planの作成（`.plans/` への md 書き出し、変更強度に応じた grill-me / grilling、ユーザー承認を含む）、ADR候補の検出、実装・検証、OKFベースのCurrent-state Documentation・Decision Record・Release Note（未確定 `## v?.?.? (未確定)` および SemVer 確定見出し）への整合までを一貫して進めるためのワークフロー。実装スピードを維持しながら、セッションを跨いだ再開可能性、設計上の意思決定の追跡可能性、AIが利用しやすい知識構造、恒久ドキュメントの正確性を確保したい場合に使用する。
+description: コードの実装・変更・リファクタリング・機能追加を行う際に、GitHub Issueによる作業トラッキングと実装・修正区切りごとの進捗コメント、Session Checkpoint、Implementation Planの作成（`.plans/` への md 書き出し、変更強度に応じた grill-me / grilling、ユーザー承認を含む）、ADR候補の検出、実装・検証、OKFベースのCurrent-state Documentation・Decision Record・Release Noteへの整合、完了後のコードレビューとワークフロー遵守チェックまでを一貫して進めるためのワークフロー。実装スピードを維持しながら、セッションを跨いだ再開可能性、設計上の意思決定の追跡可能性、AIが利用しやすい知識構造、恒久ドキュメントの正確性を確保したい場合に使用する。
 ---
 
 # 実装ワークフロー Skill
@@ -13,7 +13,9 @@ description: コードの実装・変更・リファクタリング・機能追�
 - 重要な設計判断の追跡可能性
 - Current-state Documentation の正確性
 - セッションを跨いだ安全な作業再開
+- 実装・修正の区切りごとに残す Issue 進捗履歴
 - 完了前の確実な検証
+- 完了後のコードレビューとワークフロー遵守確認
 
 Implementation Plan は一時的な作業成果物。`.plans/` 配下の Markdown として書き出し、参照・編集する。git 管理外であり、リポジトリへコミットしない。恒久的な情報は Current-state Documentation、ADR、Release Note へ整理する。
 
@@ -27,7 +29,7 @@ Implementation Plan は一時的な作業成果物。`.plans/` 配下の Markdow
 
 | 判断・作業 | 読む reference |
 |---|---|
-| Phase 0 — GitHub Issue 確認・起票、本文/コメント運用 | `references/github-issue-workflow.md` |
+| Phase 0 — GitHub Issue 確認・起票、本文/コメント運用、進捗コメント | `references/github-issue-workflow.md` |
 | Phase 1–2 — Understand、Implementation Plan、変更強度、grilling、ユーザー承認 | `references/implementation-plan.md` |
 | Phase 3 — ADR 候補判定、Decision Level、実装中の判断検出 | `references/decision-check.md` |
 | Session Handoff / Resume — Checkpoint、再開時の Source of Truth | `references/session-handoff.md` |
@@ -35,6 +37,7 @@ Implementation Plan は一時的な作業成果物。`.plans/` 配下の Markdow
 | Phase 6 — OKF Concept、Current-state、ADR、Documentation Reconciliation | `references/okf-documentation.md` |
 | Release Log — 未確定見出し、SemVer、記載要否 | `references/release-note.md` |
 | Phase 7 — Completion Report、一時成果物ルール | `references/completion-report.md` |
+| Phase 8 — コードレビュー、ワークフロー遵守チェック | `references/review-and-compliance.md` |
 
 同じルールを `SKILL.md` と reference の両方に重複して記載しない。
 
@@ -51,7 +54,9 @@ Implementation Plan は一時的な作業成果物。`.plans/` 配下の Markdow
 7. **実装後に恒久知識を再構成する** — 最終実装を基準にドキュメントを整合させる。
 8. **OKF では Concept 単位で知識を管理する** — 1 ファイル = 1 Concept を原則とし、過剰分割も避ける。
 9. **GitHub Issue を Coordination Ledger として使う** — 本文は作業契約、コメントは追記型履歴。Issue を恒久ドキュメントの代替にしない。
-10. **セッション終了時に Checkpoint を残す** — 別セッションが Repository 状態と照合して再開できる事実を残す。
+10. **実装・修正の区切りごとに Issue 進捗コメントを残す** — 投稿成功を確認するまでその区切りを完了としない。詳細は `references/github-issue-workflow.md`。
+11. **セッション終了時に Checkpoint を残す** — 別セッションが Repository 状態と照合して再開できる事実を残す。
+12. **一連のワークフロー完了後にレビューする** — コードレビューとワークフロー遵守チェックを行い、must-fix が無いことを確認してから Issue を Close する。詳細は `references/review-and-compliance.md`。
 
 ---
 
@@ -69,7 +74,7 @@ Phase 2: Implementation Plan（`.plans/` + 必要に応じて grilling → ユ�
 Phase 3: Decision Check
         ↓
 Phase 4: Implement
-        │
+        │  実装/修正の区切りごとに Issue 進捗コメント（必須）
         ├── セッション継続
         └── セッション終了 → Work Checkpoint → Resume Protocol
         ↓
@@ -77,7 +82,12 @@ Phase 5: Verify
         ↓
 Phase 6: Documentation Reconciliation
         ↓
-Phase 7: Completion Report → Issue Close
+Phase 7: Completion Report（Issue 最終コメント。この時点では Close しない）
+        ↓
+Phase 8: Review & Compliance（コードレビュー + ワークフロー遵守）
+        │  must-fix があれば Phase 4 に戻る（進捗コメント必須）
+        ↓
+Issue Close
 ```
 
 ---
@@ -131,6 +141,7 @@ ADR 候補基準と Decision Level（1: Architecture / 2: Design / 3: Implementa
 - テスト設計は `test-strategy` Skill、自動化可能な振る舞い変更は `test-driven-development` Skill に従う
 - 新しい事実に応じて Plan から逸脱してよい（Plan の同期維持のためだけに更新しない）
 - スコープや Acceptance Criteria が変わる場合は `.plans/` の md を更新し、再承認を得てから続行する
+- **実装または修正対応が一段落したら、紐づく Issue へ進捗コメントを残す。** 投稿を確認するまでその区切りを完了としない。詳細は `references/github-issue-workflow.md`
 
 実装中に重要な設計判断が発生した場合は `references/decision-check.md` の Decision Detection に従う。
 
@@ -156,7 +167,13 @@ ADR 候補基準と Decision Level（1: Architecture / 2: Design / 3: Implementa
 
 ## Phase 7: Completion Report
 
-Changes、Verification、Documentation 更新、GitHub Issue 最終コメントを報告する。Acceptance Criteria 充足と恒久知識への昇格を確認してから Issue を Close する。一時成果物ルールは `references/completion-report.md`。
+Changes、Verification、Documentation 更新を Issue 最終コメントとして残す。この時点では Issue を Close しない。一時成果物ルールは `references/completion-report.md`。
+
+---
+
+## Phase 8: Review & Compliance
+
+一連のワークフロー完了後、最終差分のコードレビューとワークフロー遵守チェックを行う。結果を Issue コメントへ残す。must-fix があれば Phase 4 に戻り、再検証してからレビューをやり直す。must-fix が無く Acceptance Criteria を満たしたら Issue を Close する。詳細は `references/review-and-compliance.md`。
 
 ---
 
@@ -168,6 +185,7 @@ Issue で作業契約を明確にする。
 計画は変更強度に応じて grill-me / grilling で練り、ユーザー承認を得てから実装する。必要なら md を見直して再承認する。  
 セッションを跨ぐときは Checkpoint を残す。  
 恒久的な意思決定を検出する。  
-実装して検証する。  
+実装して検証する。実装・修正の区切りごとに Issue へ進捗コメントを残す。  
 最終状態を OKF で構造化された恒久知識へ整合させる。  
-Release Note は Phase 6 で `## v?.?.? (未確定)` へ追記し、タグ確定時に SemVer 見出しへ置き換える。**
+Release Note は Phase 6 で `## v?.?.? (未確定)` へ追記し、タグ確定時に SemVer 見出しへ置き換える。  
+完了後にコードレビューとワークフロー遵守を確認してから Issue を Close する。**
