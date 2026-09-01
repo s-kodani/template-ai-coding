@@ -8,7 +8,7 @@ from fastapi.responses import JSONResponse
 
 from mcp_gateway.cache import TokenCache
 from mcp_gateway.config import Settings
-from mcp_gateway.errors import ErrorBody, GatewayError, ToolCallBody
+from mcp_gateway.errors import ErrorBody, GatewayError
 from mcp_gateway.jwt_auth import verify_chainlit_token, verify_exchanged_token
 from mcp_gateway.mcp_client import (
     attach_trace_from_headers,
@@ -16,6 +16,7 @@ from mcp_gateway.mcp_client import (
     detach_trace,
     list_mcp_tools,
 )
+from mcp_gateway.mcp_http import dispatch_mcp_method
 from mcp_gateway.policy import authorize_tool
 from mcp_gateway.registry import get_server, list_enabled_servers, load_registry
 from mcp_gateway.token_exchange import exchange_token
@@ -120,14 +121,16 @@ def create_app(
             azp=settings.gateway_azp,
             signing_key=jwt_signing_key,
         )
-        return {"servers": list_enabled_servers(registry, principal.roles)}
+        return {"servers": list_enabled_servers(
+            registry, principal.roles, public_base_url=settings.public_base_url
+        )}
 
-    @app.get("/v1/mcp/{server_id}/tools")
-    async def list_tools(
+    @app.post("/mcp/{server_id}")
+    async def mcp_endpoint(
         server_id: str,
         request: Request,
         authorization: str | None = Header(default=None),
-    ) -> dict[str, Any]:
+    ) -> Any:
         token = _bearer(authorization)
         trace_token = attach_trace_from_headers(dict(request.headers))
         try:
@@ -139,60 +142,38 @@ def create_app(
                 azp=settings.gateway_azp,
                 signing_key=jwt_signing_key,
             )
+            payload = await request.json()
+            if not isinstance(payload, dict):
+                raise GatewayError(400, "INVALID_REQUEST", "MCP request must be a JSON object")
+            method = str(payload.get("method") or "")
+            params = payload.get("params") if isinstance(payload.get("params"), dict) else {}
+            rpc_id = payload.get("id")
             server = get_server(registry, server_id)
-            mcp_token = await _mcp_token(
-                settings=settings,
-                cache=cache,
-                source_token=principal.token,
-                server_id=server_id,
+            if method == "tools/call":
+                authorize_tool(principal, server, str((params or {}).get("name") or ""))
+            needs_downstream = method in {"tools/list", "tools/call"}
+            mcp_token = ""
+            if needs_downstream:
+                mcp_token = await _mcp_token(
+                    settings=settings,
+                    cache=cache,
+                    source_token=principal.token,
+                    server_id=server_id,
+                    server=server,
+                    signing_key=jwt_signing_key,
+                )
+            return await dispatch_mcp_method(
+                method=method,
+                params=params,
+                rpc_id=rpc_id,
+                principal=principal,
                 server=server,
-                signing_key=jwt_signing_key,
-            )
-            tools = await lister(
-                url=server["transport"]["url"],
-                token=mcp_token,
-                timeout_seconds=float(server.get("timeout_seconds") or settings.mcp_call_timeout_seconds),
-            )
-            allowed = set(server.get("authorization", {}).get("allowed_tools") or [])
-            return {"tools": [tool for tool in tools if tool.get("name") in allowed]}
-        finally:
-            detach_trace(trace_token)
-
-    @app.post("/v1/mcp/{server_id}/tools/{tool_name}:call")
-    async def call_tool(
-        server_id: str,
-        tool_name: str,
-        body: ToolCallBody,
-        request: Request,
-        authorization: str | None = Header(default=None),
-    ) -> dict[str, Any]:
-        token = _bearer(authorization)
-        trace_token = attach_trace_from_headers(dict(request.headers))
-        try:
-            principal = verify_chainlit_token(
-                token,
-                issuer=settings.keycloak_issuer,
-                jwks_uri=settings.keycloak_jwks_uri,
-                audience=settings.gateway_audience,
-                azp=settings.gateway_azp,
-                signing_key=jwt_signing_key,
-            )
-            server = get_server(registry, server_id)
-            authorize_tool(principal, server, tool_name)
-            mcp_token = await _mcp_token(
-                settings=settings,
-                cache=cache,
-                source_token=principal.token,
-                server_id=server_id,
-                server=server,
-                signing_key=jwt_signing_key,
-            )
-            return await caller(
-                url=server["transport"]["url"],
-                token=mcp_token,
-                tool_name=tool_name,
-                arguments=body.arguments,
-                timeout_seconds=float(server.get("timeout_seconds") or settings.mcp_call_timeout_seconds),
+                mcp_token=mcp_token,
+                lister=lister,
+                caller=caller,
+                timeout_seconds=float(
+                    server.get("timeout_seconds") or settings.mcp_call_timeout_seconds
+                ),
             )
         finally:
             detach_trace(trace_token)
