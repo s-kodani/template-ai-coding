@@ -34,4 +34,4 @@ end-to-end トレーシングには、ツール呼び出し時の MCP `_meta` �
 
 ## 改訂
 
-既定の knowledge-mcp ツール実行は FastMCP Client 直接呼び出しから **MCP Gateway** 経由へ移した（[ADR-0012](/decisions/ADR-0012-mcp-gateway-resource-server.md)）。LLM schema は Gateway の list API から組み立てる。追加 MCP の内蔵 UI と `_meta` 注入はこの ADR のまま。Gateway MCP はプラグ UI に表示専用で載せ、Chainlit MCP セッションは張らない。
+既定の knowledge-mcp ツール実行は FastMCP Client 直接呼び出しから **MCP Gateway** 経由へ移した（[ADR-0012](/decisions/ADR-0012-mcp-gateway-resource-server.md)）。Chainlit はアプリ管理の FastMCP Client で Gateway の `/mcp/{server_id}` に接続する（[ADR-0013](/decisions/ADR-0013-mcp-gateway-per-server-streamable-http.md)）。追加 MCP の内蔵 UI と `_meta` 注入はこの ADR のまま。Gateway MCP はプラグ UI に表示専用で載せ、Chainlit 内蔵 MCP セッションは張らない。

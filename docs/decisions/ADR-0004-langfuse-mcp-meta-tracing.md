@@ -30,4 +30,4 @@ decision_status: accepted
 
 ## 改訂
 
-既定ツールは MCP Gateway が Chainlit からの HTTP トレースコンテキストを受け取り、knowledge-mcp への `tools/call` の `_meta` へ注入する（[ADR-0012](/decisions/ADR-0012-mcp-gateway-resource-server.md)）。追加 MCP の `_meta` 注入は従来どおり Chainlit 側。
+既定ツールは Chainlit の FastMCP Client が Gateway `/mcp/{server_id}` の `tools/call` `_meta` に W3C を載せ、Gateway が下流 knowledge-mcp へ転送する（[ADR-0012](/decisions/ADR-0012-mcp-gateway-resource-server.md)、[ADR-0013](/decisions/ADR-0013-mcp-gateway-per-server-streamable-http.md)）。追加 MCP の `_meta` 注入は従来どおり Chainlit 側。

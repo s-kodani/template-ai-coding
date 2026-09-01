@@ -5,7 +5,7 @@ description: FastMCP、MCP Gateway、Chainlit、pgvector、Keycloak、Langfuse �
 tags: [architecture, mcp, tracing, langflow, keycloak, gateway]
 status: stable
 generated:
-  at: "2026-08-30T05:55:00Z"
+  at: "2026-09-01T15:50:00Z"
   by: process:cursor-agent
 ---
 
@@ -16,7 +16,7 @@ generated:
 | コンポーネント | 役割 |
 |---|---|
 | Chainlit（`src/chat_ui/`） | チャット UI、Keycloak OAuth、Langfuse ルートスパン、既定ツールは MCP Gateway 経由、追加 MCP 接続 UI |
-| MCP Gateway（`gateway/`） | Chainlit JWT 検証、Keycloak Token Exchange、公式 `mcp>=2` クライアント |
+| MCP Gateway（`gateway/`） | Chainlit JWT 検証、Keycloak Token Exchange、サーバー単位 Streamable HTTP、下流は公式 `mcp>=2` |
 | FastMCP サーバー（`src/knowledge_mcp/`） | Streamable HTTP MCP、Keycloak Resource Server、検索ツール、子スパン |
 | PostgreSQL + pgvector | アプリ用ベクトルストアと Chainlit refresh token（pgcrypto） |
 | Keycloak | ローカル IdP（realm import）。Chainlit ログインと Token Exchange |
@@ -86,8 +86,8 @@ flowchart TB
 ```text
 Keycloak ログイン（client=chainlit）
   -> Chainlit が refresh token をアプリ Postgres に保存
-  -> チャット開始時、Chainlit は GET /v1/mcp（role でフィルタ）と GET /v1/mcp/{id}/tools でツールを発見する
-  -> 既定ツール実行時、Chainlit は Gateway へ Bearer（aud に mcp-gateway）
+  -> チャット開始時、Chainlit は GET /v1/mcp（role でフィルタ）で url を得て、POST /mcp/{id} で tools/list する
+  -> 既定ツール実行時、Chainlit は FastMCP Client で POST /mcp/{id} tools/call（Bearer は aud に mcp-gateway）
   -> Gateway が Token Exchange（client=mcp-gateway、scope=mcp-tools。Keycloak 26 V2 では audience パラメータなし）
   -> knowledge-mcp が JWT を検証（aud に http://localhost:8000/mcp、role knowledge-mcp-reader）
 ```
@@ -127,7 +127,7 @@ flowchart TD
 ```
 
 - Chainlit が `chat.turn` と `llm.generate` 観測を作成
-- 既定の knowledge-mcp 呼び出しは Chainlit が Gateway へ HTTP し、Gateway が公式 MCP クライアントで `_meta` に W3C トレースコンテキストを注入する
+- 既定の knowledge-mcp 呼び出しは Chainlit の FastMCP Client が Gateway `/mcp/{server_id}` の `_meta` に W3C を載せ、Gateway が下流へ転送する
 - UI から接続した追加 MCP は公式 SDK の `ClientSession.call_tool(..., meta=...)` で同じ `_meta` を注入
 - FastMCP Server が `_meta` を extract し SERVER スパンを子として接続する。baggage により Langfuse はこれらのスパンを追加ルートにしない
 - カスタム OTel スパン: `search.embed`、`search.query`（MCP server span の子。Langfuse 独立トレースにはしない）
