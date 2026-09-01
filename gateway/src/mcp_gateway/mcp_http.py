@@ -45,7 +45,7 @@ async def dispatch_mcp_method(
     rpc_id: object,
     principal: Any,
     server: dict[str, Any],
-    mcp_token: str,
+    mcp_token: str | None,
     lister: Any,
     caller: Any,
     timeout_seconds: float,

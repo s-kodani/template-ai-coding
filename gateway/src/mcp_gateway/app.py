@@ -152,9 +152,9 @@ def create_app(
             if method == "tools/call":
                 authorize_tool(principal, server, str((params or {}).get("name") or ""))
             needs_downstream = method in {"tools/list", "tools/call"}
-            mcp_token = ""
+            exchanged = None
             if needs_downstream:
-                mcp_token = await _mcp_token(
+                exchanged = await _mcp_token(
                     settings=settings,
                     cache=cache,
                     source_token=principal.token,
@@ -168,7 +168,7 @@ def create_app(
                 rpc_id=rpc_id,
                 principal=principal,
                 server=server,
-                mcp_token=mcp_token,
+                mcp_token=exchanged,
                 lister=lister,
                 caller=caller,
                 timeout_seconds=float(
