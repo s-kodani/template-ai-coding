@@ -13,7 +13,7 @@ Checkpoint 作成と Resume Protocol。
 - 大きなマイルストーン完了後に作業を中断する場合
 - 未解決の Design Decision や外部状態を残したまま中断する場合
 
-細かなコード変更ごとに Checkpoint を追加する必要はない。
+細かなコード変更ごとに Checkpoint を追加する必要はない。完了した実装・修正の区切りは進捗コメント（`references/github-issue-workflow.md`）で残す。Checkpoint は未完の作業を引き継ぐためのものである。
 
 ### Checkpoint Format
 

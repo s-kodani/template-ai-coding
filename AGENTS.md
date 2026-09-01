@@ -9,7 +9,8 @@
 | トピック | 入口 |
 |---|---|
 | ワークフロー全体 | `.agents/skills/implementation-workflow/SKILL.md` |
-| GitHub Issue / Checkpoint / Close | `references/github-issue-workflow.md`, `session-handoff.md`, `completion-report.md` |
+| GitHub Issue / 進捗コメント / Checkpoint / Close | `references/github-issue-workflow.md`, `session-handoff.md`, `completion-report.md` |
+| 完了後レビュー / ワークフロー遵守 | `references/review-and-compliance.md` |
 | OKF / Release Log 運用 | `references/okf-documentation.md`, `release-note.md`, `verification.md` |
 
 Skill とこのファイルが競合する場合は、**このリポジトリ固有ルールである `AGENTS.md` を優先**します。
@@ -79,7 +80,7 @@ Implementation Plan の一時ファイルは `.plans/`（git 管理外）へ書�
 
 Issue を Current-state Documentation や ADR の代替にしない。
 
-Issue 本文・起票前確認・Checkpoint・Resume・Close の手順は `implementation-workflow` Skill の reference に従う（`github-issue-workflow.md`, `session-handoff.md`, `completion-report.md`）。
+Issue 本文・起票前確認・進捗コメント・Checkpoint・Resume・Close・完了後レビューの手順は `implementation-workflow` Skill の reference に従う（`github-issue-workflow.md`, `session-handoff.md`, `completion-report.md`, `review-and-compliance.md`）。
 
 ### このリポジトリ固有
 
@@ -87,6 +88,8 @@ Issue 本文・起票前確認・Checkpoint・Resume・Close の手順は `imple
 - 新規 Issue 起票前に、ユーザーへ既存 Issue の有無を確認する（詳細は `references/github-issue-workflow.md`）
 - PR は `Refs #<issue>` / `Closes #<issue>` を明示（`src/` 変更時 CI 必須）
 - 複数 PR や後続作業が残る場合は誤 Close を避けるため `Refs` を使う
+- 実装・修正の区切りごとに紐づく Issue へ進捗コメントを残す。Cursor Cloud で `gh` が read-only のときは Issue へ書かず、同じ本文を PR コメントへ投稿し、Issue へ残せなかった理由を報告する
+- 一連のワークフロー完了後にコードレビューとワークフロー遵守チェックを行い、must-fix が無いことを確認してから Issue を Close する
 
 ---
 

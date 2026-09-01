@@ -20,7 +20,7 @@ description: >
 
 1. 変更ファイルの prefix を確認する
 2. 下表の **必須** コマンドを実行する
-3. 結果を Issue / PR / Completion Report に記録する
+3. 結果を Issue 進捗コメント / PR / Completion Report に記録する
 4. 実行していない検証を成功扱いにしない
 
 詳細は必要に応じて `references/` を読む（一括読み込みしない）。
