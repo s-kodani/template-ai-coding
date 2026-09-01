@@ -55,7 +55,7 @@ class MCPGatewayClient:
                     result = await client.call_tool(
                         name, arguments, meta=inject_langfuse_propagated_meta({})
                     )
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001 - map FastMCP/httpx failures to tool output
                 output = _mcp_error(exc)
                 record_tool_output(output)
                 return output
@@ -86,7 +86,7 @@ class MCPGatewayClient:
                 self._mcp_url(server_id, url), access_token
             ) as client:
                 listed = await client.list_tools()
-        except Exception:
+        except Exception:  # noqa: BLE001 - missing schema must not block other servers
             return []
         tools = getattr(listed, "tools", listed) or []
         mapped: list[dict[str, Any]] = []
