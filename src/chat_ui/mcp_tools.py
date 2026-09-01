@@ -127,7 +127,7 @@ def parse_tool_result(result: Any) -> dict[str, Any]:
         first = content[0]
         text = first.text if hasattr(first, "text") else str(first)
 
-    if getattr(result, "isError", False):
+    if getattr(result, "isError", False) or getattr(result, "is_error", False):
         return {"error": text or "Tool returned an error."}
     if not content:
         return {"error": "Tool returned no content."}

@@ -240,6 +240,12 @@ def test_parse_tool_result_error_flag() -> None:
     assert parse_tool_result(result) == {"error": "boom"}
 
 
+def test_parse_tool_result_snake_case_error_flag() -> None:
+    result = SimpleNamespace(is_error=True, content=[SimpleNamespace(text="boom")])
+
+    assert parse_tool_result(result) == {"error": "boom"}
+
+
 @pytest.mark.asyncio
 async def test_call_session_tool_injects_traceparent(span_exporter) -> None:
     session = SimpleNamespace()
