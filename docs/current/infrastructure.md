@@ -5,7 +5,7 @@ description: アプリ、Keycloak、MCP Gateway、Langfuse、任意 Langflow の
 tags: [docker, langfuse, langflow, postgres, keycloak, gateway, ci, devsecops]
 status: stable
 generated:
-  at: "2026-09-01T15:50:00Z"
+  at: "2026-09-02T13:25:00Z"
   by: process:cursor-agent
 ---
 
@@ -110,7 +110,7 @@ Chainlit は Keycloak の `knowledge` realm で OAuth する（[ADR-0011](/decis
 
 | ワークフロー | ジョブ | 内容 |
 |---|---|---|
-| `.github/workflows/ci.yml` | quality | `ruff check`, `pytest`（ルートと `gateway/`）、`uv sync --frozen` |
+| `.github/workflows/ci.yml` | quality | `ruff check`, `pytest`（ルートと `gateway/`）、`uv sync --frozen`、自前 Skill の展開一致（`scripts/check_skill_deploy.py`） |
 | | security | Bandit, `uv audit`, gitleaks |
 | | build-and-scan | `docker compose build`, Trivy（mcp-server / chainlit / mcp-gateway イメージ、`scanners: vuln`） |
 | `.github/workflows/okf.yml` | okf | OKF bundle 検証 |
@@ -126,6 +126,7 @@ uv run bandit -r src scripts gateway/src -c pyproject.toml
 uv audit --preview-features audit-command
 uv run pre-commit run --all-files
 uv run python scripts/validate_okf.py
+uv run python scripts/check_skill_deploy.py --check
 docker compose -f infra/app/compose.yml build
 ```
 

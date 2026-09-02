@@ -27,7 +27,7 @@ Release-Note: required
 - [ ] 完了後のコードレビューとワークフロー遵守チェックを実施した
 - [ ] 検証を実行した（[project-verification](.agents/skills/project-verification/SKILL.md) 参照）
 - [ ] `Release-Note: required` の場合、`docs/releases/log.md` の `## v?.?.? (未確定)` を更新した
-- [ ] Skill 変更時、`uv run python scripts/sync_skills.py --check` が通る
+- [ ] Skill 変更時、`uv run python scripts/check_skill_deploy.py --check` が通る
 - [ ] Current-state Documentation / ADR を更新した（該当する場合）
 
 ## Verification

@@ -6,13 +6,14 @@ globs:
   - infra/**
   - tests/**
   - docs/**
+  - .apm/skills/**
   - .agents/skills/**
 alwaysApply: false
 ---
 
 # Implementation Workflow（Cursor）
 
-`src/`、`scripts/`、`infra/`、`tests/`、`docs/`、`.agents/skills/` を変更するタスクでは、**コード編集前に**次を実行する。
+`src/`、`scripts/`、`infra/`、`tests/`、`docs/`、`.apm/skills/`、`.agents/skills/` を変更するタスクでは、**コード編集前に**次を実行する。
 
 1. `git fetch origin main` し、新規ブランチは `origin/main` から切る。既存ブランチなら `git merge origin/main`（rebase は明示時のみ。dirty tree では止まって報告する）
 2. `.agents/skills/implementation-workflow/SKILL.md` を読む（`AGENTS.md` の Repository 固有ルールと併用）
@@ -29,4 +30,4 @@ MCP サーバー作業では、追加で `mcp-server-engineering` の `reference
 
 Pull Request 本文には `Refs #<issue>` または `Closes #<issue>` を含める（`src/` 変更時は CI で必須）。`src/` / `infra/` 変更時は `Release-Note: required` または `Release-Note: not-required` + `Reason:` を宣言する。
 
-Skill 変更後は `uv run python scripts/sync_skills.py` を実行し `.claude/skills/` を再生成する。
+自前 Skill は `.apm/skills/` を編集し、`apm install` のあと `uv run python scripts/check_skill_deploy.py --check` を実行する。展開先（`.agents/skills/` / `.claude/skills/`）は手編集しない。
