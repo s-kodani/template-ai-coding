@@ -52,7 +52,7 @@ Skill とこのファイルが競合する場合は、**このリポジトリ固
 |-------|------|
 | `review` | Phase 8 のコードレビューとワークフロー遵守。実装・編集はしない |
 
-自前 Agent は `.apm/agents/<name>.agent.md` を編集し、`apm install` で `.cursor/agents/` と `.claude/agents/` へ展開する。展開先は手編集しない。Phase 8 では呼べるときに `review` を起動する（自己レビューは残す）。
+自前 Agent は `.apm/agents/<name>.agent.md` を編集し、`apm install` で `.cursor/agents/` と `.claude/agents/` へ展開する。Codex は `.codex/agents/<name>.toml` へ変換する。展開先は手編集しない。Phase 8 では呼べるときに `review` を起動する（自己レビューは残す）。
 
 ### APM 管理 Skill（編集禁止）
 

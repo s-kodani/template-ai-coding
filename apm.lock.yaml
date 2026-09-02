@@ -280,7 +280,7 @@ deployments:
   owners:
   - .
   active_owner: .
-  content_hash: sha256:abbd1cbce8f56e7ce086de8dd59d5ac6f2f7a4d1f75ee1164d1d6be7d0b5e791
+  content_hash: sha256:7dc8cbd3834bbf6dfe10f23d984088f48e1ed82a6a7becbd4c6554334989ac9e
 - kind: project-relative
   target: agents
   value: .agents/skills/implementation-workflow/references/session-handoff.md
@@ -397,7 +397,7 @@ deployments:
   owners:
   - .
   active_owner: .
-  content_hash: sha256:d7a7bb3a1df8e352a559ea546c790737af3083a082b6541794121ea3a2a31a0b
+  content_hash: sha256:a4ef62c1de5936a8b7a49605611d9e56f26a7fe3a7c300ef3d19a11c42198123
 - kind: project-relative
   target: agents
   value: .agents/skills/project-verification/references/ci-matrix.md
@@ -406,7 +406,7 @@ deployments:
   owners:
   - .
   active_owner: .
-  content_hash: sha256:27f825d359a5d4e0f7766523460cfa76efaa485ad52b30d73feb3175b3c6d287
+  content_hash: sha256:756dda292c62fa2a976a8ef09e2b5b5c6e90e5e037ce02433fe683e824951387
 - kind: project-relative
   target: agents
   value: .agents/skills/project-verification/references/ingest-validation.md
@@ -452,6 +452,15 @@ deployments:
   - .
   active_owner: .
   content_hash: sha256:e2029f36c3a501190df45aa8ac7b7c659012926d14ff7a094cc3d6b212c0beee
+- kind: project-relative
+  target: claude
+  value: .claude/agents/review.md
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: sha256:7852f29f8e3d4375286399249011b5553306907685728b0d4953614c345c563c
 - kind: project-relative
   target: claude
   value: .claude/skills/commit-only
@@ -703,7 +712,7 @@ deployments:
   owners:
   - .
   active_owner: .
-  content_hash: sha256:abbd1cbce8f56e7ce086de8dd59d5ac6f2f7a4d1f75ee1164d1d6be7d0b5e791
+  content_hash: sha256:7dc8cbd3834bbf6dfe10f23d984088f48e1ed82a6a7becbd4c6554334989ac9e
 - kind: project-relative
   target: claude
   value: .claude/skills/implementation-workflow/references/session-handoff.md
@@ -838,7 +847,7 @@ deployments:
   owners:
   - .
   active_owner: .
-  content_hash: sha256:d7a7bb3a1df8e352a559ea546c790737af3083a082b6541794121ea3a2a31a0b
+  content_hash: sha256:a4ef62c1de5936a8b7a49605611d9e56f26a7fe3a7c300ef3d19a11c42198123
 - kind: project-relative
   target: claude
   value: .claude/skills/project-verification/references/ci-matrix.md
@@ -847,7 +856,7 @@ deployments:
   owners:
   - .
   active_owner: .
-  content_hash: sha256:27f825d359a5d4e0f7766523460cfa76efaa485ad52b30d73feb3175b3c6d287
+  content_hash: sha256:756dda292c62fa2a976a8ef09e2b5b5c6e90e5e037ce02433fe683e824951387
 - kind: project-relative
   target: claude
   value: .claude/skills/project-verification/references/ingest-validation.md
@@ -1037,6 +1046,24 @@ deployments:
   - obra/superpowers/skills/test-driven-development
   active_owner: obra/superpowers/skills/test-driven-development
   content_hash: sha256:51471c853306ff92ca8bb41dcaea05f31c0e46b03651f8f3c99754b7172f4ae1
+- kind: project-relative
+  target: codex
+  value: .codex/agents/review.toml
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: sha256:896ba89506678a7c31d31155587d3c9e3dd652270ba66e4e63fe73deb7c80210
+- kind: project-relative
+  target: cursor
+  value: .cursor/agents/review.md
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: sha256:7852f29f8e3d4375286399249011b5553306907685728b0d4953614c345c563c
 - kind: uri
   target: mcp
   value: awslabs.aws-documentation-mcp-server
@@ -1167,6 +1194,7 @@ local_deployed_files:
 - .agents/skills/project-verification/references/trace-validation.md
 - .agents/skills/test-strategy
 - .agents/skills/test-strategy/SKILL.md
+- .claude/agents/review.md
 - .claude/skills/commit-only
 - .claude/skills/commit-only/SKILL.md
 - .claude/skills/commit-only/reference.md
@@ -1206,6 +1234,8 @@ local_deployed_files:
 - .claude/skills/project-verification/references/trace-validation.md
 - .claude/skills/test-strategy
 - .claude/skills/test-strategy/SKILL.md
+- .codex/agents/review.toml
+- .cursor/agents/review.md
 local_deployed_file_hashes:
   .agents/skills/commit-only/SKILL.md: sha256:29c7ec0777dd6d7fbe56649df961935168a07f4f131746337f01f127a60d1d1b
   .agents/skills/commit-only/reference.md: sha256:8500b1098b337bb80e2751c37c2bc723f2c5af7ccbade2d5639dc7b10d14e039
@@ -1222,7 +1252,7 @@ local_deployed_file_hashes:
   .agents/skills/implementation-workflow/references/implementation-plan.md: sha256:0b86e70a007abdf93ae863e1c948129bd50fa52aa4f30dfb0da1d9fa272cd411
   .agents/skills/implementation-workflow/references/okf-documentation.md: sha256:1a2426ec8f90be53a2e88b8e25336e217b37fbe31104b249f95d5945a800decf
   .agents/skills/implementation-workflow/references/release-note.md: sha256:4262658516cc32a071f2d8e45de9acde7ad7efd2ac431f9cb8af11137a54e5ea
-  .agents/skills/implementation-workflow/references/review-and-compliance.md: sha256:abbd1cbce8f56e7ce086de8dd59d5ac6f2f7a4d1f75ee1164d1d6be7d0b5e791
+  .agents/skills/implementation-workflow/references/review-and-compliance.md: sha256:7dc8cbd3834bbf6dfe10f23d984088f48e1ed82a6a7becbd4c6554334989ac9e
   .agents/skills/implementation-workflow/references/session-handoff.md: sha256:1d39428948884fe8311772292f4fb31fc83e090dbaa1e81575bfd683288c1c17
   .agents/skills/implementation-workflow/references/verification.md: sha256:607a13de277127d15f99faa1543db01d814184eb283f12f9553cbeb960db02f9
   .agents/skills/mcp-server-engineering/README.md: sha256:c580ab8a79cf4c1594c395bd17e40408cd967043a276248b491290201444062a
@@ -1233,12 +1263,13 @@ local_deployed_file_hashes:
   .agents/skills/mcp-server-engineering/references/tool-design.md: sha256:3c97c8bc6b33894c0c7a295130267ff0efb349fa91fbc49f38d701fcdbfb3a5f
   .agents/skills/mcp-server-engineering/references/transport-and-state.md: sha256:c8f16b6b7b0689b7d5c510698494eb51f098010fc6a63c83515e820e8000fe61
   .agents/skills/mcp-server-engineering/references/version-and-sources.md: sha256:c51988bef125533ebbba276d93c1f1a538f49de01d44e61fac1199f96c7b0370
-  .agents/skills/project-verification/SKILL.md: sha256:d7a7bb3a1df8e352a559ea546c790737af3083a082b6541794121ea3a2a31a0b
-  .agents/skills/project-verification/references/ci-matrix.md: sha256:27f825d359a5d4e0f7766523460cfa76efaa485ad52b30d73feb3175b3c6d287
+  .agents/skills/project-verification/SKILL.md: sha256:a4ef62c1de5936a8b7a49605611d9e56f26a7fe3a7c300ef3d19a11c42198123
+  .agents/skills/project-verification/references/ci-matrix.md: sha256:756dda292c62fa2a976a8ef09e2b5b5c6e90e5e037ce02433fe683e824951387
   .agents/skills/project-verification/references/ingest-validation.md: sha256:0973be051ac1250594e998320024703b510c6f8d34d1b52815f14a60e71e7903
   .agents/skills/project-verification/references/local-stack.md: sha256:d2d2f65c3741d2cfacf4448ec1cd931eb93575cf9600abc000c7021ea88321a2
   .agents/skills/project-verification/references/trace-validation.md: sha256:93dcb185cd56cb13fbabd23025808dcc0aa7c0e180226bcfff012101b1e3adc3
   .agents/skills/test-strategy/SKILL.md: sha256:e2029f36c3a501190df45aa8ac7b7c659012926d14ff7a094cc3d6b212c0beee
+  .claude/agents/review.md: sha256:7852f29f8e3d4375286399249011b5553306907685728b0d4953614c345c563c
   .claude/skills/commit-only/SKILL.md: sha256:29c7ec0777dd6d7fbe56649df961935168a07f4f131746337f01f127a60d1d1b
   .claude/skills/commit-only/reference.md: sha256:8500b1098b337bb80e2751c37c2bc723f2c5af7ccbade2d5639dc7b10d14e039
   .claude/skills/commit-push-pr/SKILL.md: sha256:36e8b010144096e1088426ab3d50ff10a8c9418dacd28f54bbbfccda40792b2f
@@ -1254,7 +1285,7 @@ local_deployed_file_hashes:
   .claude/skills/implementation-workflow/references/implementation-plan.md: sha256:0b86e70a007abdf93ae863e1c948129bd50fa52aa4f30dfb0da1d9fa272cd411
   .claude/skills/implementation-workflow/references/okf-documentation.md: sha256:1a2426ec8f90be53a2e88b8e25336e217b37fbe31104b249f95d5945a800decf
   .claude/skills/implementation-workflow/references/release-note.md: sha256:4262658516cc32a071f2d8e45de9acde7ad7efd2ac431f9cb8af11137a54e5ea
-  .claude/skills/implementation-workflow/references/review-and-compliance.md: sha256:abbd1cbce8f56e7ce086de8dd59d5ac6f2f7a4d1f75ee1164d1d6be7d0b5e791
+  .claude/skills/implementation-workflow/references/review-and-compliance.md: sha256:7dc8cbd3834bbf6dfe10f23d984088f48e1ed82a6a7becbd4c6554334989ac9e
   .claude/skills/implementation-workflow/references/session-handoff.md: sha256:1d39428948884fe8311772292f4fb31fc83e090dbaa1e81575bfd683288c1c17
   .claude/skills/implementation-workflow/references/verification.md: sha256:607a13de277127d15f99faa1543db01d814184eb283f12f9553cbeb960db02f9
   .claude/skills/mcp-server-engineering/README.md: sha256:c580ab8a79cf4c1594c395bd17e40408cd967043a276248b491290201444062a
@@ -1265,9 +1296,11 @@ local_deployed_file_hashes:
   .claude/skills/mcp-server-engineering/references/tool-design.md: sha256:3c97c8bc6b33894c0c7a295130267ff0efb349fa91fbc49f38d701fcdbfb3a5f
   .claude/skills/mcp-server-engineering/references/transport-and-state.md: sha256:c8f16b6b7b0689b7d5c510698494eb51f098010fc6a63c83515e820e8000fe61
   .claude/skills/mcp-server-engineering/references/version-and-sources.md: sha256:c51988bef125533ebbba276d93c1f1a538f49de01d44e61fac1199f96c7b0370
-  .claude/skills/project-verification/SKILL.md: sha256:d7a7bb3a1df8e352a559ea546c790737af3083a082b6541794121ea3a2a31a0b
-  .claude/skills/project-verification/references/ci-matrix.md: sha256:27f825d359a5d4e0f7766523460cfa76efaa485ad52b30d73feb3175b3c6d287
+  .claude/skills/project-verification/SKILL.md: sha256:a4ef62c1de5936a8b7a49605611d9e56f26a7fe3a7c300ef3d19a11c42198123
+  .claude/skills/project-verification/references/ci-matrix.md: sha256:756dda292c62fa2a976a8ef09e2b5b5c6e90e5e037ce02433fe683e824951387
   .claude/skills/project-verification/references/ingest-validation.md: sha256:0973be051ac1250594e998320024703b510c6f8d34d1b52815f14a60e71e7903
   .claude/skills/project-verification/references/local-stack.md: sha256:d2d2f65c3741d2cfacf4448ec1cd931eb93575cf9600abc000c7021ea88321a2
   .claude/skills/project-verification/references/trace-validation.md: sha256:93dcb185cd56cb13fbabd23025808dcc0aa7c0e180226bcfff012101b1e3adc3
   .claude/skills/test-strategy/SKILL.md: sha256:e2029f36c3a501190df45aa8ac7b7c659012926d14ff7a094cc3d6b212c0beee
+  .codex/agents/review.toml: sha256:896ba89506678a7c31d31155587d3c9e3dd652270ba66e4e63fe73deb7c80210
+  .cursor/agents/review.md: sha256:7852f29f8e3d4375286399249011b5553306907685728b0d4953614c345c563c
