@@ -29,7 +29,7 @@ GitHub Issue を使用している場合は、最終コメントとして以下�
 - 残課題がある場合はその Issue への分離状況
 - 関連 PR / commit
 
-Phase 8 の Review で must-fix が無く、Acceptance Criteria を満たし、必要な恒久知識への昇格が完了したことを確認してから Issue を Close する。後続 PR や残作業がある場合は Close せず `Refs` のままにする。
+Phase 8 の Review で must-fix が無く、Acceptance Criteria タスクリストに未チェックが残っておらず（または項目を明示的に撤回し、コメントへ理由を残しており）、必要な恒久知識への昇格が完了したことを確認してから Issue を Close する。後続 PR や残作業がある場合は Close せず `Refs` のままにする。
 
 例:
 

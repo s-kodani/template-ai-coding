@@ -82,7 +82,7 @@ Issue本文を日報や進捗メモとして使うと、すぐに陳腐化しま
 - Goal
 - Background / Context
 - In Scope / Out of Scope
-- Acceptance Criteria
+- Acceptance Criteria（GitHub タスクリスト。`[x]` は充足状態）
 - Constraints
 - Related Knowledge
 
@@ -91,18 +91,18 @@ Issue本文を日報や進捗メモとして使うと、すぐに陳腐化しま
 履歴として追記します。
 
 - Scope / Requirement Change
-- Implementation Update（実装・修正の区切りごと）
+- Implementation Update（実装・修正の区切りごと。AC のチェック変更根拠を含む）
 - Work Checkpoint
 - Verification結果
 - Review結果（コードレビューとワークフロー遵守）
 - Completion Report
 
-ScopeやAcceptance Criteriaが変わった場合は、Issue本文を現在状態へ更新し、変更理由をコメントへ残します。
+ScopeやAcceptance Criteriaの**文言**が変わった場合は、Issue本文を現在状態へ更新し、変更理由をコメントへ残します。実装・修正の区切りでは本文の Acceptance Criteria タスクリストを再評価し、満たした項目だけ `[x]` にします。叙事的な進捗率は本文に書きません。
 
 これにより、
 
-- 本文 = 現在の正しい作業定義
-- コメント = Append-onlyの履歴
+- 本文 = 現在の正しい作業定義と AC の充足状態
+- コメント = Append-onlyの履歴（いつ・なぜチェックが変わったか）
 
 という構造を維持できます。
 
@@ -119,7 +119,7 @@ ScopeやAcceptance Criteriaが変わった場合は、Issue本文を現在状態
 
 既存Issueの確認なしに重複Issueを作成しないことが重要です。
 
-実装または修正対応が一段落するたびに、紐づくIssueへ進捗コメント（`<!-- agent-progress:v1 -->`）を残します。投稿できたことを確認するまで、その区切りを完了としません。Issueへ書けない環境では PR コメントへフォールバックし、Issueへ残したと偽ってはいけません。詳細は `references/github-issue-workflow.md` です。
+実装または修正対応が一段落するたびに、紐づくIssueへ進捗コメント（`<!-- agent-progress:v1 -->`）を残し、本文の Acceptance Criteria タスクリストを再評価します。投稿できたことを確認するまで、その区切りを完了としません。Issueへ書けない環境では PR コメントへフォールバックし、Issueへ残したと偽ってはいけません。詳細は `references/github-issue-workflow.md` です。
 
 一連のワークフロー完了後は、コードレビューとワークフロー遵守チェック（Phase 8）を行い、結果をIssueへ残してから Close します。詳細は `references/review-and-compliance.md` です。
 
@@ -144,6 +144,7 @@ Decision Check
         ↓
 Implement
         │  実装/修正の区切りごとに Issue 進捗コメント（必須）
+        │  同じ区切りで AC タスクリストを再評価
         │
         ├── セッション継続
         │
@@ -435,7 +436,7 @@ Phase 6 では Current-state Documentation、ADR、Release Log を最終実装�
 - ユーザー承認ゲート（Cloud / background agent も例外なし）
 - Decision Check
 - Session Handoff / Resume
-- 実装・修正区切りごとの Issue 進捗コメント
+- 実装・修正区切りごとの Issue 進捗コメントと Acceptance Criteria タスクリスト再評価
 - Verification
 - Documentation Reconciliation
 - OKF運用

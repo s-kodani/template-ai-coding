@@ -23,7 +23,7 @@ Release-Note: required
 
 - [ ] [implementation-workflow](.agents/skills/implementation-workflow/SKILL.md) に沿って実装した
 - [ ] 対応 GitHub Issue を確認・紐付けした
-- [ ] 実装・修正の区切りごとに Issue へ進捗コメントを残した（書けない場合は PR コメントへフォールバックし、理由を Notes に書いた）
+- [ ] 実装・修正の区切りごとに Issue へ進捗コメントを残し、Acceptance Criteria タスクリストを再評価した（書けない場合は PR コメントへフォールバックし、理由を Notes に書いた）
 - [ ] 完了後のコードレビューとワークフロー遵守チェックを実施した
 - [ ] 検証を実行した（[project-verification](.agents/skills/project-verification/SKILL.md) 参照）
 - [ ] `Release-Note: required` の場合、`docs/releases/log.md` の `## v?.?.? (未確定)` を更新した
