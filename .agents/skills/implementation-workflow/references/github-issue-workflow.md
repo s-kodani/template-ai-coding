@@ -50,8 +50,8 @@ Issue は実装計画の保存場所ではない。
 
 ## Acceptance Criteria
 
-- ...
-- ...
+- [ ] 検証可能な完了条件 A
+- [ ] 検証可能な完了条件 B
 
 ## Constraints
 
@@ -67,15 +67,56 @@ Issue は実装計画の保存場所ではない。
 本文へ保存しないもの:
 
 - 詳細な Implementation Plan
-- 現在の進捗率
+- 叙事的な進捗率・日報（「何割終わった」「今日はこれをした」）
 - 「次に何をするか」の一時的メモ
 - 一時的な調査結果
 - 未整理の Scratch Note
 - Session 固有の状態
 
+Acceptance Criteria の `[ ]` / `[x]` は作業契約の充足状態であり、叙事的進捗ではない。本文に持たせてよい。
+
+## Acceptance Criteria タスクリスト
+
+Acceptance Criteria は GitHub タスクリストで書く。実装 ToDo（「ファイル X を直す」）にはしない。検証可能な完了条件にする。
+
+### 着手時の正規化
+
+Phase 0 または Resume で本文を読んだとき、Acceptance Criteria が箇条書き（`- 条件`）なら、文言を変えずに `- [ ] 条件` へ変換する。変換したらコメントで理由を残す。既存 Issue の一括変換はしない。
+
+### 再評価のタイミング
+
+進捗コメントと同じ区切りで、**全項目**を再評価する。
+
+- Phase 4 の実装が一区切りついた
+- 修正対応が終わった
+- その区切りの検証直後
+- Phase 7 / Phase 8 の Close 判定前
+
+ファイル保存や個別の編集操作ごと、同一区切り内の連続コミットごとには更新しない。
+
+### チェック規則
+
+1. 現在の Repository 状態で満たしたものだけ `[x]` にする
+2. 後続変更で崩れた項目は `[ ]` に戻す
+3. 未検証・部分実装ではチェックしない。検証していない項目を完了扱いしない
+4. 進捗コメントに、今回 `[ ]` → `[x]` / `[x]` → `[ ]` した項目と根拠を書く
+5. 契約そのもの（文言の追加・削除・意味変更）は Scope / Requirement Change として本文を更新し、コメントへ履歴を残す
+
+### 本文の更新手順
+
+チェック状態だけを変える。Goal / Scope など他節は契約変更がない限り触らない。
+
+```bash
+gh issue view <issue-number> --json body --jq .body > /tmp/issue-body.md
+# Acceptance Criteria の [ ] / [x] だけを編集する
+gh issue edit <issue-number> --body-file /tmp/issue-body.md
+```
+
+本文を書けない場合（`gh` read-only 等）は、同じ再評価結果を進捗 / PR コメントへ書き、本文を更新したと偽らない。
+
 ## Issue 本文の鮮度維持
 
-Goal、Scope、Acceptance Criteria、Constraints など作業契約が変更された場合は Issue 本文を更新し、同時にコメントへ履歴を残す。
+Goal、Scope、Acceptance Criteria の文言、Constraints など作業契約が変更された場合は Issue 本文を更新し、同時にコメントへ履歴を残す。充足状態の `[x]` 更新だけなら Scope / Requirement Change コメントは不要（進捗コメントの Acceptance Criteria 欄で足りる）。
 
 ```markdown
 ## Scope / Requirement Change
@@ -100,7 +141,7 @@ Goal、Scope、Acceptance Criteria、Constraints など作業契約が変更さ�
 
 ## 実装・修正の進捗コメント（必須）
 
-エージェント側の実装または修正対応が一段落するたびに、紐づく作業 Issue へ進捗コメントを残す。セッション終了時の Work Checkpoint（`references/session-handoff.md`）とは別物である。
+エージェント側の実装または修正対応が一段落するたびに、紐づく作業 Issue へ進捗コメントを残し、本文の Acceptance Criteria タスクリストを再評価する。セッション終了時の Work Checkpoint（`references/session-handoff.md`）とは別物である。
 
 ### 残すタイミング
 
@@ -122,10 +163,11 @@ Work Checkpoint は作業が未完のままセッションを終えるときに�
 
 次を満たすまで、その区切りを完了としない。
 
-1. 進捗コメントを投稿した
-2. 投稿先にコメントが存在する（URL または Issue コメント一覧で確認した）
+1. Acceptance Criteria タスクリストを再評価し、書ける場合は本文の `[ ]` / `[x]` を更新した
+2. 進捗コメントを投稿した（Acceptance Criteria 欄に今回のチェック変更を含む）
+3. 投稿先にコメントが存在する（URL または Issue コメント一覧で確認した）
 
-投稿していないのに「Issue へ残した」と報告してはいけない。
+投稿していないのに「Issue へ残した」と報告してはいけない。本文を更新できない場合は、その理由と再評価結果を同じコメントに書く。
 
 ### 投稿手順
 
@@ -171,6 +213,12 @@ gh issue comment <issue-number> --body-file <path-to-markdown>
 ### Verification
 - 実行したコマンドと結果
 - 未実施があればその旨
+
+### Acceptance Criteria
+- Checked: この区切りで `[x]` にした項目。なければ `none`
+- Unchecked: この区切りで `[ ]` に戻した項目。なければ `none`
+- Unchanged unmet: 未充足のままの項目。なければ `none`
+- Body updated: `yes` | `no`（`no` のときは理由）
 
 ### Remaining
 - 残作業。なければ `none`

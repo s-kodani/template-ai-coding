@@ -88,7 +88,7 @@ Issue 本文・起票前確認・進捗コメント・Checkpoint・Resume・Clos
 - 新規 Issue 起票前に、ユーザーへ既存 Issue の有無を確認する（詳細は `references/github-issue-workflow.md`）
 - PR は `Refs #<issue>` / `Closes #<issue>` を明示（`src/` 変更時 CI 必須）
 - 複数 PR や後続作業が残る場合は誤 Close を避けるため `Refs` を使う
-- 実装・修正の区切りごとに紐づく Issue へ進捗コメントを残す。Cursor Cloud で `gh` が read-only のときは Issue へ書かず、同じ本文を PR コメントへ投稿し、Issue へ残せなかった理由を報告する
+- 実装・修正の区切りごとに紐づく Issue へ進捗コメントを残し、本文の Acceptance Criteria タスクリストを再評価する。Cursor Cloud で `gh` が read-only のときは Issue へ書かず、同じ本文を PR コメントへ投稿し、Issue へ残せなかった理由を報告する
 - 一連のワークフロー完了後にコードレビューとワークフロー遵守チェックを行い、must-fix が無いことを確認してから Issue を Close する
 
 ---

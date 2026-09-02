@@ -21,7 +21,7 @@ alwaysApply: false
 5. 「設計」または「標準」で未解決判断がある場合のみ `grill-me` / `grilling`。結果は md へ反映する
 6. ユーザー承認を得てから実装する（Cloud / background agent も例外ではない）
 7. 実装後: Phase 5 検証（`project-verification` Skill、`test-strategy`、必要時 `test-driven-development`）
-8. 実装または修正の区切りごとに、紐づく GitHub Issue へ進捗コメントを残す（投稿確認まで完了としない。`gh` が read-only なら PR コメントへフォールバック）
+8. 実装または修正の区切りごとに、紐づく GitHub Issue へ進捗コメントを残し、本文の Acceptance Criteria タスクリスト（`- [ ]` / `- [x]`）を再評価する（投稿確認まで完了としない。`gh` が read-only なら PR コメントへフォールバックし、本文を更新したと偽らない）
 9. Phase 6: 観測可能な変更があれば `docs/releases/log.md` の `## v?.?.? (未確定)` へ追記
 10. 一連の完了後: Phase 8 でコードレビューとワークフロー遵守をチェックし、結果を Issue（またはフォールバック先）へ残してから Close する
 

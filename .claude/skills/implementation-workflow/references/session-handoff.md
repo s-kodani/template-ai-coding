@@ -62,6 +62,9 @@ Checkpoint 作成と Resume Protocol。
 - 失敗中の Test
 - 未解決問題
 
+### Acceptance Criteria
+- 本文タスクリストの現在状態（満たしている / 未充足）。読めない場合は `not checked`
+
 ### Next Action
 1. 次セッションが最初に行う具体的な作業
 ```
@@ -78,7 +81,7 @@ Checkpoint では**予定ではなく事実**を優先する。Implementation Pl
 
 1. `AGENTS.md` と適用 Skill を読む
 2. `git fetch origin <default-branch>` し、作業ブランチへ `git merge origin/<default-branch>` する（未指定時は `main`。rebase は明示時のみ。dirty tree では stash せず止まって報告する。衝突は単純なら解消し、意図の衝突は報告して止まる）
-3. Issue 本文から Goal / Scope / Acceptance Criteria / Constraints を確認
+3. Issue 本文から Goal / Scope / Acceptance Criteria / Constraints を確認する。Acceptance Criteria が箇条書きなら `- [ ]` に正規化し、コメントで理由を残す。チェック状態は Repository 現在状態と照合する
 4. 最新の `agent-work-checkpoint:v1` コメントを特定
 5. Checkpoint 以降のコメントをすべて確認
 6. Repository の現在状態を確認（branch、HEAD、`git status`、diff、commits、PR）

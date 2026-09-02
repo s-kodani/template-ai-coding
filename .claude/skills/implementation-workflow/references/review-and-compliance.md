@@ -25,7 +25,7 @@ Phase 8 の詳細。Phase 7 Completion Report のあと、Issue を Close する
 
 見る観点:
 
-- Acceptance Criteria を満たしているか
+- Acceptance Criteria を満たしているか。本文タスクリストの未チェックが残っていないか（撤回した項目はコメント根拠があるか）
 - スコープ外の変更が混ざっていないか
 - テストが変更に見合っているか。失敗しているテストを無視していないか
 - 秘密情報、認可バイパス、危険なデフォルトがないか
@@ -44,7 +44,8 @@ Phase 8 の詳細。Phase 7 Completion Report のあと、Issue を Close する
 - [ ] Implementation Plan を `.plans/` へ書き出し、承認後に実装した
 - [ ] 変更強度に応じた grilling を行った、または省略理由が「軽微」である
 - [ ] Phase 3 Decision Check を行い、必要な ADR を扱った
-- [ ] 実装・修正の区切りごとに Issue 進捗コメントを残した（または書き込み不可を明示した）
+- [ ] 実装・修正の区切りごとに Issue 進捗コメントを残し、Acceptance Criteria タスクリストを再評価した（または書き込み不可を明示した）
+- [ ] Acceptance Criteria に未チェックが残っていない、または撤回理由をコメントした
 - [ ] Phase 5 検証を実行し、未実施を成功と報告していない
 - [ ] Phase 6 で恒久ドキュメント / Release Log を最終実装へ合わせた
 - [ ] Phase 7 Completion Report を Issue へ残した
@@ -57,7 +58,7 @@ Phase 8 の詳細。Phase 7 Completion Report のあと、Issue を Close する
 
 | 判定 | 意味 | 次の行動 |
 |---|---|---|
-| `pass` | must-fix なし | Issue を Close してよい（後続 PR がある場合は Close しない） |
+| `pass` | must-fix なし。未チェックの Acceptance Criteria もなし（または明示的撤回済み） | Issue を Close してよい（後続 PR がある場合は Close しない） |
 | `pass-with-nits` | 任意改善のみ | nits を残課題としてコメントし、Close してよい |
 | `must-fix` | 欠陥またはワークフロー欠落 | Phase 4 に戻る。修正後は進捗コメント → 再検証 → Phase 8 をやり直す |
 

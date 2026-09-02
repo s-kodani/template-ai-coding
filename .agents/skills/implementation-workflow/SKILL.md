@@ -53,8 +53,8 @@ Implementation Plan は一時的な作業成果物。`.plans/` 配下の Markdow
 6. **実態に合わせて計画を変更する** — Plan Drift を許容する。Plan は履歴文書ではない。スコープや Acceptance Criteria が変わる見直しは `.plans/` の md を更新し、再承認を得てから続行する。
 7. **実装後に恒久知識を再構成する** — 最終実装を基準にドキュメントを整合させる。
 8. **OKF では Concept 単位で知識を管理する** — 1 ファイル = 1 Concept を原則とし、過剰分割も避ける。
-9. **GitHub Issue を Coordination Ledger として使う** — 本文は作業契約、コメントは追記型履歴。Issue を恒久ドキュメントの代替にしない。
-10. **実装・修正の区切りごとに Issue 進捗コメントを残す** — 投稿成功を確認するまでその区切りを完了としない。詳細は `references/github-issue-workflow.md`。
+9. **GitHub Issue を Coordination Ledger として使う** — 本文は作業契約、コメントは追記型履歴。Acceptance Criteria は本文のタスクリスト（`[ ]` / `[x]`）で充足状態を持つ。叙事的進捗はコメント。Issue を恒久ドキュメントの代替にしない。
+10. **実装・修正の区切りごとに Issue 進捗コメントを残し、AC タスクリストを再評価する** — 投稿成功を確認するまでその区切りを完了としない。詳細は `references/github-issue-workflow.md`。
 11. **セッション終了時に Checkpoint を残す** — 別セッションが Repository 状態と照合して再開できる事実を残す。
 12. **一連のワークフロー完了後にレビューする** — コードレビューとワークフロー遵守チェックを行い、must-fix が無いことを確認してから Issue を Close する。詳細は `references/review-and-compliance.md`。
 
@@ -75,6 +75,7 @@ Phase 3: Decision Check
         ↓
 Phase 4: Implement
         │  実装/修正の区切りごとに Issue 進捗コメント（必須）
+        │  同じ区切りで AC タスクリストを再評価
         ├── セッション継続
         └── セッション終了 → Work Checkpoint → Resume Protocol
         ↓
@@ -110,7 +111,7 @@ Issue Close
 
 `AGENTS.md` で GitHub Issue 利用が指定されている場合、コード変更前に作業 Issue を確定する。
 
-**新規 Issue 起票前に、既存 Issue の有無をユーザーへ確認する。** 詳細は `references/github-issue-workflow.md`。
+**新規 Issue 起票前に、既存 Issue の有無をユーザーへ確認する。** 新規 Issue の Acceptance Criteria は GitHub タスクリスト（`- [ ]`）で書く。詳細は `references/github-issue-workflow.md`。
 
 ---
 
@@ -141,7 +142,7 @@ ADR 候補基準と Decision Level（1: Architecture / 2: Design / 3: Implementa
 - テスト設計は `test-strategy` Skill、自動化可能な振る舞い変更は `test-driven-development` Skill に従う
 - 新しい事実に応じて Plan から逸脱してよい（Plan の同期維持のためだけに更新しない）
 - スコープや Acceptance Criteria が変わる場合は `.plans/` の md を更新し、再承認を得てから続行する
-- **実装または修正対応が一段落したら、紐づく Issue へ進捗コメントを残す。** 投稿を確認するまでその区切りを完了としない。詳細は `references/github-issue-workflow.md`
+- **実装または修正対応が一段落したら、紐づく Issue へ進捗コメントを残し、本文の Acceptance Criteria タスクリストを再評価する。** 投稿を確認するまでその区切りを完了としない。詳細は `references/github-issue-workflow.md`
 
 実装中に重要な設計判断が発生した場合は `references/decision-check.md` の Decision Detection に従う。
 
@@ -173,7 +174,7 @@ Changes、Verification、Documentation 更新を Issue 最終コメントとし�
 
 ## Phase 8: Review & Compliance
 
-一連のワークフロー完了後、最終差分のコードレビューとワークフロー遵守チェックを行う。結果を Issue コメントへ残す。must-fix があれば Phase 4 に戻り、再検証してからレビューをやり直す。must-fix が無く Acceptance Criteria を満たしたら Issue を Close する。詳細は `references/review-and-compliance.md`。
+一連のワークフロー完了後、最終差分のコードレビューとワークフロー遵守チェックを行う。結果を Issue コメントへ残す。must-fix があれば Phase 4 に戻り、再検証してからレビューをやり直す。must-fix が無く、未チェックの Acceptance Criteria が残っていない（または明示的に撤回した）ことを確認してから Issue を Close する。詳細は `references/review-and-compliance.md`。
 
 ---
 
@@ -185,7 +186,7 @@ Issue で作業契約を明確にする。
 計画は変更強度に応じて grill-me / grilling で練り、ユーザー承認を得てから実装する。必要なら md を見直して再承認する。  
 セッションを跨ぐときは Checkpoint を残す。  
 恒久的な意思決定を検出する。  
-実装して検証する。実装・修正の区切りごとに Issue へ進捗コメントを残す。  
+実装して検証する。実装・修正の区切りごとに Issue へ進捗コメントを残し、Acceptance Criteria タスクリストを再評価する。  
 最終状態を OKF で構造化された恒久知識へ整合させる。  
 Release Note は Phase 6 で `## v?.?.? (未確定)` へ追記し、タグ確定時に SemVer 見出しへ置き換える。  
 完了後にコードレビューとワークフロー遵守を確認してから Issue を Close する。**
