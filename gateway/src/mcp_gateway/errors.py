@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-from typing import Any
-
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel
 
 
 class GatewayError(Exception):
@@ -16,9 +14,3 @@ class GatewayError(Exception):
 class ErrorBody(BaseModel):
     code: str
     message: str
-
-
-class ToolCallBody(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    arguments: dict[str, Any] = Field(default_factory=dict)

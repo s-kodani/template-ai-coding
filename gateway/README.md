@@ -1,9 +1,8 @@
 # mcp-gateway
 
-Chainlit / FastMCP アプリとは別の Python プロジェクト。公式 `mcp>=2` を使い、Keycloak Token Exchange のあと Registry 上の MCP を呼ぶ。
+Chainlit / FastMCP アプリとは別の Python プロジェクト。公式 `mcp>=2` で下流 MCP を呼び、Keycloak Token Exchange する。inbound はルートの FastMCP（`mcp 1.29`）向け JSON-RPC Streamable HTTP アダプタ。
 
-- `GET /v1/mcp` — enabled かつ JWT の realm role が `required_roles` を満たすサーバー一覧（Chainlit JWT）
-- `GET /v1/mcp/{server_id}/tools` — tool schema
-- `POST /v1/mcp/{server_id}/tools/{name}:call` — 実行
+- `GET /v1/mcp` — enabled かつ JWT の realm role が `required_roles` を満たす `{id, name, tools, url}`（Chainlit JWT）
+- `POST /mcp/{server_id}` — Streamable HTTP（`tools/list` / `tools/call` 等）
 
-ルートの Chainlit 2.12 は `mcp<2` のため、同一環境には載せない。
+ルートの Chainlit 2.12 は `mcp<2` のため、同一環境には載せない。ホストポートは公開しない。

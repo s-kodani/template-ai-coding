@@ -23,3 +23,4 @@ class Settings(BaseSettings):
     token_cache_ttl_seconds: int = 300
     mcp_call_timeout_seconds: float = 30.0
     token_exchange_timeout_seconds: float = 5.0
+    public_base_url: str = "http://mcp-gateway:8082"

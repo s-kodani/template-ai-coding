@@ -5,7 +5,7 @@ description: アプリ、Keycloak、MCP Gateway、Langfuse、任意 Langflow の
 tags: [docker, langfuse, langflow, postgres, keycloak, gateway, ci, devsecops]
 status: stable
 generated:
-  at: "2026-08-30T05:55:00Z"
+  at: "2026-09-01T15:50:00Z"
   by: process:cursor-agent
 ---
 
@@ -80,7 +80,7 @@ Chainlit は Keycloak の `knowledge` realm で OAuth する（[ADR-0011](/decis
 - 管理 UI: http://localhost:8081 （`admin` / `admin`）
 - チャットログイン: Chainlit の Keycloak ボタンから。開発ユーザーは `dev` / `dev`（role `knowledge-mcp-reader`）
 - Chainlit コンテナはアプリ Postgres の `DATABASE_URL` を使わない（Chainlit 内蔵 data layer の `User` テーブルは持たない）。refresh token は `TOKEN_STORE_DATABASE_URL` で同じ Postgres の `chainlit_oauth_tokens` に保存する
-- MCP Gateway はホストポートを公開しない。Chainlit から `http://mcp-gateway:8082` へ到達する
+- MCP Gateway はホストポートを公開しない。Chainlit から `http://mcp-gateway:8082` へ到達する。カタログ `url` は `PUBLIC_BASE_URL=http://mcp-gateway:8082`
 - knowledge-mcp は `MCP_JWKS_URI` 設定時に Bearer 必須。Inspector は `uv run python scripts/mcp_dev_token.py` でトークンを取る
 - realm 定義は `infra/app/keycloak/knowledge-realm.json`。変更後は Keycloak コンテナを再作成する
 - Token Exchange（Keycloak 26 V2）は `audience` を送らない。knowledge-mcp の `aud` は `mcp-tools` の custom audience mapper が付ける

@@ -215,6 +215,7 @@ def test_compose_defines_internal_mcp_gateway() -> None:
 
     assert "ports" not in gateway
     assert gateway["build"]["dockerfile"] == "infra/app/Dockerfile.gateway"
+    assert gateway["environment"]["PUBLIC_BASE_URL"] == "http://mcp-gateway:8082"
     assert chainlit["environment"]["MCP_GATEWAY_URL"] == "http://mcp-gateway:8082"
     assert chainlit["environment"]["DATABASE_URL"] == ""
     assert "TOKEN_STORE_DATABASE_URL" in chainlit["environment"]

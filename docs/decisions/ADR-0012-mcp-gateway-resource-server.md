@@ -6,7 +6,7 @@ tags: [decision, architecture, authentication, mcp, keycloak, gateway]
 status: stable
 decision_status: accepted
 generated:
-  at: "2026-08-30T10:35:00Z"
+  at: "2026-09-01T15:50:00Z"
   by: process:cursor-agent
 ---
 
@@ -23,7 +23,7 @@ MCP の Authorization では、下流サーバーへ上流 Access Token をパ�
 ## 決定
 
 - **mcp-gateway** を別プロセス / 別 Python プロジェクト（`gateway/`、`mcp>=2`）としてアプリ Compose に載せる。ホストポートは公開しない
-- Chainlit の Gateway ツールは `GET /v1/mcp` と `GET /v1/mcp/{server_id}/tools` で発見し、`POST /v1/mcp/{server_id}/tools/{name}:call` で実行する。`GET /v1/mcp` は JWT の realm role が各サーバーの `required_roles` を満たすものだけ返す。LLM schema は knowledge 専用にハードコードしない。LLM 名は `{server_id}__{mcp_tool_name}`（OpenAI の `^[a-zA-Z0-9_-]{1,64}$`）。Token Exchange は各サーバーの `authentication.mode=keycloak_token_exchange` と `resource` / `scopes` を必須とし、knowledge 向けデフォルトは持たない
+- Chainlit の Gateway ツールは `GET /v1/mcp` で発見し、各サーバーの Streamable HTTP（`url`、例 `http://mcp-gateway:8082/mcp/knowledge`）で `tools/list` / `tools/call` する。輸送の正本は [ADR-0013](/decisions/ADR-0013-mcp-gateway-per-server-streamable-http.md)。`GET /v1/mcp` は JWT の realm role が各サーバーの `required_roles` を満たすものだけ返す。LLM schema は knowledge 専用にハードコードしない。LLM 名は `{server_id}__{mcp_tool_name}`（OpenAI の `^[a-zA-Z0-9_-]{1,64}$`）。Token Exchange は各サーバーの `authentication.mode=keycloak_token_exchange` と `resource` / `scopes` を必須とし、knowledge 向けデフォルトは持たない
 - knowledge-mcp は Keycloak の Resource Server とする（FastMCP `JWTVerifier` + `RemoteAuthProvider`）。検証する `aud` と PRM `resource` は `http://localhost:8000/mcp`。Keycloak 26 の standard token exchange（V2）では `audience` パラメータを付けない（付けると `Requested audience not available: knowledge-mcp`）。Resource `aud` は `mcp-gateway` の default scope `mcp-tools` の custom audience mapper が付与する
 - Gateway は Chainlit トークンを検証し（`aud=mcp-gateway`、`azp=chainlit`）、`mcp-gateway` クライアントで Token Exchange する。ユーザー識別は JWT `sub` のみ。リクエスト body の `user_id` は拒否する
 - ツール認可はサーバーごとの realm role。knowledge-mcp は `knowledge-mcp-reader`。scope 名は `mcp-tools`
@@ -40,3 +40,7 @@ MCP の Authorization では、下流サーバーへ上流 Access Token をパ�
 - プラグ UI の Gateway MCP は Chainlit の MCP セッションにはならない。切断するとそのセッションではツールを使わない
 - 追加 MCP（allowlist 内）は従来どおり Chainlit 内蔵クライアントで接続できる
 - in-process FastMCP Client テストは `MCP_JWKS_URI` 未設定時に HTTP Bearer を要求しない
+
+## 改訂
+
+Chainlit–Gateway の tool schema / 実行は REST からサーバー単位 Streamable HTTP へ移した（[ADR-0013](/decisions/ADR-0013-mcp-gateway-per-server-streamable-http.md)）。本 ADR の Token Exchange・パススルー禁止・role フィルタ・プラグ UI 表示専用は変更しない。

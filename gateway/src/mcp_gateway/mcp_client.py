@@ -76,6 +76,7 @@ async def call_mcp_tool(
     tool_name: str,
     arguments: dict[str, Any],
     timeout_seconds: float,
+    meta: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     _validate_registry_url(url)
     http_client = httpx2.AsyncClient(
@@ -89,7 +90,9 @@ async def call_mcp_tool(
             mode="auto",
             read_timeout_seconds=timeout_seconds,
         ) as client:
-            result = await client.call_tool(tool_name, arguments, meta=_trace_meta() or None)
+            result = await client.call_tool(
+                tool_name, arguments, meta=meta or _trace_meta() or None
+            )
     except TimeoutError as exc:
         raise GatewayError(504, "MCP_TIMEOUT", "MCP tool call timed out") from exc
     except GatewayError:

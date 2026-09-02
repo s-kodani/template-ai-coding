@@ -78,6 +78,7 @@ services:
       GATEWAY_CLIENT_ID: mcp-gateway
       GATEWAY_CLIENT_SECRET: ${GATEWAY_CLIENT_SECRET:-mcp-gateway-local-secret}
       REGISTRY_PATH: /app/infra/app/gateway-registry.yml
+      PUBLIC_BASE_URL: http://mcp-gateway:8082
       HOST: 0.0.0.0
       PORT: "8082"
     volumes:

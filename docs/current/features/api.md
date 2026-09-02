@@ -12,15 +12,16 @@ status: stable
 
 ## Gateway HTTP
 
-Chainlit は `MCP_GATEWAY_URL` へ次を呼ぶ（Bearer は `aud=mcp-gateway` の Chainlit トークン）。
+Chainlit は `MCP_GATEWAY_URL` へ次を呼ぶ（Bearer は `aud=mcp-gateway` の Chainlit トークン）。ツール list/call の輸送は [ADR-0013](/decisions/ADR-0013-mcp-gateway-per-server-streamable-http.md)。
 
 | メソッド | パス | 用途 |
 |---|---|---|
-| GET | `/v1/mcp` | enabled かつ JWT の `realm_access.roles` が `required_roles` を満たす `{id, name, tools}`。Registry のみ。下流 MCP は呼ばない |
-| GET | `/v1/mcp/{server_id}/tools` | そのサーバーの tool schema（`allowed_tools` でフィルタ） |
-| POST | `/v1/mcp/{server_id}/tools/{name}:call` | ツール実行。`{name}` は MCP ツール名（接頭辞なし） |
+| GET | `/v1/mcp` | enabled かつ JWT の `realm_access.roles` が `required_roles` を満たす `{id, name, tools, url}`。Registry のみ。下流 MCP は呼ばない |
+| POST | `/mcp/{server_id}` | Streamable HTTP JSON-RPC（`initialize` / `tools/list` / `tools/call` 等）。JWT 検証のあと Token Exchange して下流 MCP を呼ぶ |
 
-Chainlit が LLM に載せる function 名は `{server_id}__{name}`。Gateway のパスは MCP 名のまま。プラグ UI の切断は Chainlit の `POST|DELETE /gateway-mcp` でセッションからそのサーバーのツールを外す。
+`url` は `PUBLIC_BASE_URL`（Compose 既定 `http://mcp-gateway:8082`）から `{base}/mcp/{server_id}`。ホストポートは公開しない。
+
+Chainlit が LLM に載せる function 名は `{server_id}__{name}`。MCP 上のツール名は接頭辞なし。プラグ UI の切断は Chainlit の `POST|DELETE /gateway-mcp` でセッションからそのサーバーのツールを外す。
 
 Token Exchange は Registry の `authentication.mode`（`keycloak_token_exchange`）、`resource`、`scopes` が必須。欠けると 500。knowledge 向けのデフォルト `resource` / `scopes` は使わない。
 

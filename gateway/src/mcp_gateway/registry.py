@@ -24,10 +24,14 @@ def get_server(registry: dict[str, Any], server_id: str) -> dict[str, Any]:
 
 
 def list_enabled_servers(
-    registry: dict[str, Any], roles: frozenset[str] | set[str] | None = None
+    registry: dict[str, Any],
+    roles: frozenset[str] | set[str] | None = None,
+    *,
+    public_base_url: str = "http://mcp-gateway:8082",
 ) -> list[dict[str, Any]]:
     listed: list[dict[str, Any]] = []
     caller_roles = set(roles or [])
+    base = public_base_url.rstrip("/")
     for server_id, server in registry.items():
         if not isinstance(server, dict) or not server.get("enabled", True):
             continue
@@ -41,6 +45,7 @@ def list_enabled_servers(
                 "id": server_id,
                 "name": ui.get("name") or server_id,
                 "tools": allowed,
+                "url": f"{base}/mcp/{server_id}",
             }
         )
     return listed

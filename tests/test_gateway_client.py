@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-from typing import Self
-from unittest.mock import AsyncMock
+import json
+from types import SimpleNamespace
+from typing import Any, Self
 
 import httpx
 import pytest
 
-from chat_ui.gateway_client import MCPGatewayClient, call_gateway_tool
+from chat_ui.gateway_client import MCPGatewayClient, call_gateway_tool, load_gateway_catalog
 
 
 class _FakeManager:
@@ -20,25 +21,86 @@ class _FakeManager:
         return self._tokens.pop(0) if self._tokens else None
 
 
+class _FakeMcp:
+    def __init__(
+        self,
+        *,
+        tools: list[Any] | None = None,
+        result: dict | None = None,
+        error: BaseException | None = None,
+    ) -> None:
+        self.tools = tools or []
+        self.result = result or {}
+        self.error = error
+        self.calls: list[tuple[str, dict, object]] = []
+        self.url = ""
+        self.token = ""
+
+    async def __aenter__(self) -> Self:
+        if self.error and not self.calls:
+            raise self.error
+        return self
+
+    async def __aexit__(self, *_: object) -> None:
+        return None
+
+    async def list_tools(self) -> Any:
+        if self.error:
+            raise self.error
+        return SimpleNamespace(tools=self.tools)
+
+    async def call_tool(self, name: str, arguments: dict, meta: object = None) -> Any:
+        self.calls.append((name, arguments, meta))
+        if self.error:
+            raise self.error
+        return SimpleNamespace(
+            is_error=False,
+            content=[SimpleNamespace(text=json.dumps(self.result))],
+        )
+
+
+def _http_error(status: int) -> httpx.HTTPStatusError:
+    request = httpx.Request("POST", "http://gateway:8082/mcp/knowledge")
+    response = httpx.Response(status, request=request)
+    return httpx.HTTPStatusError("http error", request=request, response=response)
+
+
 @pytest.mark.asyncio
-async def test_call_tool_returns_token_expired_on_401(monkeypatch: pytest.MonkeyPatch) -> None:
-    client = MCPGatewayClient("http://gateway:8082")
+async def test_call_tool_returns_token_expired_on_401() -> None:
+    fake = _FakeMcp(error=_http_error(401))
 
-    class FakeResponse:
-        status_code = 401
-        text = "expired"
+    def factory(url: str, token: str) -> _FakeMcp:
+        fake.url = url
+        fake.token = token
+        return fake
 
-        def json(self) -> dict:
-            return {"code": "TOKEN_EXPIRED"}
-
-    fake = AsyncMock()
-    fake.__aenter__.return_value.post = AsyncMock(return_value=FakeResponse())
-    fake.__aexit__.return_value = None
-    monkeypatch.setattr("chat_ui.gateway_client.httpx.AsyncClient", lambda **_: fake)
-
+    client = MCPGatewayClient("http://gateway:8082", mcp_client_factory=factory)
     result = await client.call_tool("knowledge", "search_knowledge", {"query": "x"}, "tok")
     assert result["error"] == "TOKEN_EXPIRED"
     assert result["status_code"] == 401
+    assert fake.url == "http://gateway:8082/mcp/knowledge"
+    assert fake.token == "tok"
+
+
+@pytest.mark.asyncio
+async def test_call_tool_uses_catalog_url() -> None:
+    fake = _FakeMcp(result={"ok": True})
+
+    def factory(url: str, token: str) -> _FakeMcp:
+        fake.url = url
+        fake.token = token
+        return fake
+
+    client = MCPGatewayClient("http://gateway:8082", mcp_client_factory=factory)
+    result = await client.call_tool(
+        "knowledge",
+        "search_knowledge",
+        {"query": "x"},
+        "tok",
+        url="http://custom/mcp/knowledge",
+    )
+    assert result == {"ok": True}
+    assert fake.url == "http://custom/mcp/knowledge"
 
 
 @pytest.mark.asyncio
@@ -67,30 +129,33 @@ async def test_call_gateway_tool_unauthenticated_is_generic() -> None:
 
 
 @pytest.mark.asyncio
-async def test_call_gateway_tool_retries_once_after_401(monkeypatch: pytest.MonkeyPatch) -> None:
-    seen: list[str] = []
+async def test_call_gateway_tool_retries_once_after_401() -> None:
+    calls: list[str] = []
 
-    class FakeResponse:
-        def __init__(self, status_code: int, payload: dict) -> None:
-            self.status_code = status_code
-            self._payload = payload
-            self.text = ""
+    class _RetryMcp(_FakeMcp):
+        async def __aenter__(self) -> Self:
+            return self
 
-        def json(self) -> dict:
-            return self._payload
+        async def call_tool(self, name: str, arguments: dict, meta: object = None) -> Any:
+            self.calls.append((name, arguments, meta))
+            if len(calls) == 0:
+                calls.append(self.token)
+                raise _http_error(401)
+            calls.append(self.token)
+            return SimpleNamespace(
+                is_error=False,
+                content=[SimpleNamespace(text='{"hits": []}')],
+            )
 
-    async def fake_post(self: httpx.AsyncClient, url: str, headers: dict | None = None, json: dict | None = None):
-        del self, url, json
-        token = (headers or {}).get("Authorization", "")
-        seen.append(token)
-        if len(seen) == 1:
-            return FakeResponse(401, {})
-        return FakeResponse(200, {"hits": []})
+    current = _RetryMcp()
 
-    monkeypatch.setattr("httpx.AsyncClient.post", fake_post)
+    def factory(url: str, token: str) -> _RetryMcp:
+        current.url = url
+        current.token = token
+        return current
 
     result = await call_gateway_tool(
-        MCPGatewayClient("http://gateway:8082"),
+        MCPGatewayClient("http://gateway:8082", mcp_client_factory=factory),
         _FakeManager(["first", "second"]),
         "sess",
         "search_knowledge",
@@ -98,7 +163,8 @@ async def test_call_gateway_tool_retries_once_after_401(monkeypatch: pytest.Monk
         server_id="other",
     )
     assert result == {"hits": []}
-    assert seen == ["Bearer first", "Bearer second"]
+    assert calls == ["first", "second"]
+    assert current.url == "http://gateway:8082/mcp/other"
 
 
 class _GetClient:
@@ -123,8 +189,18 @@ async def test_list_servers_returns_catalog(monkeypatch: pytest.MonkeyPatch) -> 
     client = MCPGatewayClient("http://gateway:8082")
     payload = {
         "servers": [
-            {"id": "knowledge", "name": "knowledge-mcp", "tools": ["search_knowledge"]},
-            {"id": "other", "name": "other", "tools": ["ping"]},
+            {
+                "id": "knowledge",
+                "name": "knowledge-mcp",
+                "tools": ["search_knowledge"],
+                "url": "http://gateway:8082/mcp/knowledge",
+            },
+            {
+                "id": "other",
+                "name": "other",
+                "tools": ["ping"],
+                "url": "http://gateway:8082/mcp/other",
+            },
         ]
     }
 
@@ -141,51 +217,61 @@ async def test_list_servers_returns_catalog(monkeypatch: pytest.MonkeyPatch) -> 
 
 
 @pytest.mark.asyncio
-async def test_list_tools_returns_empty_on_forbidden(monkeypatch: pytest.MonkeyPatch) -> None:
-    client = MCPGatewayClient("http://gateway:8082")
+async def test_list_tools_returns_empty_on_forbidden() -> None:
+    fake = _FakeMcp(error=_http_error(403))
 
-    class FakeResponse:
-        status_code = 403
-        text = "denied"
+    def factory(url: str, token: str) -> _FakeMcp:
+        fake.url = url
+        fake.token = token
+        return fake
 
-        def json(self) -> dict:
-            return {"code": "ACCESS_DENIED"}
-
-    fake = _GetClient([FakeResponse()])
-    monkeypatch.setattr("chat_ui.gateway_client.httpx.AsyncClient", lambda **_: fake)
+    client = MCPGatewayClient("http://gateway:8082", mcp_client_factory=factory)
     assert await client.list_tools("knowledge", "tok") == []
+    assert fake.url == "http://gateway:8082/mcp/knowledge"
 
 
 @pytest.mark.asyncio
-async def test_load_gateway_catalog_maps_tools_to_server_id(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    from chat_ui.gateway_client import load_gateway_catalog
+async def test_load_gateway_catalog_uses_catalog_url() -> None:
+    listed_urls: list[str] = []
 
-    client = MCPGatewayClient("http://gateway:8082")
-
-    async def fake_list_servers(token: str) -> list[dict]:
-        assert token == "tok"
-        return [
-            {"id": "knowledge", "name": "knowledge-mcp", "tools": ["search_knowledge"]},
-            {"id": "other", "name": "other", "tools": ["ping"]},
-        ]
-
-    async def fake_list_tools(server_id: str, token: str) -> list[dict]:
-        assert token == "tok"
-        if server_id == "knowledge":
+    class CatalogClient(MCPGatewayClient):
+        async def list_servers(self, token: str) -> list[dict]:
+            assert token == "tok"
             return [
                 {
-                    "name": "search_knowledge",
-                    "description": "Search",
-                    "inputSchema": {"type": "object", "properties": {"query": {"type": "string"}}},
-                }
+                    "id": "knowledge",
+                    "name": "knowledge-mcp",
+                    "tools": ["search_knowledge"],
+                    "url": "http://gateway:8082/mcp/knowledge",
+                },
+                {
+                    "id": "other",
+                    "name": "other",
+                    "tools": ["ping"],
+                    "url": "http://gateway:8082/mcp/other",
+                },
             ]
-        return [{"name": "ping", "description": "Ping", "inputSchema": {"type": "object"}}]
 
-    monkeypatch.setattr(client, "list_servers", fake_list_servers)
-    monkeypatch.setattr(client, "list_tools", fake_list_tools)
-    tools, targets = await load_gateway_catalog(client, "tok")
+        async def list_tools(
+            self, server_id: str, token: str, url: str | None = None
+        ) -> list[dict]:
+            assert token == "tok"
+            listed_urls.append(str(url))
+            if server_id == "knowledge":
+                return [
+                    {
+                        "name": "search_knowledge",
+                        "description": "Search",
+                        "inputSchema": {"type": "object", "properties": {"query": {"type": "string"}}},
+                    }
+                ]
+            return [{"name": "ping", "description": "Ping", "inputSchema": {"type": "object"}}]
+
+    tools, targets = await load_gateway_catalog(CatalogClient("http://gateway:8082"), "tok")
+    assert listed_urls == [
+        "http://gateway:8082/mcp/knowledge",
+        "http://gateway:8082/mcp/other",
+    ]
     assert [tool["function"]["name"] for tool in tools] == [
         "knowledge__search_knowledge",
         "other__ping",
@@ -194,3 +280,23 @@ async def test_load_gateway_catalog_maps_tools_to_server_id(
         "knowledge__search_knowledge": ("knowledge", "search_knowledge"),
         "other__ping": ("other", "ping"),
     }
+
+
+@pytest.mark.asyncio
+async def test_call_tool_injects_trace_meta(span_exporter) -> None:
+    from opentelemetry import trace
+
+    fake = _FakeMcp(result={"ok": True})
+
+    def factory(url: str, token: str) -> _FakeMcp:
+        fake.url = url
+        fake.token = token
+        return fake
+
+    client = MCPGatewayClient("http://gateway:8082", mcp_client_factory=factory)
+    tracer = trace.get_tracer("test")
+    with tracer.start_as_current_span("chat.turn"):
+        result = await client.call_tool("knowledge", "search_knowledge", {"query": "x"}, "tok")
+    assert result == {"ok": True}
+    assert fake.calls[0][2] is not None
+    assert "traceparent" in fake.calls[0][2]
