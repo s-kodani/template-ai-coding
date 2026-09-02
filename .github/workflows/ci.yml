@@ -30,8 +30,8 @@ jobs:
       - name: Gateway pytest
         run: uv run --directory gateway pytest
 
-      - name: Skill sync check
-        run: uv run python scripts/sync_skills.py --check
+      - name: Skill deploy check
+        run: uv run python scripts/check_skill_deploy.py --check
 
   security:
     runs-on: ubuntu-latest

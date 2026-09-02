@@ -49,7 +49,7 @@ Skill / 設定変更時の最低限:
 uv run ruff check src tests scripts
 uv run pytest
 uv run python scripts/validate_okf.py
-uv run python scripts/sync_skills.py --check
+uv run python scripts/check_skill_deploy.py --check
 ```
 
 `src/` 変更を含む PR では上記に加え、リポジトリ CI と同等の検証を Phase 5 で実施する。詳細は `project-verification` Skill を参照。

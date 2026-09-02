@@ -2,6 +2,7 @@
 
 ## v?.?.? (未確定)
 
+- **Changed**: 自前 Agent Skill の正本を `.apm/skills/` にし、`apm install` で `.agents/skills/` と `.claude/skills/` へ展開する。CI は `scripts/check_skill_deploy.py` で一致を検証する（[インフラ](/current/infrastructure.md)）
 - **Changed**: Chainlit と MCP Gateway のツール list/call を REST からサーバー単位 Streamable HTTP（`POST /mcp/{server_id}`）にした。発見は `GET /v1/mcp` の `{id, name, tools, url}` のまま（[API 契約](/current/features/api.md)、[認証認可](/current/features/authentication.md)、[ADR-0013](/decisions/ADR-0013-mcp-gateway-per-server-streamable-http.md)）
 - **Changed**: knowledge-mcp の realm role を `mcp-reader` から `knowledge-mcp-reader` に改名した。次の Gateway MCP は別 role を Registry `required_roles` に書く（[認証認可](/current/features/authentication.md)、[ADR-0012](/decisions/ADR-0012-mcp-gateway-resource-server.md)）
 - **Changed**: プラグ UI で Gateway MCP を切断すると、そのサーバーのツールを LLM / 実行から外す。再接続で戻る（[UI 機能](/current/features/ui.md)、[ADR-0012](/decisions/ADR-0012-mcp-gateway-resource-server.md)）

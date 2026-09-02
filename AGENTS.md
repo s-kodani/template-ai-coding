@@ -30,7 +30,7 @@ Skill とこのファイルが競合する場合は、**このリポジトリ固
 | `docs/` の Current-state / ADR のみ | Phase 6 相当の整合確認 |
 | 質問のみ（コード・ドキュメント変更なし） | 不要 |
 
-### Skill カタログ（正本: `.agents/skills/`）
+### Skill カタログ（自前の正本: `.apm/skills/`）
 
 | Skill | 用途 |
 |-------|------|
@@ -44,7 +44,7 @@ Skill とこのファイルが競合する場合は、**このリポジトリ固
 | `commit-only` / `commit-push` / `commit-push-pr` | Git 操作（`delivery-reference.md` 参照） |
 | `gh` | GitHub CLI 参照専用 |
 
-`.claude/skills/` は `.agents/skills/` から `scripts/sync_skills.py` で生成する。手編集しない。
+自前 Skill は `.apm/skills/` を編集し、`apm install` で `.agents/skills/`（Cursor / Codex）と `.claude/skills/`（Claude）へ展開する。展開先は手編集しない。エージェントは展開先を読む。
 
 ### APM 管理 Skill（編集禁止）
 
@@ -56,8 +56,6 @@ Skill とこのファイルが競合する場合は、**このリポジトリ固
 | `test-driven-development` | obra/superpowers | `test-strategy`（適用判断）、`AGENTS.md`（必須ケース） |
 | `grill-me` / `grilling` | mattpocock/skills | `implementation-workflow` references |
 | `gh` | cli/cli | 特になし（汎用 CLI 参照） |
-
-自前 Skill（`implementation-workflow`、`test-strategy`、`mcp-server-engineering`、`project-verification`、`commit-*`）は `.agents/skills/` を正本として編集してよい。
 
 MCP サーバー実装・変更では `mcp-server-engineering` Skill を併用します。MCP 固有の完了チェックは `references/mcp-completion-checklist.md` を参照します。
 
@@ -215,7 +213,7 @@ Validation:
 - Build: `docker compose -f infra/app/compose.yml build`
 - OKF: `uv run python scripts/validate_okf.py`
 - PR workflow (pull request): `scripts/validate_pr_workflow.py`（CI: `.github/workflows/pr-workflow.yml`）
-- Skill sync: `uv run python scripts/sync_skills.py --check`
+- Skill deploy: `uv run python scripts/check_skill_deploy.py --check`
 - Local stack: `make -C infra up && make -C infra seed`
 ```
 
