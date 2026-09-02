@@ -46,6 +46,14 @@ Skill とこのファイルが競合する場合は、**このリポジトリ固
 
 自前 Skill は `.apm/skills/` を編集し、`apm install` で `.agents/skills/`（Cursor / Codex）と `.claude/skills/`（Claude）へ展開する。展開先は手編集しない。エージェントは展開先を読む。
 
+### Agent カタログ（自前の正本: `.apm/agents/`）
+
+| Agent | 用途 |
+|-------|------|
+| `review` | Phase 8 のコードレビューとワークフロー遵守。実装・編集はしない |
+
+自前 Agent は `.apm/agents/<name>.agent.md` を編集し、`apm install` で `.cursor/agents/` と `.claude/agents/` へ展開する。Codex は `.codex/agents/<name>.toml` へ変換する。展開先は手編集しない。Phase 8 では呼べるときに `review` を起動する（自己レビューは残す）。
+
 ### APM 管理 Skill（編集禁止）
 
 `apm.yml` で取り込む外部 Skill は **内容を編集しない**。リポジトリ固有のルールは `AGENTS.md` または自前 Skill（`test-strategy`、`implementation-workflow` 等）へ書く。`apm install` / 更新で upstream に戻る。
@@ -213,7 +221,7 @@ Validation:
 - Build: `docker compose -f infra/app/compose.yml build`
 - OKF: `uv run python scripts/validate_okf.py`
 - PR workflow (pull request): `scripts/validate_pr_workflow.py`（CI: `.github/workflows/pr-workflow.yml`）
-- Skill deploy: `uv run python scripts/check_skill_deploy.py --check`
+- Skill / Agent deploy: `uv run python scripts/check_skill_deploy.py --check`
 - Local stack: `make -C infra up && make -C infra seed`
 ```
 

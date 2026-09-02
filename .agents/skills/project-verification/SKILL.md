@@ -2,7 +2,7 @@
 name: project-verification
 description: >
   本リポジトリの CI / DevSecOps / Docker / Langfuse / Ingest 検証を、変更種別に応じて
-  実行する Skill。src/ scripts/ infra/ tests/ docs/ .apm/skills/ の実装・変更時に
+  実行する Skill。src/ scripts/ infra/ tests/ docs/ .apm/skills/ .apm/agents/ の実装・変更時に
   implementation-workflow Phase 5 と併用する。
 ---
 
@@ -40,7 +40,7 @@ description: >
 |---|---|
 | `src/` / `tests/` / `scripts/`（Python） | `uv run ruff check src tests scripts`、`uv run pytest` |
 | `docs/`（OKF） | `uv run python scripts/validate_okf.py` |
-| `.apm/skills/` | `uv run python scripts/check_skill_deploy.py --check`（正本編集後は `apm install`） |
+| `.apm/skills/` / `.apm/agents/` | `uv run python scripts/check_skill_deploy.py --check`（正本編集後は `apm install`） |
 | `infra/` | 上記 Python 検証 + `docker compose -f infra/app/compose.yml build` |
 | PR（`src/` 変更） | Issue 参照 + Release Note 要否宣言（`validate_pr_workflow.py`） |
 | トレース関連 | `uv run pytest tests/test_trace_propagation.py tests/test_langfuse_span_export.py` |

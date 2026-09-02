@@ -32,7 +32,7 @@ Phase 8 の詳細。Phase 7 Completion Report のあと、Issue を Close する
 - Current-state / ADR / Release Log が最終実装と食い違っていないか
 - デバッグ用の一時コードが残っていないか
 
-専用の review subagent（例: bugbot）が使え、この実行で許可されている場合は追加で使ってよい。自己レビューの代替にはしない。
+ハーネスがプロジェクトの `review` サブエージェント（`.cursor/agents/review.md` / `.claude/agents/review.md`）を呼べるときは、自己レビューに加えて必ず起動する。`review` は読み取り専用であり、Issue / PR コメントは親エージェントが投稿する。自己レビューの代替にはしない。専用 subagent が使えない実行では、自己レビューだけでよい。
 
 ## ワークフロー遵守チェック
 
