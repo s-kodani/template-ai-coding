@@ -26,15 +26,16 @@
 
 必須チェック: `quality`, `security`, `build-and-scan`, `okf`（リポジトリ設定による）
 
-## Skill deploy
+## Skill / Agent deploy
 
 自前 Skill の正本は `.apm/skills/`。展開先は `.agents/skills/` と `.claude/skills/`。
+自前 Agent の正本は `.apm/agents/`。展開先は `.cursor/agents/` と `.claude/agents/`。
 
-Skill 変更 PR では CI 前にローカルで:
+Skill / Agent 変更 PR では CI 前にローカルで:
 
 ```bash
 apm install
 uv run python scripts/check_skill_deploy.py --check
 ```
 
-`apm` が無い場合は、各自前 Skill ディレクトリを両展開先へコピーしてから check する。展開先の手編集はしない。
+`apm` が無い場合は、各自前 Skill ディレクトリと `*.agent.md` を展開先へコピーしてから check する。展開先の手編集はしない。

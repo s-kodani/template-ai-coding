@@ -1,4 +1,4 @@
-"""Check that APM-deployed skills match .apm/skills and both agent targets."""
+"""Check that APM-deployed skills and agents match first-party sources."""
 
 from __future__ import annotations
 
@@ -35,6 +35,38 @@ def _compare_trees(source: Path, dest: Path) -> list[str]:
     for rel_path in sorted(source_files & dest_files):
         if (source / rel_path).read_bytes() != (dest / rel_path).read_bytes():
             errors.append(f"{dest / rel_path}: out of sync with {source / rel_path}")
+    return errors
+
+
+def _agent_stems(root: Path, suffix: str) -> dict[str, Path]:
+    if not root.is_dir():
+        return {}
+    stems: dict[str, Path] = {}
+    for path in root.iterdir():
+        if path.is_file() and path.name.endswith(suffix):
+            stems[path.name[: -len(suffix)]] = path
+    return stems
+
+
+def check_agent_deploy(repo_root: Path) -> list[str]:
+    source = _agent_stems(repo_root / ".apm" / "agents", ".agent.md")
+    cursor = _agent_stems(repo_root / ".cursor" / "agents", ".md")
+    claude = _agent_stems(repo_root / ".claude" / "agents", ".md")
+    errors: list[str] = []
+
+    for stem, src_path in sorted(source.items()):
+        for label, deployed in ((".cursor/agents", cursor), (".claude/agents", claude)):
+            dest_path = deployed.get(stem)
+            if dest_path is None:
+                errors.append(f"{label}/{stem}.md: missing")
+                continue
+            if dest_path.read_bytes() != src_path.read_bytes():
+                errors.append(f"{label}/{stem}.md: out of sync with {src_path}")
+
+    extras = sorted((set(cursor) | set(claude)) - set(source))
+    for stem in extras:
+        errors.append(f"deployed agent has no source: {stem}")
+
     return errors
 
 
@@ -75,18 +107,18 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.parse_args(argv)
 
-    errors = check_skill_deploy(REPO_ROOT)
+    errors = check_skill_deploy(REPO_ROOT) + check_agent_deploy(REPO_ROOT)
     if errors:
         for error in errors:
             print(f"error: {error}", file=sys.stderr)
         print(
-            "Edit `.apm/skills/` then run `apm install` (or copy each first-party skill "
-            "to `.agents/skills/` and `.claude/skills/`).",
+            "Edit `.apm/skills/` or `.apm/agents/` then run `apm install` "
+            "(or copy first-party files to the Cursor / Claude deploy paths).",
             file=sys.stderr,
         )
         return 1
 
-    print("Skills are in sync.")
+    print("Skills and agents are in sync.")
     return 0
 
 
