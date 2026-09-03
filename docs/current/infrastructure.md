@@ -73,6 +73,8 @@ Langfuse SDK 4 はデフォルトで LLM / Langfuse スパン以外を落とす�
 
 MCP `_meta` には FastMCP 既定の `traceparent` に加え、Langfuse の `langfuse_trace_id` baggage を載せます。これがないと、mcp-server プロセス側の FastMCP スパンが同一 `traceId` でもトレース一覧の追加ルートになります。
 
+`chat.turn` では `propagate_attributes` により `user.id` / `session.id` / tags / metadata を子 observation へ伝播し、`as_baggage=True` で MCP 下流（mcp-server）へも載せます。プロセス共通の `langfuse.environment` / `langfuse.release` は `LANGFUSE_TRACING_ENVIRONMENT` / `LANGFUSE_RELEASE`（または SDK 初期化）で設定します。
+
 ## 認証（Keycloak）
 
 Chainlit は Keycloak の `knowledge` realm で OAuth する（[ADR-0011](/decisions/ADR-0011-keycloak-chainlit-oauth.md)）。既定 knowledge-mcp 呼び出しは MCP Gateway が Token Exchange する（[ADR-0012](/decisions/ADR-0012-mcp-gateway-resource-server.md)）。シーケンスは [認証認可](/current/features/authentication.md)。
@@ -96,11 +98,13 @@ Chainlit は Keycloak の `knowledge` realm で OAuth する（[ADR-0011](/decis
 | 確認項目 | 期待結果 |
 |---|---|
 | Langfuse トレース一覧 | `chat.turn` が **1 行** のみ（同一 `traceId` の FastMCP / ツールスパンはルートに出ない） |
-| トレース詳細 | `llm.generate` が `chat.turn` の子 |
-| ツール呼び出し | `search_knowledge` / `get_document` の input / output が tool observation に記録（`get_document` の output 本文は先頭 500 文字） |
-| MCP サーバー | `tools/call …` SERVER span 配下に `search.embed` / `search.query` |
+| トレース属性 | `user.id`（Keycloak sub 等）、`session.id`（Chainlit セッション）、`langfuse.environment` / `langfuse.release`（設定時） |
+| トレース詳細 | `llm.generate` が `chat.turn` の子（type=generation、model / usage 付き） |
+| Embedding | `search.embed` が embedding observation（model / usage 付き） |
+| ツール呼び出し | `search_knowledge` / `get_document` の input / output が tool observation に記録。metadata に `tool.route` / `tool.server_id` 等 |
+| MCP サーバー | `tools/call …` SERVER span 配下に `search.query` / `get_document.fetch` |
 | Postgres | `search.query` 近傍に asyncpg クライアントスパン（CONNECT / SELECT 等） |
-| 自動テスト | `uv run pytest tests/test_trace_propagation.py tests/test_langfuse_span_export.py` |
+| 自動テスト | `uv run pytest tests/test_trace_propagation.py tests/test_langfuse_span_export.py tests/test_tracing_metadata.py` |
 
 ## CI/CD と DevSecOps
 

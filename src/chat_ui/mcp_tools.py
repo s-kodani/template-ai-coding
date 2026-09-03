@@ -139,9 +139,13 @@ def parse_tool_result(result: Any) -> dict[str, Any]:
 
 
 async def call_session_tool(
-    session: Any, name: str, arguments: dict[str, Any]
+    session: Any,
+    name: str,
+    arguments: dict[str, Any],
+    *,
+    tool_metadata: dict[str, str] | None = None,
 ) -> dict[str, Any]:
-    with tool_observation(name, arguments):
+    with tool_observation(name, arguments, metadata=tool_metadata):
         result = await session.call_tool(
             name, arguments, meta=inject_langfuse_propagated_meta({})
         )

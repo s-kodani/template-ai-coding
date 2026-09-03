@@ -23,7 +23,14 @@ from chat_ui.mcp_tools import (
 from chat_ui.mcp_ui import write_mcp_autoload_script
 from chat_ui.token_manager import build_token_manager
 from knowledge_mcp.config import get_settings
-from knowledge_mcp.tracing import configure_langfuse_tracing, instrument_asyncpg
+from knowledge_mcp.tracing import (
+    chat_trace_attributes,
+    configure_langfuse_tracing,
+    flush_langfuse,
+    instrument_asyncpg,
+    record_generation_result,
+    update_current_turn_io,
+)
 
 _langfuse = configure_langfuse_tracing()
 instrument_asyncpg()
@@ -110,9 +117,12 @@ async def _dispatch_tool(name: str, arguments: dict[str, Any]) -> dict[str, Any]
     session_tools = cl.user_session.get("mcp_tools") or {}
     targets = cl.user_session.get("gateway_targets") or {}
     kind, target = resolve_tool_target(name, session_tools, targets)
+    tool_metadata: dict[str, str] = {"tool.route": kind, "tool.llm_name": name}
     if kind == "gateway" and target:
         mapped = targets.get(name)
         mcp_name = mapped[1] if isinstance(mapped, tuple) else name
+        tool_metadata["tool.server_id"] = target
+        tool_metadata["tool.mcp_name"] = mcp_name
         return await call_gateway_tool(
             gateway_client,
             token_manager,
@@ -120,77 +130,93 @@ async def _dispatch_tool(name: str, arguments: dict[str, Any]) -> dict[str, Any]
             mcp_name,
             arguments,
             server_id=target,
+            tool_metadata=tool_metadata,
         )
     if kind == "session" and target:
+        tool_metadata["tool.session"] = target
+        tool_metadata["tool.mcp_name"] = name
         entry = cl.context.session.mcp_sessions.get(target)
         if not entry:
             return {"error": f"MCP session not found: {target}"}
         mcp_session, _ = entry
-        return await call_session_tool(mcp_session, name, arguments)
+        return await call_session_tool(mcp_session, name, arguments, tool_metadata=tool_metadata)
     return {"error": f"Unknown tool: {name}"}
 
 
-@observe(name="llm.generate")
+@observe(name="llm.generate", as_type="generation", capture_input=False, capture_output=False)
 async def _generate(messages: list[dict[str, Any]], tools: list[dict[str, Any]]) -> Any:
-    return await openai_client.chat.completions.create(
+    response = await openai_client.chat.completions.create(
         model=settings.chat_model,
         messages=messages,
         tools=tools,
         tool_choice="auto",
     )
+    record_generation_result(response, model=settings.chat_model)
+    return response
 
 
 @cl.on_message
-@observe(name="chat.turn")
+@observe(name="chat.turn", capture_input=False, capture_output=False)
 async def on_message(message: cl.Message) -> None:
-    messages = cl.user_session.get("messages", [])
-    messages.append({"role": "user", "content": message.content})
+    user = _session_user()
+    user_metadata = getattr(user, "metadata", None) or {}
+    user_id = str(user_metadata.get("keycloak_sub") or getattr(user, "identifier", "") or "") or None
+    session_id = str(cl.context.session.id)
 
-    os.environ.setdefault("FASTMCP_TELEMETRY_MODE", "native")
+    with chat_trace_attributes(
+        user_id=user_id,
+        session_id=session_id,
+        chat_model=settings.chat_model,
+    ):
+        update_current_turn_io(user_message=message.content)
 
-    tools = _llm_tools()
-    response = await _generate(messages, tools)
-    choice = response.choices[0].message
+        messages = cl.user_session.get("messages", [])
+        messages.append({"role": "user", "content": message.content})
 
-    while choice.tool_calls:
-        messages.append(
-            {
-                "role": "assistant",
-                "content": choice.content or "",
-                "tool_calls": [
-                    {
-                        "id": tool_call.id,
-                        "type": "function",
-                        "function": {
-                            "name": tool_call.function.name,
-                            "arguments": tool_call.function.arguments,
-                        },
-                    }
-                    for tool_call in choice.tool_calls
-                ],
-            }
-        )
+        os.environ.setdefault("FASTMCP_TELEMETRY_MODE", "native")
 
-        for tool_call in choice.tool_calls:
-            args = json.loads(tool_call.function.arguments or "{}")
-            tool_result = await _dispatch_tool(tool_call.function.name, args)
-            messages.append(
-                {
-                    "role": "tool",
-                    "tool_call_id": tool_call.id,
-                    "content": json.dumps(tool_result),
-                }
-            )
-
+        tools = _llm_tools()
         response = await _generate(messages, tools)
         choice = response.choices[0].message
 
-    assistant_text = choice.content or "I could not generate a response."
-    messages.append({"role": "assistant", "content": assistant_text})
-    cl.user_session.set("messages", messages)
-    await cl.Message(content=assistant_text).send()
+        while choice.tool_calls:
+            messages.append(
+                {
+                    "role": "assistant",
+                    "content": choice.content or "",
+                    "tool_calls": [
+                        {
+                            "id": tool_call.id,
+                            "type": "function",
+                            "function": {
+                                "name": tool_call.function.name,
+                                "arguments": tool_call.function.arguments,
+                            },
+                        }
+                        for tool_call in choice.tool_calls
+                    ],
+                }
+            )
 
-    if settings.langfuse_configured:
-        from langfuse import get_client
+            for tool_call in choice.tool_calls:
+                args = json.loads(tool_call.function.arguments or "{}")
+                tool_result = await _dispatch_tool(tool_call.function.name, args)
+                messages.append(
+                    {
+                        "role": "tool",
+                        "tool_call_id": tool_call.id,
+                        "content": json.dumps(tool_result),
+                    }
+                )
 
-        get_client().flush()
+            response = await _generate(messages, tools)
+            choice = response.choices[0].message
+
+        assistant_text = choice.content or "I could not generate a response."
+        messages.append({"role": "assistant", "content": assistant_text})
+        cl.user_session.set("messages", messages)
+        update_current_turn_io(user_message=message.content, assistant_message=assistant_text)
+        await cl.Message(content=assistant_text).send()
+
+        if settings.langfuse_configured:
+            flush_langfuse()

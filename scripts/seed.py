@@ -55,7 +55,7 @@ async def seed(settings: Settings) -> None:
             ):
                 skipped += 1
                 continue
-            vector = await embedding_client.embed(fixture["content"])
+            vector, _usage = await embedding_client.embed(fixture["content"])
             await replace_document(
                 repository,
                 [

@@ -2,6 +2,7 @@
 
 ## v?.?.? (未確定)
 
+- **Changed**: Langfuse OTEL メタデータを一通り設定 — `user.id` / `session.id` / tags / metadata の `propagate_attributes`（MCP `_meta` baggage 伝播含む）、`llm.generate` を generation 型 + model / usage、`search.embed` を embedding observation + usage、ツール observation に route / server_id、環境変数 `LANGFUSE_TRACING_ENVIRONMENT` / `LANGFUSE_RELEASE`（[インフラ](/current/infrastructure.md)）
 - **Added**: レビュー用サブエージェント `review` を APM のプロジェクト primitive（`.apm/agents/`）として追加する。`apm install` で `.cursor/agents/` と `.claude/agents/` へ展開し、Codex は `.codex/agents/review.toml` へ変換する。CI は `scripts/check_skill_deploy.py` で Skill と合わせて一致を検証する（[インフラ](/current/infrastructure.md)）
 - **Changed**: 自前 Agent Skill の正本を `.apm/skills/` にし、`apm install` で `.agents/skills/` と `.claude/skills/` へ展開する。CI は `scripts/check_skill_deploy.py` で一致を検証する（[インフラ](/current/infrastructure.md)）
 - **Changed**: Chainlit と MCP Gateway のツール list/call を REST からサーバー単位 Streamable HTTP（`POST /mcp/{server_id}`）にした。発見は `GET /v1/mcp` の `{id, name, tools, url}` のまま（[API 契約](/current/features/api.md)、[認証認可](/current/features/authentication.md)、[ADR-0013](/decisions/ADR-0013-mcp-gateway-per-server-streamable-http.md)）
