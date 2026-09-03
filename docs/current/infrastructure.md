@@ -69,11 +69,11 @@ Langfuse スタック用の `infra/langfuse/.env` では、`ENCRYPTION_KEY` を 
 
 Chainlit と FastMCP の両方で、FastMCP を import する **前に** Langfuse Python SDK を初期化します。キーが未設定の場合はトレースは no-op となり、サービスは起動可能です。
 
-Langfuse SDK 4 はデフォルトで LLM / Langfuse スパン以外を落とすため、`should_export_span` で `fastmcp` と `opentelemetry.instrumentation.asyncpg` を追加許可します。httpx などの汎用クライアントスパンは送りません。
+**送信メタデータ・観測ツリー・秘匿ルールの正本**は [Langfuse OTEL トレーシング](/current/features/tracing.md)。以下は運用上の要点のみ。
 
-MCP `_meta` には FastMCP 既定の `traceparent` に加え、Langfuse の `langfuse_trace_id` baggage を載せます。これがないと、mcp-server プロセス側の FastMCP スパンが同一 `traceId` でもトレース一覧の追加ルートになります。
-
-`chat.turn` では `propagate_attributes` により `user.id` / `session.id` / tags / metadata を子 observation へ伝播し、`as_baggage=True` で MCP 下流（mcp-server）へも載せます。プロセス共通の `langfuse.environment` / `langfuse.release` は `LANGFUSE_TRACING_ENVIRONMENT` / `LANGFUSE_RELEASE`（または SDK 初期化）で設定します。
+- Langfuse SDK 4 はデフォルトで LLM / Langfuse スパン以外を落とすため、`should_export_span` で `fastmcp` と `opentelemetry.instrumentation.asyncpg` を追加許可する
+- MCP `_meta` には `traceparent` / `tracestate` / `baggage`（`langfuse_trace_id` と `propagate_attributes` の属性）を載せる
+- プロセス共通の `langfuse.environment` / `langfuse.release` は `LANGFUSE_TRACING_ENVIRONMENT` / `LANGFUSE_RELEASE` で設定する
 
 ## 認証（Keycloak）
 
@@ -91,9 +91,11 @@ Chainlit は Keycloak の `knowledge` realm で OAuth する（[ADR-0011](/decis
 
 1. **MCP Inspector**: `uv run python scripts/mcp_dev_token.py` の出力を Bearer にし、`http://127.0.0.1:8000/mcp` に接続
 2. **Chainlit**: Keycloak でログインし、`search_knowledge` が呼ばれる質問を送信
-3. **Langfuse**: チャット 1 ターンあたり 1 本のトレースに、クライアント/サーバーのツールスパンがネストされていることを確認
+3. **Langfuse**: チャット 1 ターンあたり 1 本のトレースに、クライアント/サーバーのツールスパンがネストされていることを確認（属性一覧は [Langfuse OTEL トレーシング](/current/features/tracing.md)）
 
 ### トレース検証チェックリスト（1 ターン = 1 trace）
+
+[Langfuse OTEL トレーシング](/current/features/tracing.md) の「検証」節と同一。要点:
 
 | 確認項目 | 期待結果 |
 |---|---|

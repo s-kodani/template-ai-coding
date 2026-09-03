@@ -106,32 +106,36 @@ HTTP トランスポート（Streamable HTTP、Origin 検証）
 
 ## トレース伝播
 
+メタデータの正本は [Langfuse OTEL トレーシング](/current/features/tracing.md)。以下は構成概要。
+
 ```mermaid
 flowchart TD
-    chat["chat.turn<br/>（Chainlit ルート）"]
-    llm["llm.generate"]
-    tool["search_knowledge / get_document<br/>（Langfuse tool observation）"]
+    chat["chat.turn<br/>（Chainlit ルート + trace 属性）"]
+    llm["llm.generate<br/>（generation）"]
+    tool["tool observation"]
     client["FastMCP Client span"]
-    server["FastMCP Server span<br/>（_meta traceparent から接続）"]
-    embed["search.embed<br/>（OTel span）"]
-    query["search.query<br/>（OTel span）"]
-    db["asyncpg spans<br/>（Postgres クエリ）"]
+    server["FastMCP Server span<br/>（_meta から接続）"]
+    embed_otel["search.embed<br/>（OTel span）"]
+    embed_lf["search.embed<br/>（embedding observation）"]
+    query["search.query"]
+    fetch["get_document.fetch"]
+    db["asyncpg spans"]
 
     chat --> llm
     chat --> tool
     tool --> client
-    client -->|"W3C traceparent + baggage in MCP _meta"| server
-    server --> embed
+    client -->|"traceparent + baggage in MCP _meta"| server
+    server --> embed_otel
+    embed_otel --> embed_lf
     server --> query
+    server --> fetch
     query --> db
 ```
 
-- Chainlit が `chat.turn` と `llm.generate` 観測を作成
-- 既定の knowledge-mcp 呼び出しは Chainlit の FastMCP Client が Gateway `/mcp/{server_id}` の `_meta` に W3C を載せ、Gateway が下流へ転送する
-- UI から接続した追加 MCP は公式 SDK の `ClientSession.call_tool(..., meta=...)` で同じ `_meta` を注入
-- FastMCP Server が `_meta` を extract し SERVER スパンを子として接続する。baggage により Langfuse はこれらのスパンを追加ルートにしない
-- カスタム OTel スパン: `search.embed`、`search.query`（MCP server span の子。Langfuse 独立トレースにはしない）
-- Postgres クライアントスパンは `opentelemetry-instrumentation-asyncpg`
-- Langfuse への export は SDK デフォルト（Langfuse / gen_ai / 既知 LLM instrumentor）に加え `fastmcp` と `opentelemetry.instrumentation.asyncpg` を許可する
+- Chainlit が `chat.turn` / `llm.generate` と tool observation を作成し、`propagate_attributes` で `user.id` / `session.id` 等を子 span へ伝播する
+- 既定 knowledge-mcp は Chainlit FastMCP Client → Gateway `/mcp/{server_id}` → knowledge-mcp。Gateway は `_meta` を転送するのみ
+- 追加 MCP は `ClientSession.call_tool(..., meta=...)` で同じ `_meta` を注入
+- MCP サーバーは `search.embed`（OTel + embedding observation）、`search.query`、`get_document.fetch` と asyncpg スパンをネストする
+- Langfuse export フィルタと秘匿ルールは [トレーシング](/current/features/tracing.md) を参照
 
 compose 構成は [インフラ](/current/infrastructure.md) を参照。

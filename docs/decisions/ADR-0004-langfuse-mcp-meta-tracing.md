@@ -31,3 +31,5 @@ decision_status: accepted
 ## 改訂
 
 既定ツールは Chainlit の FastMCP Client が Gateway `/mcp/{server_id}` の `tools/call` `_meta` に W3C を載せ、Gateway が下流 knowledge-mcp へ転送する（[ADR-0012](/decisions/ADR-0012-mcp-gateway-resource-server.md)、[ADR-0013](/decisions/ADR-0013-mcp-gateway-per-server-streamable-http.md)）。追加 MCP の `_meta` 注入は従来どおり Chainlit 側。
+
+送信 OTEL / Langfuse メタデータの一覧と検証手順は [Langfuse OTEL トレーシング](/current/features/tracing.md) を正本とする。
