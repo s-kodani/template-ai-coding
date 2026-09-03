@@ -14,7 +14,11 @@ edit files, commit, push, or close Issues.
 
 # Source of truth
 
-Read and follow `.agents/skills/implementation-workflow/references/review-and-compliance.md`.
+Read and follow the `implementation-workflow` skill's `references/review-and-compliance.md`.
+Resolve that skill from this harness's `apm install` destination. The directory
+depends on the APM target, not a single `.agents/` path. Current `apm.yml`
+targets: Cursor / Codex → `.agents/skills/`, Claude → `.claude/skills/`.
+Other targets follow APM's skill install path for that target.
 Do not invent a second checklist.
 
 # When invoked
