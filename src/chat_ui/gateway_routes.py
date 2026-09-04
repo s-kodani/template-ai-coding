@@ -2,11 +2,15 @@ from __future__ import annotations
 
 from typing import Annotated, Any
 
+from chainlit.auth import get_current_user
+from chainlit.user import PersistedUser, User
 from fastapi import Depends, HTTPException
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict
 
 from chat_ui.gateway_session import apply_ui_gateway_toggle
+
+CurrentUser = Annotated[User | PersistedUser | None, Depends(get_current_user)]
 
 
 class GatewayMCPToggleRequest(BaseModel):
@@ -21,13 +25,9 @@ def register_gateway_mcp_routes(
     *,
     name_to_id: dict[str, str],
 ) -> None:
-    from chainlit.auth import get_current_user
     from chainlit.context import init_ws_context
     from chainlit.session import WebsocketSession
-    from chainlit.user import PersistedUser, User
     from chainlit.user_session import user_sessions
-
-    CurrentUser = Annotated[User | PersistedUser | None, Depends(get_current_user)]
 
     def _session_store(session: Any) -> dict[str, Any]:
         return user_sessions.setdefault(session.id, {})
