@@ -28,10 +28,10 @@ generated:
 - Chainlit 内蔵 MCP 接続 UI で Streamable HTTP / SSE サーバを追加接続できる。接続先は `.chainlit/config.toml` の `user_servers.allowed_urls` に含まれる origin に限る（[ADR-0009](/decisions/ADR-0009-chainlit-mcp-user-servers-allowlist.md)）
 - Registry の enabled Gateway MCP はプラグ UI（MCP Servers）に載せる。Chainlit はそれらへ MCP セッションを張らない。切断するとそのサーバーのツールを LLM / 実行から外し、再接続で戻す（チャットを開き直すと再び有効）
 - 追加接続したサーバのツールはセッションに載り、LLM の function tools に動的追加される
-- 追加サーバへの `tools/call` では `_meta` へ W3C `traceparent` と Langfuse `baggage` を注入する
+- 追加サーバへの `tools/call` では `_meta` へ W3C `traceparent` と Langfuse `baggage` を注入する（詳細は [Langfuse OTEL トレーシング](/current/features/tracing.md)）
 - Gateway ツールの同名衝突は `{server_id}__` 接頭辞で共存する。追加 MCP セッション同士の同名は先に接続した方を優先する
 - stdio MCP は無効（named server も宣言せず、Chainlit サーバ上での任意コマンド実行を避ける）
-- Langfuse ルート観測 `chat.turn` とネストされた `llm.generate` を作成
+- Langfuse: `chat.turn` ルート、`llm.generate`（generation）、ツール observation。`user.id` / `session.id` は `propagate_attributes` で付与（[トレーシング](/current/features/tracing.md)）
 
 ## MCP 接続 UI
 
@@ -44,4 +44,4 @@ generated:
 
 ## 設定
 
-`CHAT_MODEL`、`OPENAI_API_KEY`、`MCP_GATEWAY_URL`、`MCP_GATEWAY_REGISTRY_PATH`、`TOKEN_STORE_*`、`CHAINLIT_AUTH_SECRET`、`OAUTH_GENERIC_*`、Langfuse キーはルートの `.env.example` を参照。
+`CHAT_MODEL`、`OPENAI_API_KEY`、`MCP_GATEWAY_URL`、`MCP_GATEWAY_REGISTRY_PATH`、`TOKEN_STORE_*`、`CHAINLIT_AUTH_SECRET`、`OAUTH_GENERIC_*`、Langfuse キーはルートの `.env.example` を参照。トレースメタデータの一覧は [Langfuse OTEL トレーシング](/current/features/tracing.md)。

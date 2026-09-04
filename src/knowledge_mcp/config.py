@@ -33,6 +33,8 @@ class Settings(BaseSettings):
     langfuse_secret_key: str = ""
     langfuse_host: str = "http://localhost:3000"
     langfuse_tracing_enabled: bool = True
+    langfuse_tracing_environment: str = ""
+    langfuse_release: str = ""
 
     embedding_timeout: float = 30.0
     db_timeout: float = 10.0

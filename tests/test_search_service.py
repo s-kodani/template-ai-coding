@@ -6,14 +6,17 @@ from knowledge_mcp.service import SearchService
 
 
 class FakeEmbeddingClient:
+    model = "text-embedding-3-small"
+    dimensions = 1536
+
     def __init__(self, vector: list[float] | None = None, error: Exception | None = None) -> None:
         self.vector = vector or [0.1] * 1536
         self.error = error
 
-    async def embed(self, text: str) -> list[float]:
+    async def embed(self, text: str) -> tuple[list[float], dict[str, int] | None]:
         if self.error:
             raise self.error
-        return self.vector
+        return self.vector, {"total": 1}
 
 
 class FakeRepository:

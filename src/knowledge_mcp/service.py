@@ -3,7 +3,11 @@ from __future__ import annotations
 from knowledge_mcp.embedding import EmbeddingClient
 from knowledge_mcp.models import DocumentDetail, SearchResult
 from knowledge_mcp.repository import VectorRepository
-from knowledge_mcp.tracing import search_span
+from knowledge_mcp.tracing import (
+    embedding_observation,
+    record_embedding_usage,
+    search_span,
+)
 
 
 class SearchService:
@@ -27,7 +31,13 @@ class SearchService:
                 span.update(metadata={"search.query_length": len(query)})
             elif hasattr(span, "set_attribute"):
                 span.set_attribute("search.query_length", len(query))
-            embedding = await self._embedding_client.embed(query)
+            with embedding_observation(
+                model=self._embedding_client.model,
+                input_length=len(query),
+                dimensions=self._embedding_client.dimensions,
+            ) as embed_observation:
+                embedding, usage = await self._embedding_client.embed(query)
+                record_embedding_usage(embed_observation, usage)
 
         with search_span("search.query") as span:
             hits = await self._repository.search(embedding, top_k)
@@ -47,4 +57,15 @@ class SearchService:
         document_id = document_id.strip()
         if not document_id:
             raise ValueError("document_id must not be empty")
-        return await self._repository.get_document(document_id)
+        with search_span("get_document.fetch") as span:
+            document = await self._repository.get_document(document_id)
+            if hasattr(span, "update"):
+                span.update(
+                    metadata={
+                        "document.found": document is not None,
+                        "document.id_length": len(document_id),
+                    }
+                )
+            elif hasattr(span, "set_attribute"):
+                span.set_attribute("document.found", document is not None)
+        return document

@@ -46,8 +46,10 @@ class MCPGatewayClient:
         arguments: dict[str, Any],
         access_token: str,
         url: str | None = None,
+        *,
+        tool_metadata: dict[str, str] | None = None,
     ) -> dict[str, Any]:
-        with tool_observation(name, arguments):
+        with tool_observation(name, arguments, metadata=tool_metadata):
             try:
                 async with self._mcp_client_factory(
                     self._mcp_url(server_id, url), access_token
@@ -126,16 +128,22 @@ async def call_gateway_tool(
     name: str,
     arguments: dict[str, Any],
     server_id: str,
+    *,
+    tool_metadata: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     token = await token_source.get_access_token(session_id)
     if not token:
         return {"error": "Not authenticated for MCP tools"}
-    result = await client.call_tool(server_id, name, arguments, token)
+    result = await client.call_tool(
+        server_id, name, arguments, token, tool_metadata=tool_metadata
+    )
     if result.get("status_code") == 401:
         token = await token_source.get_access_token(session_id, force_refresh=True)
         if not token:
             return result
-        result = await client.call_tool(server_id, name, arguments, token)
+        result = await client.call_tool(
+            server_id, name, arguments, token, tool_metadata=tool_metadata
+        )
     return result
 
 

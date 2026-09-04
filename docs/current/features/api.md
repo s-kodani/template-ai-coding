@@ -46,7 +46,7 @@ Langfuse では Chainlit 側の `chat.turn` 配下に tool observation として
 
 ヒット行の `content`（chunk 本文）を返すか、見つからない場合はエラーを返します。親文書の全文結合はしません。
 
-Langfuse では Chainlit 側の `chat.turn` 配下に tool observation として **input** `{"document_id": "..."}` と **output**（文書メタデータと chunk 本文の先頭 500 文字）がネスト記録されます。MCP サーバー側は FastMCP の server span に同じ input / output が付与されます。
+Langfuse では Chainlit 側の `chat.turn` 配下に tool observation として **input** `{"document_id": "..."}` と **output**（文書メタデータと chunk 本文の先頭 500 文字）がネスト記録されます。MCP サーバー側は FastMCP の server span に同じ input / output が付与されます。ツール routing metadata 等の一覧は [Langfuse OTEL トレーシング](/current/features/tracing.md) を参照。
 
 ## MCP では公開しないもの
 

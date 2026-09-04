@@ -97,7 +97,7 @@ async def test_search_spans_nest_under_server_span(span_exporter: InMemorySpanEx
     with patch.object(server.repository, "connect", AsyncMock()), patch.object(
         server.repository, "close", AsyncMock()
     ), patch.object(server.embedding_client, "aclose", AsyncMock()), patch.object(
-        server.embedding_client, "embed", AsyncMock(return_value=[0.1] * 1536)
+        server.embedding_client, "embed", AsyncMock(return_value=([0.1] * 1536, {"total": 1}))
     ), patch.object(server.repository, "search", AsyncMock(return_value=hits)):
         tracer = trace.get_tracer("test")
         with tracer.start_as_current_span("chat.turn"):
@@ -131,7 +131,7 @@ async def test_tool_call_spans_share_single_trace_id(span_exporter: InMemorySpan
     with patch.object(server.repository, "connect", AsyncMock()), patch.object(
         server.repository, "close", AsyncMock()
     ), patch.object(server.embedding_client, "aclose", AsyncMock()), patch.object(
-        server.embedding_client, "embed", AsyncMock(return_value=[0.1] * 1536)
+        server.embedding_client, "embed", AsyncMock(return_value=([0.1] * 1536, {"total": 1}))
     ), patch.object(server.repository, "search", AsyncMock(return_value=hits)):
         tracer = trace.get_tracer("test")
         with tracer.start_as_current_span("chat.turn") as root:
@@ -174,7 +174,7 @@ async def test_mcp_bridge_call_tool_preserves_root_trace(span_exporter: InMemory
     with patch.object(server.repository, "connect", AsyncMock()), patch.object(
         server.repository, "close", AsyncMock()
     ), patch.object(server.embedding_client, "aclose", AsyncMock()), patch.object(
-        server.embedding_client, "embed", AsyncMock(return_value=[0.1] * 1536)
+        server.embedding_client, "embed", AsyncMock(return_value=([0.1] * 1536, {"total": 1}))
     ), patch.object(server.repository, "search", AsyncMock(return_value=hits)):
         settings = Settings()
         from chat_ui.mcp_bridge import MCPBridge

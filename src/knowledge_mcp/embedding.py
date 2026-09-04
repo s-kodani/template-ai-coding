@@ -18,7 +18,15 @@ class EmbeddingClient:
             timeout=settings.embedding_timeout,
         )
 
-    async def embed(self, text: str) -> list[float]:
+    @property
+    def model(self) -> str:
+        return self._settings.embedding_model
+
+    @property
+    def dimensions(self) -> int:
+        return self._settings.embedding_dimensions
+
+    async def embed(self, text: str) -> tuple[list[float], dict[str, int] | None]:
         if not self._settings.openai_api_key:
             raise EmbeddingError(
                 "Embedding API key is not configured. Set OPENAI_API_KEY before searching."
@@ -46,7 +54,13 @@ class EmbeddingClient:
                 f"Embedding dimension mismatch: expected {self._settings.embedding_dimensions}, "
                 f"got {len(vector)}."
             )
-        return vector
+        usage_payload = payload.get("usage")
+        usage: dict[str, int] | None = None
+        if isinstance(usage_payload, dict):
+            total = usage_payload.get("total_tokens")
+            if total is not None:
+                usage = {"total": int(total)}
+        return vector, usage
 
     async def aclose(self) -> None:
         await self._client.aclose()
