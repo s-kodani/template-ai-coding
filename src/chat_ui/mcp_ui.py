@@ -21,7 +21,6 @@ def _display_entries(entries: list[dict[str, Any]]) -> list[dict[str, Any]]:
                 "tools": entry.get("tools") or [],
                 "status": "connected",
                 "type": GATEWAY_MCP_TYPE,
-                "clientType": GATEWAY_MCP_TYPE,
                 "url": GATEWAY_MCP_URL_LABEL,
                 "isUserProvided": False,
             }
@@ -71,7 +70,10 @@ def render_mcp_autoload_js(entries: list[dict[str, Any]] | None = None) -> str:
         const payload = JSON.parse(body);
         if (payload && NAMES.has(payload.name)) {{
           const target = new URL("/gateway-mcp", location.origin).href;
-          return originalFetch(target, init);
+          const slimInit = Object.assign({{}}, init || {{}}, {{
+            body: JSON.stringify({{ sessionId: payload.sessionId, name: payload.name }}),
+          }});
+          return originalFetch(target, slimInit);
         }}
       }} catch (_error) {{}}
     }}

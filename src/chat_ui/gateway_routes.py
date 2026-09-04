@@ -4,8 +4,16 @@ from typing import Annotated, Any
 
 from fastapi import Depends, HTTPException
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel, ConfigDict
 
 from chat_ui.gateway_session import apply_ui_gateway_toggle
+
+
+class GatewayMCPToggleRequest(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    sessionId: str
+    name: str
 
 
 def register_gateway_mcp_routes(
@@ -16,7 +24,6 @@ def register_gateway_mcp_routes(
     from chainlit.auth import get_current_user
     from chainlit.context import init_ws_context
     from chainlit.session import WebsocketSession
-    from chainlit.types import ConnectMCPRequest, DisconnectMCPRequest
     from chainlit.user import PersistedUser, User
     from chainlit.user_session import user_sessions
 
@@ -33,7 +40,7 @@ def register_gateway_mcp_routes(
 
     @app.post("/gateway-mcp")
     async def connect_gateway_mcp(
-        payload: ConnectMCPRequest,
+        payload: GatewayMCPToggleRequest,
         current_user: CurrentUser,
     ) -> JSONResponse:
         session = WebsocketSession.get_by_id(payload.sessionId)
@@ -53,7 +60,7 @@ def register_gateway_mcp_routes(
 
     @app.delete("/gateway-mcp")
     async def disconnect_gateway_mcp(
-        payload: DisconnectMCPRequest,
+        payload: GatewayMCPToggleRequest,
         current_user: CurrentUser,
     ) -> JSONResponse:
         session = WebsocketSession.get_by_id(payload.sessionId)
