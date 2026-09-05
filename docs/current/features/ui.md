@@ -40,6 +40,7 @@ generated:
 - 追加 MCP へは、Chainlit コンテナから到達でき、allowlist に含まれる URL を指定する
 - 既定 allowlist: `http://mcp-server:8000`、`http://localhost:8000`、`http://127.0.0.1:8000`、`http://host.docker.internal:8000`
 - Gateway MCP は `mcp-autoload.js` が Registry から一覧へ載せる。プラグ UI の `POST|DELETE /mcp` は `/gateway-mcp` に書き換わり、セッションの利用フラグだけを更新する。Chainlit プロセスは Streamable HTTP セッションを張らない
+- 接続数バッジ（クリップアイコン右上）は `localStorage`（`mcp_storage_key`）内で `status: "connected"` の MCP 件数を表示する。Gateway MCP は seed 時点で `connected` とし、`clientType` は含めない（Chainlit がユーザー追加 MCP と誤判定して `connectUserMcp()` を呼ぶのを防ぐ）。`/gateway-mcp` への転送 body は `{ sessionId, name }` のみ
 - knowledge-mcp へ UI からヘッダーなしで実接続しようとすると JWT 必須のため失敗する。ツール実行は Gateway 経由のまま
 
 ## 設定

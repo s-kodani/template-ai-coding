@@ -2,6 +2,7 @@
 
 ## v?.?.? (未確定)
 
+- **Fixed**: Gateway MCP 再接続時の `POST /gateway-mcp` 422 を解消し、MCP プラグ UI の接続数バッジが正しく表示されるようにした。localStorage seed から `clientType` を除去し、転送 body を `{ sessionId, name }` のみに正規化。`/gateway-mcp` の `CurrentUser` 依存をモジュールスコープへ移動（FastAPI が query param と誤解釈していた）（[UI 機能](/current/features/ui.md)）
 - **Changed**: Langfuse OTEL メタデータを一通り設定 — `user.id` / `session.id` / tags / metadata の `propagate_attributes`（MCP `_meta` baggage 伝播含む）、`llm.generate` を generation 型 + model / usage、`search.embed` を embedding observation + usage、ツール observation に route / server_id、環境変数 `LANGFUSE_TRACING_ENVIRONMENT` / `LANGFUSE_RELEASE`（[トレーシング](/current/features/tracing.md)、[インフラ](/current/infrastructure.md)）
 - **Added**: Current-state に [Langfuse OTEL トレーシング](/current/features/tracing.md) を追加し、送信メタデータの正本を集約。`architecture.md` / `ui.md` / `api.md` / `infrastructure.md` / trace-validation Skill を cross-link で整合
 - **Added**: レビュー用サブエージェント `review` を APM のプロジェクト primitive（`.apm/agents/`）として追加する。`apm install` で `.cursor/agents/` と `.claude/agents/` へ展開し、Codex は `.codex/agents/review.toml` へ変換する。CI は `scripts/check_skill_deploy.py` で Skill と合わせて一致を検証する（[インフラ](/current/infrastructure.md)）
