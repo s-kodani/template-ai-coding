@@ -27,3 +27,13 @@ def load_ui_servers(path: Path) -> list[dict[str, Any]]:
             }
         )
     return listed
+
+
+def load_name_index(path: Path) -> dict[str, str]:
+    """Map registry ``ui.name`` to ``server_id`` for Gateway MCP connect routing."""
+    return {str(entry["name"]): str(entry["id"]) for entry in load_ui_servers(path)}
+
+
+def load_id_to_name(path: Path) -> dict[str, str]:
+    """Map registry ``server_id`` to ``ui.name``."""
+    return {str(entry["id"]): str(entry["name"]) for entry in load_ui_servers(path)}

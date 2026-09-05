@@ -19,7 +19,6 @@ def _display_entries(entries: list[dict[str, Any]]) -> list[dict[str, Any]]:
             {
                 "name": name,
                 "tools": entry.get("tools") or [],
-                "status": "connected",
                 "type": GATEWAY_MCP_TYPE,
                 "url": GATEWAY_MCP_URL_LABEL,
                 "isUserProvided": False,
@@ -29,7 +28,7 @@ def _display_entries(entries: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 
 def render_mcp_autoload_js(entries: list[dict[str, Any]] | None = None) -> str:
-    """Show Gateway MCPs in Chainlit's list without opening real sessions."""
+    """Seed Gateway MCPs in Chainlit's MCP list for display; connect uses POST /mcp."""
     displayed = _display_entries(entries or [])
     names = [item["name"] for item in displayed]
     return f"""(() => {{
@@ -48,37 +47,6 @@ def render_mcp_autoload_js(entries: list[dict[str, Any]] | None = None) -> str:
     stored.unshift(ENTRIES[i]);
   }}
   localStorage.setItem(KEY, JSON.stringify(stored));
-
-  const originalFetch = window.fetch.bind(window);
-  window.fetch = function (input, init) {{
-    const url = typeof input === "string" ? input : (input && input.url) || "";
-    const method = (
-      (init && init.method) ||
-      (typeof input === "object" && input && input.method) ||
-      "GET"
-    ).toUpperCase();
-    let pathname = "";
-    try {{
-      pathname = new URL(url, location.origin).pathname;
-    }} catch (_error) {{
-      pathname = "";
-    }}
-    const isMcp = pathname === "/mcp" || pathname === "/mcp/";
-    const body = init && init.body;
-    if (isMcp && (method === "POST" || method === "DELETE") && typeof body === "string") {{
-      try {{
-        const payload = JSON.parse(body);
-        if (payload && NAMES.has(payload.name)) {{
-          const target = new URL("/gateway-mcp", location.origin).href;
-          const slimInit = Object.assign({{}}, init || {{}}, {{
-            body: JSON.stringify({{ sessionId: payload.sessionId, name: payload.name }}),
-          }});
-          return originalFetch(target, slimInit);
-        }}
-      }} catch (_error) {{}}
-    }}
-    return originalFetch(input, init);
-  }};
 }})();
 """
 
