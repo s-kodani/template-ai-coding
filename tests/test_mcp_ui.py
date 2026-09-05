@@ -35,27 +35,6 @@ const originalFetch = async (input, init = {}) => {
     method: init.method || "GET",
     body: init.body || null,
   });
-  if (String(url).includes("/gateway-mcp")) {
-    const payload = JSON.parse(init.body || "{}");
-    if ((init.method || "GET").toUpperCase() === "DELETE") {
-      return new Response(JSON.stringify({ success: true }), {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      });
-    }
-    return new Response(JSON.stringify({
-      success: true,
-      mcp: {
-        name: payload.name,
-        tools: [{ name: "search_docs" }, { name: "get_document" }],
-        clientType: "gateway",
-        url: "via MCP Gateway",
-      },
-    }), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    });
-  }
   return new Response(JSON.stringify({ proxied: true }), {
     status: 200,
     headers: { "Content-Type": "application/json" },
@@ -90,14 +69,6 @@ store.mcp_storage_key = JSON.stringify([
     url: "http://mcp-server:8000/mcp",
     isUserProvided: true,
   },
-  {
-    name: "other-mcp",
-    tools: [{ name: "ping" }],
-    status: "connected",
-    clientType: "streamable-http",
-    url: "http://localhost:9000/mcp",
-    isUserProvided: true,
-  },
 ]);
 
 vm.runInNewContext(script, sandbox);
@@ -108,30 +79,14 @@ vm.runInNewContext(script, sandbox);
     method: "POST",
     body: JSON.stringify({ sessionId: "s", name: "docs-mcp" }),
   });
-  const polluted = await sandbox.fetch("http://localhost:8080/mcp", {
-    method: "POST",
-    body: JSON.stringify({
-      sessionId: "s2",
-      name: "docs-mcp",
-      clientType: "gateway",
-      url: "via MCP Gateway",
-      isUserProvided: false,
-    }),
-  });
   const other = await sandbox.fetch("http://localhost:8080/mcp", {
     method: "POST",
     body: JSON.stringify({ sessionId: "s", name: "other-mcp", url: "http://localhost:9000/mcp" }),
   });
-  const removed = await sandbox.fetch("http://localhost:8080/mcp", {
-    method: "DELETE",
-    body: JSON.stringify({ sessionId: "s", name: "docs-mcp" }),
-  });
   const result = {
     stored,
     gateway: await gateway.json(),
-    polluted: await polluted.json(),
     other: await other.json(),
-    removed: await removed.json(),
     fetchCalls,
   };
   process.stdout.write(JSON.stringify(result));
@@ -155,6 +110,8 @@ def test_render_mcp_autoload_js_seeds_gateway_display_entry() -> None:
     assert "http://mcp-server" not in script
     assert "Authorization" not in script
     assert "streamable-http" not in script
+    assert "gateway-mcp" not in script
+    assert '"status"' not in script
 
 
 def test_write_mcp_autoload_script_creates_public_js(tmp_path: Path) -> None:
@@ -165,9 +122,7 @@ def test_write_mcp_autoload_script_creates_public_js(tmp_path: Path) -> None:
     assert GATEWAY_MCP_TYPE in path.read_text(encoding="utf-8")
 
 
-def test_autoload_script_replaces_legacy_entry_and_intercepts_gateway_mcp(
-    tmp_path: Path,
-) -> None:
+def test_autoload_script_seeds_without_intercepting_mcp_requests(tmp_path: Path) -> None:
     node = shutil.which("node")
     if node is None:
         node = "/exec-daemon/node"
@@ -191,49 +146,17 @@ def test_autoload_script_replaces_legacy_entry_and_intercepts_gateway_mcp(
     names = [item["name"] for item in stored]
 
     assert names.count(_SAMPLE_GATEWAY_NAME) == 1
-    assert "other-mcp" in names
     gateway = next(item for item in stored if item["name"] == _SAMPLE_GATEWAY_NAME)
-    assert gateway["status"] == "connected"
     assert gateway["type"] == GATEWAY_MCP_TYPE
     assert gateway["url"] == GATEWAY_MCP_URL_LABEL
     assert gateway["isUserProvided"] is False
-    assert [tool["name"] for tool in gateway["tools"]] == [
-        "search_docs",
-        "get_document",
-    ]
-    assert gateway.get("headers") in (None, {})
+    assert "status" not in gateway
     assert "clientType" not in gateway
 
-    assert result["gateway"]["success"] is True
-    assert result["polluted"]["success"] is True
-    assert result["gateway"]["mcp"]["name"] == _SAMPLE_GATEWAY_NAME
-    assert result["removed"]["success"] is True
+    assert result["gateway"] == {"proxied": True}
     assert result["other"] == {"proxied": True}
-    assert result["gateway"]["mcp"]["clientType"] == GATEWAY_MCP_TYPE
-    assert [call["url"] for call in result["fetchCalls"]] == [
-        "http://localhost:8080/gateway-mcp",
-        "http://localhost:8080/gateway-mcp",
-        "http://localhost:8080/mcp",
-        "http://localhost:8080/gateway-mcp",
-    ]
-    assert result["fetchCalls"][0]["method"] == "POST"
-    assert result["fetchCalls"][2]["method"] == "POST"
-    assert result["fetchCalls"][3]["method"] == "DELETE"
-    assert json.loads(result["fetchCalls"][0]["body"]) == {
-        "sessionId": "s",
-        "name": "docs-mcp",
-    }
-    assert json.loads(result["fetchCalls"][1]["body"]) == {
-        "sessionId": "s2",
-        "name": "docs-mcp",
-    }
-    forwarded = result["fetchCalls"][2]
-    assert forwarded["method"] == "POST"
-    assert json.loads(forwarded["body"]) == {
-        "sessionId": "s",
-        "name": "other-mcp",
-        "url": "http://localhost:9000/mcp",
-    }
+    assert len(result["fetchCalls"]) == 2
+    assert all("/gateway-mcp" not in call["url"] for call in result["fetchCalls"])
 
 
 def test_render_mcp_autoload_js_includes_all_gateway_entries() -> None:

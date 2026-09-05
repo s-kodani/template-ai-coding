@@ -105,6 +105,18 @@ class MCPGatewayClient:
         return mapped
 
 
+async def resolve_gateway_url(
+    client: MCPGatewayClient,
+    server_id: str,
+    access_token: str,
+) -> str | None:
+    for server in await client.list_servers(access_token):
+        if str(server.get("id") or "") == server_id:
+            url = str(server.get("url") or "").strip()
+            return url or None
+    return None
+
+
 async def load_gateway_catalog(
     client: MCPGatewayClient,
     access_token: str,

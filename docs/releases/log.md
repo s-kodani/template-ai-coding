@@ -2,6 +2,7 @@
 
 ## v?.?.? (未確定)
 
+- **Changed**: Gateway MCP の接続 / 実行を Chainlit 標準 MCP セッション + サーバー側 JWT 注入（`gateway_mcp_connect.py`）に統一。`/gateway-mcp` と `gateway_disabled` モデルを廃止。チャット開始時 auto-connect、401 時 reconnect（[UI 機能](/current/features/ui.md)、[認証認可](/current/features/authentication.md)、[ADR-0012](/decisions/ADR-0012-mcp-gateway-resource-server.md)、[ADR-0013](/decisions/ADR-0013-mcp-gateway-per-server-streamable-http.md)）
 - **Fixed**: Gateway MCP 再接続時の `POST /gateway-mcp` 422 を解消し、MCP プラグ UI の接続数バッジが正しく表示されるようにした。localStorage seed から `clientType` を除去し、転送 body を `{ sessionId, name }` のみに正規化。`/gateway-mcp` の `CurrentUser` 依存をモジュールスコープへ移動（FastAPI が query param と誤解釈していた）（[UI 機能](/current/features/ui.md)）
 - **Changed**: Langfuse OTEL メタデータを一通り設定 — `user.id` / `session.id` / tags / metadata の `propagate_attributes`（MCP `_meta` baggage 伝播含む）、`llm.generate` を generation 型 + model / usage、`search.embed` を embedding observation + usage、ツール observation に route / server_id、環境変数 `LANGFUSE_TRACING_ENVIRONMENT` / `LANGFUSE_RELEASE`（[トレーシング](/current/features/tracing.md)、[インフラ](/current/infrastructure.md)）
 - **Added**: Current-state に [Langfuse OTEL トレーシング](/current/features/tracing.md) を追加し、送信メタデータの正本を集約。`architecture.md` / `ui.md` / `api.md` / `infrastructure.md` / trace-validation Skill を cross-link で整合
