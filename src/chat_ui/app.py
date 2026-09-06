@@ -12,13 +12,11 @@ from langfuse import observe
 from chat_ui.auth import register_oauth_callback, set_token_manager
 from chat_ui.gateway_client import MCPGatewayClient, _http_status
 from chat_ui.gateway_mcp_connect import (
-    auto_connect_gateway_mcps,
     reconnect_gateway_mcp,
     register_gateway_mcp_connect,
 )
 from chat_ui.gateway_registry import (
     load_gateway_urls,
-    load_id_to_name,
     load_name_index,
     load_ui_servers,
 )
@@ -53,7 +51,6 @@ token_manager = build_token_manager(settings)
 set_token_manager(token_manager)
 _ui_servers = load_ui_servers(_registry_path)
 _ui_name_to_id = load_name_index(_registry_path)
-_ui_id_to_name = load_id_to_name(_registry_path)
 _ui_name_to_gateway_url = {
     str(entry["name"]): str(entry.get("gateway_url") or "") for entry in _ui_servers
 }
@@ -90,14 +87,6 @@ async def on_chat_start() -> None:
     subject = (getattr(user, "metadata", None) or {}).get("keycloak_sub")
     if subject:
         await token_manager.bind_session(str(subject), cl.context.session.id)
-        await auto_connect_gateway_mcps(
-            cl.context.session,
-            name_to_id=_ui_name_to_id,
-            id_to_name=_ui_id_to_name,
-            token_manager=token_manager,
-            gateway_client=gateway_client,
-            name_to_gateway_url=_ui_name_to_gateway_url,
-        )
 
 
 @cl.on_mcp_connect

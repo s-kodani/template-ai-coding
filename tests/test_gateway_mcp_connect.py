@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+import ast
 import asyncio
-import inspect
+from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
@@ -11,7 +12,6 @@ from fastapi import HTTPException
 from chat_ui.gateway_client import MCPGatewayClient, resolve_gateway_url
 from chat_ui.gateway_mcp_connect import (
     access_token_for_gateway_session,
-    auto_connect_gateway_mcps,
     bind_gateway_request_user,
     connect_gateway_mcp,
     disconnect_gateway_mcp,
@@ -313,37 +313,6 @@ async def test_reconnect_gateway_mcp_refreshes_token() -> None:
 
 
 @pytest.mark.asyncio
-async def test_auto_connect_gateway_mcps_connects_allowed_servers() -> None:
-    session = _FakeSession()
-    connected: list[str] = []
-
-    async def fake_connect(
-        _session: object,
-        ui_name: str,
-        **kwargs: object,
-    ) -> dict[str, object]:
-        del kwargs
-        connected.append(ui_name)
-        return {"success": True}
-
-    class CatalogClient(MCPGatewayClient):
-        async def list_servers(self, token: str) -> list[dict]:
-            assert token == "tok"
-            return [{"id": "knowledge"}, {"id": "other"}]
-
-    with patch("chat_ui.gateway_mcp_connect.connect_gateway_mcp", fake_connect):
-        names = await auto_connect_gateway_mcps(
-            session,
-            name_to_id={"knowledge-mcp": "knowledge", "other-mcp": "other"},
-            id_to_name={"knowledge": "knowledge-mcp", "other": "other-mcp"},
-            token_manager=_FakeManager(["tok"]),
-            gateway_client=CatalogClient("http://gateway:8082"),
-        )
-    assert names == ["knowledge-mcp", "other-mcp"]
-    assert connected == ["knowledge-mcp", "other-mcp"]
-
-
-@pytest.mark.asyncio
 async def test_connect_reuse_invokes_on_mcp_connect() -> None:
     called: list[str] = []
 
@@ -413,8 +382,14 @@ async def test_connect_gateway_mcp_serializes_concurrent_reuse() -> None:
 
 
 def test_on_chat_start_does_not_clear_mcp_tools() -> None:
-    from chat_ui.app import on_chat_start
-
-    source = inspect.getsource(on_chat_start)
-    assert 'set("mcp_tools", {})' not in source
-    assert 'set("gateway_server_by_connection", {})' not in source
+    source = Path("src/chat_ui/app.py").read_text()
+    tree = ast.parse(source)
+    func = next(
+        node
+        for node in tree.body
+        if isinstance(node, ast.AsyncFunctionDef) and node.name == "on_chat_start"
+    )
+    body = ast.get_source_segment(source, func) or ""
+    assert 'set("mcp_tools", {})' not in body
+    assert 'set("gateway_server_by_connection", {})' not in body
+    assert "auto_connect_gateway_mcps" not in body

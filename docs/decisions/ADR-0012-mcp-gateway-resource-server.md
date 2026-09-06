@@ -28,7 +28,7 @@ MCP の Authorization では、下流サーバーへ上流 Access Token をパ�
 - Gateway は Chainlit トークンを検証し（`aud=mcp-gateway`、`azp=chainlit`）、`mcp-gateway` クライアントで Token Exchange する。ユーザー識別は JWT `sub` のみ。リクエスト body の `user_id` は拒否する
 - ツール認可はサーバーごとの realm role。knowledge-mcp は `knowledge-mcp-reader`。scope 名は `mcp-tools`
 - Chainlit の refresh token はアプリ Postgres に pgcrypto で保存する（`TOKEN_STORE_DATABASE_URL`）。Chainlit 内蔵 data layer の `DATABASE_URL` は空のまま
-- Chainlit MCP 接続 UI には Registry の enabled サーバーを載せる。Gateway 名（`gateway-registry.yml` の `ui.name`）に対する `POST /mcp` / `DELETE /mcp` は Chainlit プロセス内ミドルウェア（`gateway_mcp_connect.py`）が横取りし、`TokenManager` から Chainlit JWT を注入して catalog `url` へ Streamable HTTP セッションを張る。JWT をブラウザ body や MCP クライアントへ渡さない。チャット開始時は role 許可サーバーをサーバー側 auto-connect する。追加の未認証 MCP は `user_servers` allowlist のまま
+- Chainlit MCP 接続 UI には Registry の enabled サーバーを載せる。Gateway 名（`gateway-registry.yml` の `ui.name`）に対する `POST /mcp` / `DELETE /mcp` は Chainlit プロセス内ミドルウェア（`gateway_mcp_connect.py`）が横取りし、`TokenManager` から Chainlit JWT を注入して catalog `url` へ Streamable HTTP セッションを張る。JWT をブラウザ body や MCP クライアントへ渡さない。接続開始はプラグ UI の `POST /mcp` のみ（`on_chat_start` は auto-connect しない）。追加の未認証 MCP は `user_servers` allowlist のまま
 - ローカル HTTP を許容する。TLS / mTLS / CIMD / Redis / 第 2 MCP はこの垂直スライスの対象外
 - 本決定は [ADR-0011](/decisions/ADR-0011-keycloak-chainlit-oauth.md) の「MCP SSO は導入しない」「RBAC は持たない」を knowledge-mcp 経路について改訂する。Chainlit の IdP としての Keycloak 採用は ADR-0011 のまま
 - 既定ツールが FastMCP Client を直接使わなくなる点で [ADR-0003](/decisions/ADR-0003-chainlit-traced-client.md) を更新する。Gateway が MCP `_meta` に W3C トレースを注入する点で [ADR-0004](/decisions/ADR-0004-langfuse-mcp-meta-tracing.md) を補う
@@ -43,4 +43,4 @@ MCP の Authorization では、下流サーバーへ上流 Access Token をパ�
 
 ## 改訂
 
-Chainlit–Gateway の tool schema / 実行は REST からサーバー単位 Streamable HTTP へ移した（[ADR-0013](/decisions/ADR-0013-mcp-gateway-per-server-streamable-http.md)）。プラグ UI は表示専用 + `/gateway-mcp` から Chainlit MCP セッション + JWT 注入ラッパへ統一した（Issue #66）。Token Exchange・パススルー禁止・role フィルタは変更しない。
+Chainlit–Gateway の tool schema / 実行は REST からサーバー単位 Streamable HTTP へ移した（[ADR-0013](/decisions/ADR-0013-mcp-gateway-per-server-streamable-http.md)）。プラグ UI は表示専用 + `/gateway-mcp` から Chainlit MCP セッション + JWT 注入ラッパへ統一した（Issue #66）。接続開始は `on_chat_start` の auto-connect ではなくプラグ UI の `POST /mcp` のみ。Token Exchange・パススルー禁止・role フィルタは変更しない。

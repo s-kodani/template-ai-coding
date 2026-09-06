@@ -404,40 +404,6 @@ async def reconnect_gateway_mcp(
     )
 
 
-async def auto_connect_gateway_mcps(
-    session: Any,
-    *,
-    name_to_id: dict[str, str],
-    id_to_name: dict[str, str],
-    token_manager: AccessTokenSource,
-    gateway_client: MCPGatewayClient,
-    name_to_gateway_url: dict[str, str] | None = None,
-) -> list[str]:
-    """Connect all role-allowed Gateway MCPs at chat start."""
-    token = await token_manager.get_access_token(session.id)
-    if not token:
-        return []
-    connected: list[str] = []
-    for server in await gateway_client.list_servers(token):
-        server_id = str(server.get("id") or "")
-        ui_name = id_to_name.get(server_id)
-        if not ui_name:
-            continue
-        try:
-            await connect_gateway_mcp(
-                session,
-                ui_name,
-                name_to_id=name_to_id,
-                token_manager=token_manager,
-                gateway_client=gateway_client,
-                name_to_gateway_url=name_to_gateway_url,
-            )
-            connected.append(ui_name)
-        except HTTPException:
-            continue
-    return connected
-
-
 def _gateway_destination_checker(configured_url: str) -> Callable[[str], None]:
     expected = httpx.URL(configured_url)
 

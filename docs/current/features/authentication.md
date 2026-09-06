@@ -5,7 +5,7 @@ description: 未ログインの Chainlit アクセスから knowledge-mcp ツー
 tags: [authentication, authorization, keycloak, gateway, mcp, chainlit]
 status: stable
 generated:
-  at: "2026-09-06T02:40:00Z"
+  at: "2026-09-06T06:25:00Z"
   by: process:cursor-agent
 ---
 
@@ -135,7 +135,7 @@ Gateway の `GET /v1/mcp`:
 1. 同じ Chainlit JWT を検証する。
 2. `enabled` でなければ 404 `MCP_SERVER_NOT_FOUND`。
 3. **この list は `required_roles` を再検査しない**（一覧で既に落としている）。
-4. 返ってきた各サーバーについて `gateway_mcp_connect.connect_gateway_mcp` が catalog `url` へ Chainlit MCP セッション（`Authorization: Bearer <Chainlit JWT>` 注入）を auto-connect する。`on_mcp_connect` が `tools/list` を `{server_id}__{mcp_tool_name}` に接頭辞付けする。
+4. プラグ UI の `POST /mcp` で `gateway_mcp_connect.connect_gateway_mcp` が catalog `url` へ Chainlit MCP セッション（`Authorization: Bearer <Chainlit JWT>` 注入）を張る。`on_mcp_connect` が `tools/list` を `{server_id}__{mcp_tool_name}` に接頭辞付けする。`on_chat_start` は auto-connect しない。
 
 ## フェーズ 4 — ツール実行（認可の強制）
 
@@ -201,7 +201,7 @@ Compose では `MCP_JWKS_URI` があるので HTTP Bearer 必須。
 
 **プラグ UI（MCP Servers）**
 
-Registry の enabled サーバーを `mcp-autoload.js` が一覧 seed する（`status: connecting` 必須。無いと Chainlit 2.12 が一覧から捨てる）。Gateway 名に対する `POST|DELETE /mcp` は `gateway_mcp_connect` ミドルウェアが JWT 注入 connect / disconnect として処理する（ブラウザ body に JWT は含めない）。Gateway 名の `POST /mcp` は Cookie 不整合や JWT 欠落でも **403**（401 にするとクライアントが `/login` へ飛ばしてリロードループになる）。JWT は `request.cookies` から読む（Starlette の Request は scope の Mapping なので `get_token_from_cookies(request)` だと Cookie を見ない）。websocket セッションに user が未設定なら Cookie のユーザーを載せ、既存 user に `keycloak_sub` が無ければ Cookie 側から補う。UI の `POST /mcp` がチャット開始の `bind_session` より先でも、Cookie ユーザーの `keycloak_sub` で結び直し、既に auto-connect 済みなら既存セッションを 200（`status: connected`）で返し `on_mcp_connect` 相当で tools を載せ直す。`on_chat_start` は `mcp_tools` を消さない。同一 websocket・同一 Gateway 名の connect は直列化する。My MCPs の OFF で MCP セッションを閉じ、ツールは LLM から外れる。ON で再接続する。チャット開始時は role 許可サーバーをサーバー側 auto-connect する。
+Registry の enabled サーバーを `mcp-autoload.js` が一覧 seed する（`status: connecting` 必須。無いと Chainlit 2.12 が一覧から捨てる）。Gateway 名に対する `POST|DELETE /mcp` は `gateway_mcp_connect` ミドルウェアが JWT 注入 connect / disconnect として処理する（ブラウザ body に JWT は含めない）。Gateway 名の `POST /mcp` は Cookie 不整合や JWT 欠落でも **403**（401 にするとクライアントが `/login` へ飛ばしてリロードループになる）。JWT は `request.cookies` から読む（Starlette の Request は scope の Mapping なので `get_token_from_cookies(request)` だと Cookie を見ない）。websocket セッションに user が未設定なら Cookie のユーザーを載せ、既存 user に `keycloak_sub` が無ければ Cookie 側から補う。UI の `POST /mcp` がチャット開始の `bind_session` より先でも、Cookie ユーザーの `keycloak_sub` で結び直し、既に接続済みなら既存セッションを 200（`status: connected`）で返し `on_mcp_connect` 相当で tools を載せ直す。`on_chat_start` は `mcp_tools` を消さず、サーバー側 auto-connect もしない。同一 websocket・同一 Gateway 名の connect は直列化する。ゴミ箱で MCP セッションを閉じ、ツールは LLM から外れる。再接続は回転矢印、またはページ再読込の seed → `POST /mcp`。
 
 **追加 MCP（allowlist）**
 
