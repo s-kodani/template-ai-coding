@@ -44,6 +44,7 @@ services:
       FASTMCP_STATELESS_HTTP: "true"
       FASTMCP_TELEMETRY_MODE: native
       LANGFUSE_HOST: http://langfuse-web:3000
+      OTEL_SERVICE_NAME: knowledge-mcp
       MCP_JWKS_URI: http://keycloak:8080/realms/knowledge/protocol/openid-connect/certs
       MCP_ISSUER: http://localhost:8081/realms/knowledge
       MCP_AUDIENCE: http://localhost:8000/mcp
@@ -139,6 +140,7 @@ services:
       MCP_GATEWAY_REGISTRY_PATH: /app/infra/app/gateway-registry.yml
       FASTMCP_TELEMETRY_MODE: native
       LANGFUSE_HOST: http://langfuse-web:3000
+      OTEL_SERVICE_NAME: chainlit
       DATABASE_URL: ""
       TOKEN_STORE_DATABASE_URL: postgresql://${POSTGRES_USER:-knowledge}:${POSTGRES_PASSWORD:-change-me}@app-postgres:5432/${POSTGRES_DB:-knowledge}
       TOKEN_STORE_KEY: ${TOKEN_STORE_KEY:-chainlit-token-store-key-change-me}

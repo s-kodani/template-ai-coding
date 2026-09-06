@@ -5,7 +5,7 @@ description: アプリ、Keycloak、MCP Gateway、Langfuse、任意 Langflow の
 tags: [docker, langfuse, langflow, postgres, keycloak, gateway, ci, devsecops]
 status: stable
 generated:
-  at: "2026-09-06T09:55:10Z"
+  at: "2026-09-06T11:23:04Z"
   by: process:codex-agent
 ---
 
@@ -74,6 +74,7 @@ Chainlit と FastMCP の両方で、FastMCP を import する **前に** Langfus
 - Langfuse SDK 4 はデフォルトで LLM / Langfuse スパン以外を落とすため、`should_export_span` で `fastmcp` と `opentelemetry.instrumentation.asyncpg` を追加許可する
 - MCP `_meta` には `traceparent` / `tracestate` / `baggage`（`langfuse_trace_id` と `propagate_attributes` の属性）を載せる
 - プロセス共通の `langfuse.environment` / `langfuse.release` は `LANGFUSE_TRACING_ENVIRONMENT` / `LANGFUSE_RELEASE` で設定する
+- OTel Resource の `service.name` は Compose のサービス別 `OTEL_SERVICE_NAME` で設定する（Chainlit: `chainlit`、MCP サーバー: `knowledge-mcp`）。変更の反映にはコンテナ再作成が必要
 
 ## 認証（Keycloak）
 
@@ -101,6 +102,7 @@ Chainlit は Keycloak の `knowledge` realm で OAuth する（[ADR-0011](/decis
 |---|---|
 | Langfuse トレース一覧 | `chat.turn` が **1 行** のみ（同一 `traceId` の FastMCP / ツールスパンはルートに出ない） |
 | トレース属性 | `user.id`（Keycloak sub 等）、`session.id`（Chainlit セッション）、`langfuse.environment` / `langfuse.release`（設定時） |
+| OTel Resource | `service.name` が Chainlit span では `chainlit`、MCP サーバー span では `knowledge-mcp`（`unknown_service` ではない） |
 | トレース詳細 | `llm.generate` が `chat.turn` の子（type=generation、model / usage 付き） |
 | Embedding | `search.embed` が embedding observation（model / usage 付き） |
 | ツール呼び出し | `search_knowledge` / `get_document` の input / output が tool observation に記録。metadata に `tool.route` / `tool.server_id` 等 |
