@@ -128,6 +128,53 @@ async def test_ingest_files_uploads_runs_and_deletes_sequentially(tmp_path: Path
 
 
 @pytest.mark.asyncio
+async def test_ingest_files_preserves_duplicate_basenames_from_different_paths(
+    tmp_path: Path,
+) -> None:
+    first = tmp_path / "team-a" / "notes.md"
+    second = tmp_path / "team-b" / "notes.md"
+    first.parent.mkdir()
+    second.parent.mkdir()
+    first.write_text("a", encoding="utf-8")
+    second.write_text("b", encoding="utf-8")
+    client = UniqueUploadPathLangflowClient()
+    received_overrides: dict[str, str] = {}
+    remapped_chunks: list[MappedChunk] = []
+
+    async def capture_sync(source_overrides: dict[str, str]) -> int:
+        received_overrides.update(source_overrides)
+        chunks = [
+            MappedChunk(
+                document_id=uuid5(PARENT_NAMESPACE, source),
+                chunk_index=0,
+                title=Path(source).name,
+                content=source,
+                source=source,
+                metadata={"source": source},
+                embedding=[0.1],
+            )
+            for source in ("user/file-1/notes.md", "user/file-2/notes.md")
+        ]
+        remapped_chunks.extend(remap_sources(chunks, source_overrides))
+        return len(remapped_chunks)
+
+    report = await ingest_files(client, [first, second], cwd=tmp_path, sync=capture_sync)
+
+    assert report.source_overrides == {
+        "team-a/notes.md": "team-a/notes.md",
+        "team-b/notes.md": "team-b/notes.md",
+    }
+    assert received_overrides["user/file-1/notes.md"] == "team-a/notes.md"
+    assert received_overrides["user/file-2/notes.md"] == "team-b/notes.md"
+    assert "notes.md" not in received_overrides
+    assert [(chunk.source, chunk.document_id) for chunk in remapped_chunks] == [
+        ("team-a/notes.md", uuid5(PARENT_NAMESPACE, "team-a/notes.md")),
+        ("team-b/notes.md", uuid5(PARENT_NAMESPACE, "team-b/notes.md")),
+    ]
+    assert report.imported_chunks == 2
+
+
+@pytest.mark.asyncio
 async def test_ingest_files_deletes_upload_when_run_fails(tmp_path: Path) -> None:
     path = tmp_path / "fail.md"
     path.write_text("x", encoding="utf-8")
@@ -262,6 +309,13 @@ class FakeLangflowClient:
 
     async def delete_file(self, file_id: str) -> None:
         self.calls.append(("delete", file_id))
+
+
+class UniqueUploadPathLangflowClient(FakeLangflowClient):
+    async def upload_file(self, path: Path) -> UploadedFile:
+        self.calls.append(("upload", path.name))
+        index = sum(call[0] == "upload" for call in self.calls)
+        return UploadedFile(id=f"id-{index}", path=f"user/file-{index}/{path.name}")
 
 
 async def fake_sync(source_overrides: dict[str, str]) -> int:

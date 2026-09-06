@@ -5,6 +5,9 @@ description: 追加 MCP は user_servers と静的 URL allowlist に限定し、
 tags: [decision, chainlit, mcp, security]
 status: stable
 decision_status: accepted
+generated:
+  at: "2026-09-06T08:41:05Z"
+  by: process:codex-agent
 ---
 
 # ADR-0009: Chainlit 2.12 の MCP user_servers allowlist
@@ -23,7 +26,7 @@ Chainlit 2.12.0 は CVE-2026-45018（stdio コマンドインジェクション�
   - `http://localhost:8000`
   - `http://127.0.0.1:8000`
   - `http://host.docker.internal:8000`
-- knowledge-mcp は named server にせず、`mcp-autoload.js` が Gateway エントリを MCP 一覧へ載せる（実接続の URL は載せない。切断は `/gateway-mcp` でセッションの利用フラグだけを更新する）
+- knowledge-mcp は named server にせず、`mcp-autoload.js` が Gateway エントリを MCP 一覧へ載せる（この時点では表示専用エントリと `/gateway-mcp` の利用フラグを採用。現在の接続方式は後述の追補を参照）
 - `[[features.mcp.servers]]` に stdio サーバを置かない
 - 上記以外の origin / port の追加 MCP は `.chainlit/config.toml` の allowlist を編集してから接続する
 
@@ -41,4 +44,8 @@ Chainlit 2.12.0 は CVE-2026-45018（stdio コマンドインジェクション�
 - Chainlit コンテナはレガシー MCP キーでは起動しない
 - 追加 MCP は allowlist 内の SSE / Streamable HTTP のみ
 - stdio を UI から追加できない
-- knowledge-mcp のツール呼び出しは MCP Gateway が担う。プラグ UI の一覧表示は `mcp-autoload.js` の表示専用エントリ（[ADR-0012](/decisions/ADR-0012-mcp-gateway-resource-server.md)）
+- knowledge-mcp のツール呼び出しは MCP Gateway が担う。この時点のプラグ UI は `mcp-autoload.js` の表示専用エントリだった
+
+## 追補（2026-09-06）
+
+Gateway MCP の UI と実行経路は [ADR-0013](/decisions/ADR-0013-mcp-gateway-per-server-streamable-http.md) で更新した。`mcp-autoload.js` は一覧の seed だけを担い、プラグ UI の `POST /mcp` がサーバー側 JWT を注入した Chainlit 標準 MCP セッションを接続する。`DELETE /mcp` はそのセッションを切断する。`/gateway-mcp` と表示専用セッションモデルは廃止し、`on_chat_start` からの auto-connect は行わない。追加 MCP の allowlist と stdio 無効化という本 ADR の決定は継続する。

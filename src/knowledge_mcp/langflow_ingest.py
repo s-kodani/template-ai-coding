@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import Counter
 from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
@@ -103,6 +104,7 @@ async def ingest_files(
     sync: Callable[[dict[str, str]], Awaitable[int]] | None = None,
 ) -> IngestReport:
     resolved = resolve_ingest_paths(paths)
+    basename_counts = Counter(path.name for path in resolved)
     report_overrides: dict[str, str] = {}
     sync_overrides: dict[str, str] = {}
     for path in resolved:
@@ -112,10 +114,11 @@ async def ingest_files(
         finally:
             await client.delete_file(uploaded.id)
         host = host_source(path, cwd=cwd)
-        report_overrides[path.name] = host
-        sync_overrides[path.name] = host
+        report_overrides[host] = host
         sync_overrides[uploaded.path] = host
-        sync_overrides[Path(uploaded.path).name] = host
+        if basename_counts[path.name] == 1:
+            sync_overrides[path.name] = host
+            sync_overrides[Path(uploaded.path).name] = host
     imported = await sync(sync_overrides) if sync is not None else 0
     return IngestReport(len(resolved), report_overrides, imported)
 

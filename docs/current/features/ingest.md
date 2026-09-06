@@ -4,6 +4,9 @@ title: Langflow Ingest
 description: ホスト原本を Langflow Files / Flow API で Ingest し、adapter 経由で documents へ載せる。
 tags: [langflow, ingest]
 status: stable
+generated:
+  at: "2026-09-06T08:41:05Z"
+  by: process:codex-agent
 ---
 
 # Langflow Ingest
@@ -24,7 +27,8 @@ status: stable
 
 - 置き場: `data/ingest/`、または `make -C infra ingest-langflow FILES='...'` で渡すパス
 - `scripts/run_langflow_ingest.py` が Files API（`/api/v2/files`）へアップロードし、Flow API（`/api/v1/run/{flow}`）で Ingest を実行し、終わったら uploaded file を削除する
-- `documents.source` と親 `document_id` はホスト相対パスから決める。`title` は metadata に実名がなければホストファイル名を使う（`Untitled` は source が無い行のフォールバック）
+- `documents.source` と親 `document_id` はホスト相対パスから決める。Files API が返す upload path をホスト相対パスへ対応付けるため、異なるディレクトリに同じファイル名があっても上書きしない。basename の対応付けは、その名前が投入対象内で一意な場合だけ互換用 fallback として使う
+- `title` は metadata に実名がなければホストファイル名を使う（`Untitled` は source が無い行のフォールバック）
 - 複数ファイルは順次処理する（キューは持たない）
 
 ## 動作

@@ -72,7 +72,7 @@ async def search_knowledge(query: str, top_k: int = 5) -> dict:
 
 @mcp.tool(auth=require_mcp_reader)
 async def get_document(document_id: str) -> dict:
-    """Fetch a full document by id returned from search_knowledge."""
+    """Fetch the document chunk identified by a search_knowledge result id."""
     record_tool_input({"document_id": document_id})
     try:
         document = await search_service.get_document(document_id=document_id)

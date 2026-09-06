@@ -23,7 +23,7 @@ FIXTURES: list[dict[str, str]] = [
         "source": "docs/current/features/api.md",
         "content": (
             "Available MCP tools are search_knowledge for semantic search and "
-            "get_document for fetching a full document by id."
+            "get_document for fetching the document chunk identified by a search result id."
         ),
     },
     {
