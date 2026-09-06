@@ -8,8 +8,12 @@ import asyncpg
 from pgvector.asyncpg import register_vector
 
 from knowledge_mcp.config import Settings
-from knowledge_mcp.ingest import ChunkDraft, sync_document
-from knowledge_mcp.langflow_import import LANGFLOW_UNREACHABLE, map_langflow_rows, remap_sources
+from knowledge_mcp.langflow_import import (
+    LANGFLOW_UNREACHABLE,
+    map_langflow_rows,
+    remap_sources,
+    sync_mapped_chunks,
+)
 from knowledge_mcp.repository import VectorRepository
 
 FETCH_SQL = """
@@ -64,33 +68,14 @@ async def import_langflow(
     chunks = map_langflow_rows(rows)
     if source_overrides:
         chunks = remap_sources(chunks, source_overrides)
-    grouped: dict[Any, list] = {}
-    for chunk in chunks:
-        grouped.setdefault(chunk.document_id, []).append(chunk)
-
     repository = VectorRepository(settings.host_database_url, settings.db_timeout)
     await repository.connect()
     try:
-        for group in grouped.values():
-            await sync_document(
-                repository,
-                [
-                    ChunkDraft(
-                        document_id=chunk.document_id,
-                        chunk_index=chunk.chunk_index,
-                        title=chunk.title,
-                        content=chunk.content,
-                        source=chunk.source,
-                        embedding=chunk.embedding,
-                        metadata=chunk.metadata,
-                    )
-                    for chunk in group
-                ],
-                embedding_model=settings.embedding_model,
-            )
+        return await sync_mapped_chunks(
+            repository, chunks, embedding_model=settings.embedding_model
+        )
     finally:
         await repository.close()
-    return len(chunks)
 
 
 def main() -> None:

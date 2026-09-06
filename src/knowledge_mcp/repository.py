@@ -124,6 +124,30 @@ class VectorRepository:
             for row in rows
         ]
 
+    async def list_host_path_hashes(self) -> set[str]:
+        pool = self._require_pool()
+        rows = await pool.fetch(
+            """
+            SELECT DISTINCT content_hash
+            FROM documents
+            WHERE content_hash IS NOT NULL
+              AND (source IS NULL OR source NOT LIKE 'langflow:%')
+            """
+        )
+        return {row["content_hash"] for row in rows}
+
+    async def list_fallback_fingerprints(self) -> list[tuple[UUID, str]]:
+        pool = self._require_pool()
+        rows = await pool.fetch(
+            """
+            SELECT document_id, content_hash
+            FROM documents
+            WHERE content_hash IS NOT NULL
+              AND source LIKE 'langflow:%'
+            """
+        )
+        return [(row["document_id"], row["content_hash"]) for row in rows]
+
     async def delete_by_document_id(self, document_id: UUID) -> int:
         pool = self._require_pool()
         result = await pool.execute(

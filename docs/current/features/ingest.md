@@ -60,6 +60,8 @@ OpenAI API キーはルート `.env` の `OPENAI_API_KEY` をコンテナへ渡�
 
 同一 `document_id` の本文 hash 列と embedding モデルが変わっていなければ Skip する。変わっていれば当該親の旧 chunk を削除してから再投入する。文書単位削除は `make -C infra delete-document DOCUMENT_ID=<uuid>`（`scripts/delete_document.py`）。
 
+`ingest-langflow` のあとに `import-langflow` しても、同じ本文の `langflow:` / Untitled 行は載せない。逆順ではホストパス側を残し、同じ `content_hash` の fallback 親を削除する。UI だけ Ingest して `import-langflow` した場合は、従来どおり fallback source で載せる。
+
 ## 既知の制約: PGVector metadata の JSON 化
 
 `Read File` → `Split Text` の Chunk metadata には、Langflow 内部の `Properties` オブジェクトが残ることがある。1.11.4 の `PGVector` はこれをそのまま `cmetadata` へ書くため、次のエラーで Ingest が失敗する。
