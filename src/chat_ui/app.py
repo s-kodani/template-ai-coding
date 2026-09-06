@@ -86,8 +86,6 @@ def _gateway_server_for_connection(connection_name: str) -> str | None:
 @cl.on_chat_start
 async def on_chat_start() -> None:
     cl.user_session.set("messages", [{"role": "system", "content": SYSTEM_PROMPT}])
-    cl.user_session.set("mcp_tools", {})
-    cl.user_session.set("gateway_server_by_connection", {})
     user = _session_user()
     subject = (getattr(user, "metadata", None) or {}).get("keycloak_sub")
     if subject:

@@ -2,6 +2,7 @@
 
 ## v?.?.? (未確定)
 
+- **Fixed**: 再ログイン後に My MCPs が `connecting` のままになり、チャットで Gateway ツールが LLM に載らない問題を直した。`on_chat_start` が `mcp_tools` を消さない。既存セッション再利用時は tools を載せ直し、同一セッションの並行 connect を直列化する（[UI 機能](/current/features/ui.md)）
 - **Changed**: Chainlit の Gateway 発見を単一 `MCP_GATEWAY_URL` から Registry `gateways[].url`（複数可）へ移した。My MCPs の表示は `via {host:port}`。未使用の `MCP_SERVER_URL` / `MCP_BEARER_TOKEN` / `CHAINLIT_HOST` / `CHAINLIT_PORT` を `.env.example` から削除（[UI 機能](/current/features/ui.md)、[API 契約](/current/features/api.md)、[認証認可](/current/features/authentication.md)、[ADR-0013](/decisions/ADR-0013-mcp-gateway-per-server-streamable-http.md)）
 - **Fixed**: Chainlit 2.12 の MCP persist が `status` を必須とするため、`mcp-autoload.js` の Gateway seed に `connecting` を入れ、My MCPs から `knowledge-mcp` が消える問題を直した。Gateway JWT 欠落時の `POST /mcp` は 403 にし、401 による `/login` リロードループを避ける。`POST /mcp` の Cookie 読み取りを `request.cookies` に修正し、既存 Gateway セッションの再利用と `keycloak_sub` での token store 結び直しを入れた（[UI 機能](/current/features/ui.md)、[認証認可](/current/features/authentication.md)）
 - **Changed**: Gateway MCP の接続 / 実行を Chainlit 標準 MCP セッション + サーバー側 JWT 注入（`gateway_mcp_connect.py`）に統一。`/gateway-mcp` と `gateway_disabled` モデルを廃止。チャット開始時 auto-connect、401 時 reconnect（[UI 機能](/current/features/ui.md)、[認証認可](/current/features/authentication.md)、[ADR-0012](/decisions/ADR-0012-mcp-gateway-resource-server.md)、[ADR-0013](/decisions/ADR-0013-mcp-gateway-per-server-streamable-http.md)）

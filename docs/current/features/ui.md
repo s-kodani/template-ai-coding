@@ -22,7 +22,7 @@ generated:
 
 - 未ログインではチャットできない。Keycloak（`knowledge` realm）でログインする
 - 開発ユーザーは `dev` / `dev`（email `dev@localhost`、role `knowledge-mcp-reader`）。`readerless` はログインできるが `GET /v1/mcp` に knowledge が出ず、ツール実行も Gateway が拒否する。管理者コンソールは http://localhost:8081
-- チャット開始時に Gateway の `GET /v1/mcp`（role でフィルタ）から許可サーバーを得て、サーバー側で各 catalog `url` へ Chainlit MCP セッションを auto-connect する。`tools/list` で得た schema は LLM 名 `{server_id}__{mcp_tool_name}` に接頭辞付けする。実行は同じ MCP セッションの `tools/call`（[ADR-0013](/decisions/ADR-0013-mcp-gateway-per-server-streamable-http.md)）
+- チャット開始時に Gateway の `GET /v1/mcp`（role でフィルタ）から許可サーバーを得て、サーバー側で各 catalog `url` へ Chainlit MCP セッションを auto-connect する。UI の `POST /mcp` が先に成功していても `mcp_tools` は消さない。既存セッション再利用時も `on_mcp_connect` 相当で tools を載せ直す。同一 websocket・同一 Gateway 名の connect は直列化する。`tools/list` で得た schema は LLM 名 `{server_id}__{mcp_tool_name}` に接頭辞付けする。実行は同じ MCP セッションの `tools/call`（[ADR-0013](/decisions/ADR-0013-mcp-gateway-per-server-streamable-http.md)）
 - Chainlit の Keycloak トークンを knowledge-mcp へ渡さない
 - refresh token はアプリ Postgres（`TOKEN_STORE_DATABASE_URL` + pgcrypto）に保存する。Chainlit 内蔵 data layer の `DATABASE_URL` は空
 - Chainlit 内蔵 MCP 接続 UI で Streamable HTTP / SSE サーバを追加接続できる。接続先は `.chainlit/config.toml` の `user_servers.allowed_urls` に含まれる origin に限る（[ADR-0009](/decisions/ADR-0009-chainlit-mcp-user-servers-allowlist.md)）
@@ -39,7 +39,7 @@ generated:
 
 - 追加 MCP へは、Chainlit コンテナから到達でき、allowlist に含まれる URL を指定する
 - 既定 allowlist: `http://mcp-server:8000`、`http://localhost:8000`、`http://127.0.0.1:8000`、`http://host.docker.internal:8000`
-- Gateway MCP は `mcp-autoload.js` が Registry から一覧へ載せる（表示 seed のみ。`url` は `via {host:port}` で Gateway を識別し、接続用 URL は載せない。Chainlit 2.12 の persist が `status` を必須とするため seed に `connecting` を含める）。プラグ UI の `POST|DELETE /mcp` は Chainlit 標準のまま。Gateway 名は `gateway_mcp_connect` ミドルウェアが JWT 注入 connect として処理する。Cookie JWT は `request.cookies` から読む。`POST /mcp` は既存セッションがあればそれを返し、未バインドなら `keycloak_sub` で token store を結び直す
+- Gateway MCP は `mcp-autoload.js` が Registry から一覧へ載せる（表示 seed のみ。`url` は `via {host:port}` で Gateway を識別し、接続用 URL は載せない。Chainlit 2.12 の persist が `status` を必須とするため seed に `connecting` を含める）。プラグ UI の `POST|DELETE /mcp` は Chainlit 標準のまま。Gateway 名は `gateway_mcp_connect` ミドルウェアが JWT 注入 connect として処理する。Cookie JWT は `request.cookies` から読む。`POST /mcp` は既存セッションがあればそれを返し（`status: connected`、`list_tools` は短タイムアウト）、未バインドなら `keycloak_sub` で token store を結び直す
 - 接続数バッジ（クリップアイコン右上）は Chainlit が MCP セッション状態を管理する。Gateway MCP の JWT は DevTools の `/mcp` body に含まれない
 - knowledge-mcp へ UI からヘッダーなしで直接接続しようとすると JWT 必須のため失敗する（allowlist 内でも Gateway 名はミドルウェア経由）
 

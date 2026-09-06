@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import asyncio
+import inspect
 from types import SimpleNamespace
 from unittest.mock import patch
 
@@ -158,6 +160,7 @@ async def test_existing_gateway_mcp_result_reuses_tuple_session() -> None:
     assert result["mcp"]["name"] == "knowledge-mcp"
     assert result["mcp"]["tools"] == [{"name": "search_knowledge"}]
     assert result["mcp"]["url"] == "via MCP Gateway"
+    assert result["mcp"]["status"] == "connected"
 
     labeled = await existing_gateway_mcp_result(
         session, "knowledge-mcp", gateway_url="http://mcp-gateway:8082/mcp/knowledge"
@@ -221,6 +224,7 @@ async def test_connect_reuses_existing_session_when_token_missing() -> None:
     assert result["success"] is True
     assert result["mcp"]["name"] == "knowledge-mcp"
     assert result["mcp"]["url"] == "via mcp-gateway:8082"
+    assert result["mcp"]["status"] == "connected"
 
 
 @pytest.mark.asyncio
@@ -337,3 +341,80 @@ async def test_auto_connect_gateway_mcps_connects_allowed_servers() -> None:
         )
     assert names == ["knowledge-mcp", "other-mcp"]
     assert connected == ["knowledge-mcp", "other-mcp"]
+
+
+@pytest.mark.asyncio
+async def test_connect_reuse_invokes_on_mcp_connect() -> None:
+    called: list[str] = []
+
+    async def hook(connection: SimpleNamespace, client: object) -> None:
+        called.append(connection.name)
+        await client.list_tools()  # type: ignore[union-attr]
+
+    async def list_tools() -> SimpleNamespace:
+        return SimpleNamespace(tools=[SimpleNamespace(name="search_knowledge")])
+
+    session = _FakeSession()
+    session.mcp_sessions["knowledge-mcp"] = (SimpleNamespace(list_tools=list_tools), object())
+    with patch("chainlit.config.config") as config:
+        config.code.on_mcp_connect = hook
+        result = await connect_gateway_mcp(
+            session,
+            "knowledge-mcp",
+            name_to_id={"knowledge-mcp": "knowledge"},
+            token_manager=_FakeManager([None]),
+            gateway_client=MCPGatewayClient("http://gateway:8082"),
+            name_to_gateway_url={"knowledge-mcp": "http://mcp-gateway:8082"},
+        )
+    assert called == ["knowledge-mcp"]
+    assert result["mcp"]["status"] == "connected"
+
+
+@pytest.mark.asyncio
+async def test_existing_gateway_mcp_result_returns_none_on_list_tools_timeout() -> None:
+    async def list_tools() -> SimpleNamespace:
+        await asyncio.sleep(1)
+        return SimpleNamespace(tools=[SimpleNamespace(name="search_knowledge")])
+
+    session = _FakeSession()
+    session.mcp_sessions["knowledge-mcp"] = (SimpleNamespace(list_tools=list_tools), object())
+    with patch("chat_ui.gateway_mcp_connect.LIST_TOOLS_TIMEOUT", 0.01):
+        result = await existing_gateway_mcp_result(session, "knowledge-mcp")
+    assert result is None
+
+
+@pytest.mark.asyncio
+async def test_connect_gateway_mcp_serializes_concurrent_reuse() -> None:
+    in_flight = 0
+    max_in_flight = 0
+
+    async def list_tools() -> SimpleNamespace:
+        nonlocal in_flight, max_in_flight
+        in_flight += 1
+        max_in_flight = max(max_in_flight, in_flight)
+        await asyncio.sleep(0.05)
+        in_flight -= 1
+        return SimpleNamespace(tools=[SimpleNamespace(name="search_knowledge")])
+
+    session = _FakeSession()
+    session.mcp_sessions["knowledge-mcp"] = (SimpleNamespace(list_tools=list_tools), object())
+
+    async def once() -> dict[str, object]:
+        return await connect_gateway_mcp(
+            session,
+            "knowledge-mcp",
+            name_to_id={"knowledge-mcp": "knowledge"},
+            token_manager=_FakeManager([None]),
+            gateway_client=MCPGatewayClient("http://gateway:8082"),
+        )
+
+    await asyncio.gather(once(), once())
+    assert max_in_flight == 1
+
+
+def test_on_chat_start_does_not_clear_mcp_tools() -> None:
+    from chat_ui.app import on_chat_start
+
+    source = inspect.getsource(on_chat_start)
+    assert 'set("mcp_tools", {})' not in source
+    assert 'set("gateway_server_by_connection", {})' not in source

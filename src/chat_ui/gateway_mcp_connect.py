@@ -4,6 +4,7 @@ import asyncio
 import json
 from collections.abc import Callable
 from contextlib import AsyncExitStack
+from types import SimpleNamespace
 from typing import Any, Protocol, cast
 
 import httpx
@@ -15,6 +16,27 @@ from starlette.types import Message
 
 from chat_ui.gateway_client import MCPGatewayClient, resolve_gateway_url
 from chat_ui.mcp_ui import GATEWAY_MCP_TYPE, gateway_display_url
+
+LIST_TOOLS_TIMEOUT = 5.0
+GATEWAY_MCP_STATUS_CONNECTED = "connected"
+_connect_locks: dict[tuple[str, str], asyncio.Lock] = {}
+
+
+def _connect_lock(session_id: str, ui_name: str) -> asyncio.Lock:
+    key = (session_id, ui_name)
+    lock = _connect_locks.get(key)
+    if lock is None:
+        lock = asyncio.Lock()
+        _connect_locks[key] = lock
+    return lock
+
+
+class _CachedToolClient:
+    def __init__(self, tool_list: Any) -> None:
+        self._tool_list = tool_list
+
+    async def list_tools(self) -> Any:
+        return self._tool_list
 
 
 class AccessTokenSource(Protocol):
@@ -48,7 +70,23 @@ async def existing_gateway_mcp_result(
     client = _mcp_client_from_entry(entry)
     if client is None or not hasattr(client, "list_tools"):
         return None
-    tool_list = await client.list_tools()
+    try:
+        tool_list = await asyncio.wait_for(client.list_tools(), timeout=LIST_TOOLS_TIMEOUT)
+    except Exception:  # noqa: BLE001 - stale session; caller reconnects
+        return None
+
+    from chainlit.config import config
+    from chainlit.logger import logger
+
+    if config.code.on_mcp_connect:
+        try:
+            await config.code.on_mcp_connect(
+                SimpleNamespace(name=ui_name),
+                _CachedToolClient(tool_list),
+            )
+        except Exception:  # noqa: BLE001 - keep reuse; caller already has a live session
+            logger.debug("on_mcp_connect reuse hook failed for %s", ui_name, exc_info=True)
+
     return {
         "success": True,
         "mcp": {
@@ -57,6 +95,7 @@ async def existing_gateway_mcp_result(
             "isUserProvided": False,
             "type": GATEWAY_MCP_TYPE,
             "url": gateway_display_url(gateway_url),
+            "status": GATEWAY_MCP_STATUS_CONNECTED,
         },
     }
 
@@ -112,6 +151,29 @@ def bind_gateway_request_user(session: Any, current_user: Any) -> bool:
 
 
 async def connect_gateway_mcp(
+    session: Any,
+    ui_name: str,
+    *,
+    name_to_id: dict[str, str],
+    token_manager: AccessTokenSource,
+    gateway_client: MCPGatewayClient,
+    force_refresh: bool = False,
+    name_to_gateway_url: dict[str, str] | None = None,
+) -> dict[str, Any]:
+    """Open a Chainlit MCP session to a Gateway server with server-side JWT injection."""
+    async with _connect_lock(str(session.id), ui_name):
+        return await _connect_gateway_mcp(
+            session,
+            ui_name,
+            name_to_id=name_to_id,
+            token_manager=token_manager,
+            gateway_client=gateway_client,
+            force_refresh=force_refresh,
+            name_to_gateway_url=name_to_gateway_url,
+        )
+
+
+async def _connect_gateway_mcp(
     session: Any,
     ui_name: str,
     *,
@@ -296,6 +358,7 @@ async def connect_gateway_mcp(
             "isUserProvided": False,
             "type": GATEWAY_MCP_TYPE,
             "url": gateway_display_url(gateway_url),
+            "status": GATEWAY_MCP_STATUS_CONNECTED,
         },
     }
 
