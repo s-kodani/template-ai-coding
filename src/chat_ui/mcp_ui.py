@@ -4,9 +4,29 @@ import json
 from pathlib import Path
 from typing import Any
 
+import httpx
+
 MCP_STORAGE_KEY = "mcp_storage_key"
 GATEWAY_MCP_TYPE = "gateway"
 GATEWAY_MCP_URL_LABEL = "via MCP Gateway"
+GATEWAY_MCP_STATUS = "connecting"
+
+
+def gateway_display_url(gateway_url: str | None) -> str:
+    """UI-only label. Not a connectable URL (avoid allowlist / destination checks)."""
+    raw = str(gateway_url or "").strip()
+    if not raw:
+        return GATEWAY_MCP_URL_LABEL
+    try:
+        parsed = httpx.URL(raw)
+    except Exception:  # noqa: BLE001 - invalid URL stays a generic label
+        return GATEWAY_MCP_URL_LABEL
+    host = parsed.host
+    if not host:
+        return GATEWAY_MCP_URL_LABEL
+    if parsed.port is None:
+        return f"via {host}"
+    return f"via {host}:{parsed.port}"
 
 
 def _display_entries(entries: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -19,9 +39,9 @@ def _display_entries(entries: list[dict[str, Any]]) -> list[dict[str, Any]]:
             {
                 "name": name,
                 "tools": entry.get("tools") or [],
-                "status": "connected",
                 "type": GATEWAY_MCP_TYPE,
-                "url": GATEWAY_MCP_URL_LABEL,
+                "url": gateway_display_url(str(entry.get("gateway_url") or "")),
+                "status": GATEWAY_MCP_STATUS,
                 "isUserProvided": False,
             }
         )
@@ -29,7 +49,7 @@ def _display_entries(entries: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 
 def render_mcp_autoload_js(entries: list[dict[str, Any]] | None = None) -> str:
-    """Show Gateway MCPs in Chainlit's list without opening real sessions."""
+    """Seed Gateway MCPs in Chainlit's MCP list for display; connect uses POST /mcp."""
     displayed = _display_entries(entries or [])
     names = [item["name"] for item in displayed]
     return f"""(() => {{
@@ -48,37 +68,6 @@ def render_mcp_autoload_js(entries: list[dict[str, Any]] | None = None) -> str:
     stored.unshift(ENTRIES[i]);
   }}
   localStorage.setItem(KEY, JSON.stringify(stored));
-
-  const originalFetch = window.fetch.bind(window);
-  window.fetch = function (input, init) {{
-    const url = typeof input === "string" ? input : (input && input.url) || "";
-    const method = (
-      (init && init.method) ||
-      (typeof input === "object" && input && input.method) ||
-      "GET"
-    ).toUpperCase();
-    let pathname = "";
-    try {{
-      pathname = new URL(url, location.origin).pathname;
-    }} catch (_error) {{
-      pathname = "";
-    }}
-    const isMcp = pathname === "/mcp" || pathname === "/mcp/";
-    const body = init && init.body;
-    if (isMcp && (method === "POST" || method === "DELETE") && typeof body === "string") {{
-      try {{
-        const payload = JSON.parse(body);
-        if (payload && NAMES.has(payload.name)) {{
-          const target = new URL("/gateway-mcp", location.origin).href;
-          const slimInit = Object.assign({{}}, init || {{}}, {{
-            body: JSON.stringify({{ sessionId: payload.sessionId, name: payload.name }}),
-          }});
-          return originalFetch(target, slimInit);
-        }}
-      }} catch (_error) {{}}
-    }}
-    return originalFetch(input, init);
-  }};
 }})();
 """
 

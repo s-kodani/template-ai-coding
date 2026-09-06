@@ -23,12 +23,17 @@ from fastmcp import Client
 class MCPBridge:
     def __init__(self, settings: Settings) -> None:
         self._settings = settings
-        self._client = Client(settings.mcp_server_url)
+        self._client: Client | None = None
 
     async def call_tool(self, name: str, arguments: dict[str, Any]) -> dict[str, Any]:
+        client = self._client
+        if client is None:
+            output = {"error": "MCP client is not configured."}
+            record_tool_output(output)
+            return output
         with tool_observation(name, arguments):
-            async with self._client:
-                result = await self._client.call_tool(name, arguments)
+            async with client:
+                result = await client.call_tool(name, arguments)
             if not result.content:
                 output = {"error": "Tool returned no content."}
                 record_tool_output(output)

@@ -12,7 +12,7 @@ status: stable
 
 ## Gateway HTTP
 
-Chainlit は `MCP_GATEWAY_URL` へ次を呼ぶ（Bearer は `aud=mcp-gateway` の Chainlit トークン）。ツール list/call の輸送は [ADR-0013](/decisions/ADR-0013-mcp-gateway-per-server-streamable-http.md)。
+Chainlit は Registry `gateways[].url` ごとに次を呼ぶ（Bearer は `aud=mcp-gateway` の Chainlit トークン）。ツール list/call の輸送は [ADR-0013](/decisions/ADR-0013-mcp-gateway-per-server-streamable-http.md)。
 
 | メソッド | パス | 用途 |
 |---|---|---|
@@ -21,7 +21,7 @@ Chainlit は `MCP_GATEWAY_URL` へ次を呼ぶ（Bearer は `aud=mcp-gateway` �
 
 `url` は `PUBLIC_BASE_URL`（Compose 既定 `http://mcp-gateway:8082`）から `{base}/mcp/{server_id}`。ホストポートは公開しない。
 
-Chainlit が LLM に載せる function 名は `{server_id}__{name}`。MCP 上のツール名は接頭辞なし。プラグ UI の切断は Chainlit の `POST|DELETE /gateway-mcp` でセッションからそのサーバーのツールを外す。
+Chainlit が LLM に載せる function 名は `{server_id}__{name}`。MCP 上のツール名は接頭辞なし。プラグ UI の切断は Chainlit の `POST|DELETE /mcp`（Gateway 名）でセッションからそのサーバーのツールを外す。
 
 Token Exchange は Registry の `authentication.mode`（`keycloak_token_exchange`）、`resource`、`scopes` が必須。欠けると 500。knowledge 向けのデフォルト `resource` / `scopes` は使わない。
 

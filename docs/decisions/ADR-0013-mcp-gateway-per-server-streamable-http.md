@@ -6,7 +6,7 @@ tags: [decision, architecture, mcp, gateway, transport]
 status: stable
 decision_status: accepted
 generated:
-  at: "2026-09-01T15:50:00Z"
+  at: "2026-09-06T02:40:00Z"
   by: process:cursor-agent
 ---
 
@@ -29,8 +29,8 @@ Chainlit 2.12 は `mcp<2`、Gateway は公式 `mcp>=2` のため同一 Python �
 - **案 A** を採用する。Gateway は `POST /mcp/{server_id}` で Streamable HTTP JSON-RPC を受ける
 - サーバー一覧の発見だけ **`GET /v1/mcp`** を残す。応答は `{id, name, tools, url}`。`url` は Compose 内部の `PUBLIC_BASE_URL`（既定 `http://mcp-gateway:8082`）から `{base}/mcp/{server_id}`
 - REST の tool schema / call は削除する。`GET /health` は残す
-- Chainlit はプラグ UI ではなく **アプリ管理の FastMCP Client** で catalog `url` に接続する。Bearer は `TokenManager` の Chainlit JWT（`aud=mcp-gateway`）。JWT をブラウザに出さない
-- プラグ UI のサーバー単位 ON/OFF は `/gateway-mcp` のまま。`user_servers.allowed_urls` に Gateway を足さない
+- Chainlit は Gateway MCP について **Chainlit 標準 MCP セッション**（`mcp` SDK `streamablehttp_client`）で catalog `url` に接続する。Bearer は `TokenManager` の Chainlit JWT（`aud=mcp-gateway`）。JWT をブラウザに出さない。list/call はセッション経由に一本化
+- プラグ UI の Gateway 名に対する `POST|DELETE /mcp` はミドルウェアが JWT 注入 connect として処理する。`/gateway-mcp` は廃止。`user_servers.allowed_urls` に Gateway を足さない
 - Gateway ホストポートは公開しない。Inspector は knowledge-mcp `:8000` 直結のまま
 - LLM 名は `{server_id}__{mcp_tool_name}` のまま。MCP パス上の名前は接頭辞なし
 - Token Exchange・パススルー禁止・`required_roles` / `allowed_tools` は [ADR-0012](/decisions/ADR-0012-mcp-gateway-resource-server.md) のまま
@@ -43,3 +43,7 @@ Chainlit 2.12 は `mcp<2`、Gateway は公式 `mcp>=2` のため同一 Python �
 - Gateway は引き続き Resource Server 境界。Chainlit JWT は knowledge-mcp に届かない
 - FastMCP 2.14 Client が必要とするメソッドは `initialize` / `notifications/*` / `ping` / `tools/list` / `tools/call`。セッション ID は持たない
 - 現行シーケンスは [認証認可](/current/features/authentication.md)
+
+## 改訂
+
+Chainlit は単一の `MCP_GATEWAY_URL` を持たない。発見先は Registry `gateways[].url`（複数可）。Gateway プロセスは `PUBLIC_BASE_URL` と一致するエントリの `servers` だけを読む。カタログ `url` の作り方と Streamable HTTP 経路はこの ADR のまま。

@@ -5,7 +5,7 @@ description: 未ログインの Chainlit アクセスから knowledge-mcp ツー
 tags: [authentication, authorization, keycloak, gateway, mcp, chainlit]
 status: stable
 generated:
-  at: "2026-09-01T15:50:00Z"
+  at: "2026-09-06T06:25:00Z"
   by: process:cursor-agent
 ---
 
@@ -114,17 +114,17 @@ sequenceDiagram
 
 1. `keycloak_sub` と Chainlit `session.id` を `chainlit_oauth_tokens` に紐付ける。
 2. 保存済み access token を取り出す。期限が近ければ refresh grant。401 後のツール再試行でも同じ refresh を一度だけ使う。
-3. `GET {MCP_GATEWAY_URL}/v1/mcp` に `Authorization: Bearer <Chainlit JWT>`。
+3. Registry の各 `gateways[].url` に対し `GET {url}/v1/mcp` に `Authorization: Bearer <Chainlit JWT>`。
 
 Gateway の `GET /v1/mcp`:
 
 1. Bearer が無ければ 401 `INVALID_TOKEN`。
 2. JWKS で Chainlit JWT を検証する。`iss`、`aud` に `mcp-gateway`、`azp=chainlit`、`sub` 必須。
-3. Registry（`infra/app/gateway-registry.yml`）の `enabled: true` を走査する。
+3. Registry（`infra/app/gateway-registry.yml`）の自 Gateway エントリ（`url` が `PUBLIC_BASE_URL` と一致）の `enabled: true` を走査する。
 4. 各サーバーの `authorization.required_roles` が空でなければ、JWT の `realm_access.roles` がそれをすべて含むこと。満たさないサーバーは **返さない**（404 にはしない。一覧から消す）。
 5. 下流 MCP は呼ばない。返すのは `{id, name, tools, url}`（`tools` は `allowed_tools`、`url` は `{PUBLIC_BASE_URL}/mcp/{id}`）。
 
-いまの knowledge エントリは `required_roles: [knowledge-mcp-reader]`。`readerless` の応答は knowledge を含まない。そのため Chainlit は `/mcp/knowledge` を呼ばず、LLM にも knowledge ツールを載せない。次の Gateway MCP を足すときは、そのサーバー用の realm role を作り Registry の `required_roles` に書く。
+いまの knowledge エントリは `required_roles: [knowledge-mcp-reader]`。`readerless` の応答は knowledge を含まない。そのため Chainlit は knowledge 向け MCP セッションを張らず、LLM にも knowledge ツールを載せない。次の Gateway MCP を足すときは、そのサーバー用の realm role を作り Registry の `required_roles` に書く。
 
 `required_roles` が空のサーバーは、有効な Chainlit JWT を持つ全員に出る。
 
@@ -135,11 +135,11 @@ Gateway の `GET /v1/mcp`:
 1. 同じ Chainlit JWT を検証する。
 2. `enabled` でなければ 404 `MCP_SERVER_NOT_FOUND`。
 3. **この list は `required_roles` を再検査しない**（一覧で既に落としている）。
-4. Token Exchange してそのサーバーの MCP に list tools する。`authentication.mode` / `resource` / `scopes` が無ければ 500。応答は `allowed_tools` でフィルタする。
+4. プラグ UI の `POST /mcp` で `gateway_mcp_connect.connect_gateway_mcp` が catalog `url` へ Chainlit MCP セッション（`Authorization: Bearer <Chainlit JWT>` 注入）を張る。`on_mcp_connect` が `tools/list` を `{server_id}__{mcp_tool_name}` に接頭辞付けする。`on_chat_start` は auto-connect しない。
 
 ## フェーズ 4 — ツール実行（認可の強制）
 
-LLM が `{server_id}__{name}` を選ぶと `POST /mcp/{server_id}` の `tools/call`（`params.name` は MCP 名）。主体は JWT `sub`。arguments 内の `user_id` は Gateway の主体にしない。
+LLM が `{server_id}__{name}` を選ぶと、Chainlit の Gateway MCP セッション経由で `POST /mcp/{server_id}` の `tools/call`（MCP 名は接頭辞なし）。主体は JWT `sub`。arguments 内の `user_id` は Gateway の主体にしない。
 
 Gateway:
 
@@ -150,7 +150,7 @@ Gateway:
 5. 公式 `mcp>=2` で `http://mcp-server:8000/mcp` を呼ぶ。Bearer は **交換後 JWT**。クライアント `_meta` の W3C `traceparent` / baggage を下流へ転送する。
 6. ホストポートは公開しない。到達元は Chainlit コンテナ（`http://mcp-gateway:8082`）。
 
-401 なら Chainlit は refresh して一度だけ再接続する。
+401 なら Chainlit は refresh して Gateway MCP セッションを reconnect し、一度だけ `tools/call` を再試行する。
 
 ## フェーズ 5 — Token Exchange（Keycloak 26 V2）
 
@@ -201,7 +201,7 @@ Compose では `MCP_JWKS_URI` があるので HTTP Bearer 必須。
 
 **プラグ UI（MCP Servers）**
 
-Registry の enabled サーバーを `mcp-autoload.js` が載せる。role では隠さない。プラグ UI の接続 / 切断は `/gateway-mcp` でセッションの利用フラグだけを更新する（実 MCP セッションは張らない。トークンも渡さない）。切断したサーバーのツールは次のチャットターンから LLM に載らない。新しいチャットでは再び有効。
+Registry の enabled サーバーを `mcp-autoload.js` が一覧 seed する（`status: connecting` 必須。無いと Chainlit 2.12 が一覧から捨てる）。Gateway 名に対する `POST|DELETE /mcp` は `gateway_mcp_connect` ミドルウェアが JWT 注入 connect / disconnect として処理する（ブラウザ body に JWT は含めない）。Gateway 名の `POST /mcp` は Cookie 不整合や JWT 欠落でも **403**（401 にするとクライアントが `/login` へ飛ばしてリロードループになる）。JWT は `request.cookies` から読む（Starlette の Request は scope の Mapping なので `get_token_from_cookies(request)` だと Cookie を見ない）。websocket セッションに user が未設定なら Cookie のユーザーを載せ、既存 user に `keycloak_sub` が無ければ Cookie 側から補う。UI の `POST /mcp` がチャット開始の `bind_session` より先でも、Cookie ユーザーの `keycloak_sub` で結び直し、既に接続済みなら既存セッションを 200（`status: connected`）で返し `on_mcp_connect` 相当で tools を載せ直す。`on_chat_start` は `mcp_tools` を消さず、サーバー側 auto-connect もしない。同一 websocket・同一 Gateway 名の connect は直列化する。ゴミ箱で MCP セッションを閉じ、ツールは LLM から外れる。再接続は回転矢印、またはページ再読込の seed → `POST /mcp`。
 
 **追加 MCP（allowlist）**
 

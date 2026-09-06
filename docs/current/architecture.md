@@ -5,7 +5,7 @@ description: FastMCP、MCP Gateway、Chainlit、pgvector、Keycloak、Langfuse �
 tags: [architecture, mcp, tracing, langflow, keycloak, gateway]
 status: stable
 generated:
-  at: "2026-09-01T15:50:00Z"
+  at: "2026-09-06T06:25:00Z"
   by: process:cursor-agent
 ---
 
@@ -86,8 +86,8 @@ flowchart TB
 ```text
 Keycloak ログイン（client=chainlit）
   -> Chainlit が refresh token をアプリ Postgres に保存
-  -> チャット開始時、Chainlit は GET /v1/mcp（role でフィルタ）で url を得て、POST /mcp/{id} で tools/list する
-  -> 既定ツール実行時、Chainlit は FastMCP Client で POST /mcp/{id} tools/call（Bearer は aud に mcp-gateway）
+  -> プラグ UI の POST /mcp で Chainlit は catalog url へ MCP セッションを張り tools/list する（role フィルタは GET /v1/mcp）
+  -> 既定ツール実行時、Chainlit の Gateway MCP セッション経由で POST /mcp/{id} tools/call（Bearer は aud に mcp-gateway）
   -> Gateway が Token Exchange（client=mcp-gateway、scope=mcp-tools。Keycloak 26 V2 では audience パラメータなし）
   -> knowledge-mcp が JWT を検証（aud に http://localhost:8000/mcp、role knowledge-mcp-reader）
 ```

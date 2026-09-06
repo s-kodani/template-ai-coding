@@ -136,8 +136,6 @@ services:
     env_file:
       - ../../.env
     environment:
-      MCP_SERVER_URL: http://mcp-server:8000/mcp
-      MCP_GATEWAY_URL: http://mcp-gateway:8082
       MCP_GATEWAY_REGISTRY_PATH: /app/infra/app/gateway-registry.yml
       FASTMCP_TELEMETRY_MODE: native
       LANGFUSE_HOST: http://langfuse-web:3000

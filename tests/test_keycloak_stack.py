@@ -181,7 +181,7 @@ def test_env_example_documents_keycloak_oauth() -> None:
         "OAUTH_KEYCLOAK_NAME",
         "KC_BOOTSTRAP_ADMIN_USERNAME",
         "KC_BOOTSTRAP_ADMIN_PASSWORD",
-        "MCP_GATEWAY_URL",
+        "MCP_GATEWAY_REGISTRY_PATH",
         "TOKEN_STORE_DATABASE_URL",
         "TOKEN_STORE_KEY",
         "MCP_JWKS_URI",
@@ -193,7 +193,11 @@ def test_env_example_documents_keycloak_oauth() -> None:
     assert "OAUTH_KEYCLOAK_NAME=unused" in text
     assert "OAUTH_GENERIC_CLIENT_SECRET=chainlit-local-secret" in text
     assert "localhost:8081" in text
-    assert "MCP_GATEWAY_URL=" in text
+    assert "MCP_GATEWAY_URL=" not in text
+    assert "MCP_SERVER_URL=" not in text
+    assert "MCP_BEARER_TOKEN=" not in text
+    assert "CHAINLIT_HOST=" not in text
+    assert "CHAINLIT_PORT=" not in text
     assert "TOKEN_STORE_DATABASE_URL=" in text
     assert "MCP_AUDIENCE=http://localhost:8000/mcp" in text
 
@@ -216,7 +220,12 @@ def test_compose_defines_internal_mcp_gateway() -> None:
     assert "ports" not in gateway
     assert gateway["build"]["dockerfile"] == "infra/app/Dockerfile.gateway"
     assert gateway["environment"]["PUBLIC_BASE_URL"] == "http://mcp-gateway:8082"
-    assert chainlit["environment"]["MCP_GATEWAY_URL"] == "http://mcp-gateway:8082"
+    assert "MCP_GATEWAY_URL" not in chainlit["environment"]
+    assert "MCP_SERVER_URL" not in chainlit["environment"]
+    registry = yaml.safe_load(
+        (ROOT / "infra" / "app" / "gateway-registry.yml").read_text(encoding="utf-8")
+    )
+    assert registry["gateways"][0]["url"] == "http://mcp-gateway:8082"
     assert chainlit["environment"]["DATABASE_URL"] == ""
     assert "TOKEN_STORE_DATABASE_URL" in chainlit["environment"]
     assert mcp_server["environment"]["MCP_JWKS_URI"].startswith("http://keycloak:8080/")

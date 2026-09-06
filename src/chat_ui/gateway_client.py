@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from typing import Any, Protocol
 
 import httpx
@@ -28,10 +28,12 @@ def _default_mcp_client(url: str, token: str) -> Any:
 class MCPGatewayClient:
     def __init__(
         self,
-        base_url: str,
+        base_url: str | Sequence[str],
         mcp_client_factory: McpClientFactory | None = None,
     ) -> None:
-        self._base_url = base_url.rstrip("/")
+        urls = [base_url] if isinstance(base_url, str) else list(base_url)
+        self._base_urls = [url.rstrip("/") for url in urls if str(url).strip()]
+        self._base_url = self._base_urls[0] if self._base_urls else ""
         self._mcp_client_factory = mcp_client_factory or _default_mcp_client
 
     def _mcp_url(self, server_id: str, url: str | None) -> str:
@@ -66,16 +68,20 @@ class MCPGatewayClient:
             return output
 
     async def list_servers(self, access_token: str) -> list[dict[str, Any]]:
+        listed: list[dict[str, Any]] = []
         async with httpx.AsyncClient(timeout=15.0) as client:
-            response = await client.get(
-                f"{self._base_url}/v1/mcp",
-                headers={"Authorization": f"Bearer {access_token}"},
-            )
-        if response.status_code >= 400:
-            return []
-        payload = _safe_json(response)
-        servers = payload.get("servers")
-        return servers if isinstance(servers, list) else []
+            for base_url in self._base_urls:
+                response = await client.get(
+                    f"{base_url}/v1/mcp",
+                    headers={"Authorization": f"Bearer {access_token}"},
+                )
+                if response.status_code >= 400:
+                    continue
+                payload = _safe_json(response)
+                servers = payload.get("servers")
+                if isinstance(servers, list):
+                    listed.extend(server for server in servers if isinstance(server, dict))
+        return listed
 
     async def list_tools(
         self,
@@ -103,6 +109,18 @@ class MCPGatewayClient:
                 }
             )
         return mapped
+
+
+async def resolve_gateway_url(
+    client: MCPGatewayClient,
+    server_id: str,
+    access_token: str,
+) -> str | None:
+    for server in await client.list_servers(access_token):
+        if str(server.get("id") or "") == server_id:
+            url = str(server.get("url") or "").strip()
+            return url or None
+    return None
 
 
 async def load_gateway_catalog(

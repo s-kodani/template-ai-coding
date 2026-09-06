@@ -95,11 +95,12 @@ def test_verify_rejects_expired(rsa_keys: tuple[object, str]) -> None:
 
 def test_registry_does_not_use_client_id_as_exchange_audience() -> None:
     registry = yaml.safe_load(REGISTRY.read_text(encoding="utf-8"))
-    auth = registry["servers"]["knowledge"]["authentication"]
+    knowledge = registry["gateways"][0]["servers"]["knowledge"]
+    auth = knowledge["authentication"]
     assert "target_client" not in auth
     assert auth["resource"] == RESOURCE
     assert auth["scopes"] == ["mcp-tools"]
-    assert registry["servers"]["knowledge"]["authorization"]["required_roles"] == [
+    assert knowledge["authorization"]["required_roles"] == [
         "knowledge-mcp-reader"
     ]
 

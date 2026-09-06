@@ -217,6 +217,53 @@ async def test_list_servers_returns_catalog(monkeypatch: pytest.MonkeyPatch) -> 
 
 
 @pytest.mark.asyncio
+async def test_list_servers_aggregates_multiple_gateway_urls(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client = MCPGatewayClient(
+        ["http://gateway-a:8082", "http://gateway-b:8083/"]
+    )
+
+    class _Response:
+        def __init__(self, servers: list[dict]) -> None:
+            self.status_code = 200
+            self._servers = servers
+
+        def json(self) -> dict:
+            return {"servers": self._servers}
+
+    fake = _GetClient(
+        [
+            _Response(
+                [
+                    {
+                        "id": "knowledge",
+                        "name": "knowledge-mcp",
+                        "url": "http://gateway-a:8082/mcp/knowledge",
+                    }
+                ]
+            ),
+            _Response(
+                [
+                    {
+                        "id": "extra",
+                        "name": "extra-mcp",
+                        "url": "http://gateway-b:8083/mcp/extra",
+                    }
+                ]
+            ),
+        ]
+    )
+    monkeypatch.setattr("chat_ui.gateway_client.httpx.AsyncClient", lambda **_: fake)
+    servers = await client.list_servers("tok")
+    assert [server["id"] for server in servers] == ["knowledge", "extra"]
+    assert fake.urls == [
+        "http://gateway-a:8082/v1/mcp",
+        "http://gateway-b:8083/v1/mcp",
+    ]
+
+
+@pytest.mark.asyncio
 async def test_list_tools_returns_empty_on_forbidden() -> None:
     fake = _FakeMcp(error=_http_error(403))
 

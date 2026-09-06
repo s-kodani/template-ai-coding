@@ -91,7 +91,7 @@ def create_app(
     tool_lister: Callable[..., Awaitable[list[dict[str, Any]]]] | None = None,
 ) -> FastAPI:
     settings = settings or Settings()
-    registry = load_registry(settings.registry_path)
+    registry = load_registry(settings.registry_path, public_base_url=settings.public_base_url)
     cache = TokenCache(settings.token_cache_ttl_seconds)
     caller = tool_caller or call_mcp_tool
     lister = tool_lister or list_mcp_tools
