@@ -17,9 +17,10 @@ Commit / push / PR 系 Skill 共通のリポジトリ運用ルール。
 - PR 作成は **ManagePullRequest ツール**（またはリポジトリ標準の PR API）を優先する
 - `gh pr create` は read-only 環境では使えない場合がある。CLI に依存しない
 - 作成前に `.github/PULL_REQUEST_TEMPLATE.md` があれば確認する
-- PR 本文には `Refs #<issue>` または `Closes #<issue>` を含める
-  - 作業完了で Issue を Close できる: `Closes #<issue>`
-  - 後続 PR や残作業がある: `Refs #<issue>`
+- PR 本文には **`Refs #<issue>`** を含める（`src/` 変更時は CI 必須）
+  - 1 Issue に複数 PR がある場合も、各 PR は `Refs` を使う（**1:N**）
+  - **`Closes #<issue>` は PR 本文に使わない** — merge 時に Issue が自動 Close し、Phase 8 前に閉じる恐れがある。Issue Close は Phase 8 後に手動で行う
+  - Issue を Close する前に、紐づく作業 PR がすべて closed（merged または closed）であることを確認する
 - `src/` または `infra/` を変更する PR では **Release Note 要否宣言** を本文に含める（CI 検証）:
 
 ```markdown

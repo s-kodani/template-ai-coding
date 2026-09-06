@@ -121,7 +121,7 @@ ScopeやAcceptance Criteriaの**文言**が変わった場合は、Issue本文�
 
 実装または修正対応が一段落するたびに、紐づくIssueへ進捗コメント（`<!-- agent-progress:v1 -->`）を残し、本文の Acceptance Criteria タスクリストを再評価します。投稿できたことを確認するまで、その区切りを完了としません。Issueへ書けない環境では PR コメントへフォールバックし、Issueへ残したと偽ってはいけません。詳細は `references/github-issue-workflow.md` です。
 
-一連のワークフロー完了後は、コードレビューとワークフロー遵守チェック（Phase 8）を行い、結果をIssueへ残してから Close します。詳細は `references/review-and-compliance.md` です。
+一連のワークフロー完了後は、コードレビューとワークフロー遵守チェック（Phase 8）を行い、結果をIssueへ残します。紐づく作業 PR がすべて closed になったあと、Issue を手動 Close します。Issue と PR は 1:N。詳細は `references/review-and-compliance.md` と `references/github-issue-workflow.md` です。
 
 ---
 
@@ -171,7 +171,9 @@ Completion Report（この時点では Issue を Close しない）
         ↓
 Review & Compliance（コードレビュー + ワークフロー遵守。must-fix なら Implement に戻る）
         ↓
-Issue Close
+紐づく作業 PR がすべて closed（merged または closed）
+        ↓
+Issue Close（手動。PR の `Closes` による自動 Close は使わない）
 
 （別途）バージョンタグ確定時
         ↓
