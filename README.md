@@ -47,7 +47,7 @@ make -C infra langflow-up
 
 3. http://localhost:7860 を開きます。未 import なら `infra/langflow/flows/Ingest.json` と `infra/langflow/flows/QueryPgVector.json` を import します。
 
-4. UI で `Ingest` を実行し、専用 DB の Collection へ書き込みます。ホスト原本の置き場は `data/ingest/` です（Langflow My Files ではありません）。
+4. UI で `Ingest` を実行し、専用 DB の Collection へ書き込みます。ホスト原本の置き場は `docs/` です（Langflow My Files ではありません）。
 
 5. UI で `QueryPgVector` を実行し、Collection の類似検索を確認します。
 
@@ -57,7 +57,7 @@ make -C infra langflow-up
 make -C infra import-langflow
 ```
 
-API で投入と複製を一度に行う場合は `make -C infra ingest-langflow`（既定 `data/ingest/`）。アプリ Postgres が必要です。
+API で投入と複製を一度に行う場合は `make -C infra ingest-langflow`（既定 `docs/`）。アプリ Postgres が必要です。
 
 7. 停止します。
 

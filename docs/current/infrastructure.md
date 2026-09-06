@@ -5,7 +5,7 @@ description: アプリ、Keycloak、MCP Gateway、Langfuse、任意 Langflow の
 tags: [docker, langfuse, langflow, postgres, keycloak, gateway, ci, devsecops]
 status: stable
 generated:
-  at: "2026-09-06T08:41:05Z"
+  at: "2026-09-06T09:55:10Z"
   by: process:codex-agent
 ---
 
@@ -49,14 +49,14 @@ Langflow Ingest PoC はデフォルト起動に含まれない。
 make -C infra langflow-up
 ```
 
-UI は http://localhost:7860 。Langflow の PGVector は専用 Postgres の `langflow_vectors`（ホスト `localhost:5434`）へ書く。ホスト原本からの API Ingest は `make -C infra ingest-langflow`（既定 `data/ingest/`）。Collection からアプリの `documents` へは同コマンドが複製する。複製だけなら `make -C infra import-langflow`。
+UI は http://localhost:7860 。Langflow の PGVector は専用 Postgres の `langflow_vectors`（ホスト `localhost:5434`）へ書く。ホスト原本からの API Ingest は `make -C infra ingest-langflow`（既定 `docs/`）。Collection からアプリの `documents` へは同コマンドが複製する。複製だけなら `make -C infra import-langflow`。
 
 既存のアプリ volume を Chunk / ライフサイクル列へ更新するには、seed の前に migrate する（`make -C infra seed` は migrate を先に実行する）。
 
 ```bash
 make -C infra migrate
 make -C infra ingest-langflow
-make -C infra ingest-langflow FILES='data/ingest/notes.md'
+make -C infra ingest-langflow FILES='docs/current/features/ingest.md'
 make -C infra import-langflow
 make -C infra delete-document DOCUMENT_ID=<parent-uuid>
 ```

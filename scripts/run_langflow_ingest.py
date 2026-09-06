@@ -44,7 +44,7 @@ def main() -> None:
         "files",
         nargs="*",
         type=Path,
-        help="Host files or directories. Default: data/ingest",
+        help="Host files or directories. Default: docs",
     )
     args = parser.parse_args()
     asyncio.run(run(args.files))

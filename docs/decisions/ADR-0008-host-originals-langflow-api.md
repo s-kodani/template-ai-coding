@@ -5,6 +5,9 @@ description: 原本の SoT はホストパス。Langflow My Files は Flow 実�
 tags: [decision, langflow, ingest]
 status: stable
 decision_status: accepted
+generated:
+  at: "2026-09-06T09:55:10Z"
+  by: process:codex-agent
 ---
 
 # ADR-0008: 原本はホスト、Langflow Files API は一時転送
@@ -17,7 +20,7 @@ Langflow を原本管理システムにすると、ファイル所有権と API 
 
 ## 決定
 
-1. 原本の Source of Truth はホスト上のパス（既定 `data/ingest/`、または CLI で渡したファイル）とする。
+1. 原本の Source of Truth はホスト上のパス（既定 `docs/`、または CLI で渡したファイル）とする。
 2. Langflow Files API は Flow へ渡すための一時転送だけに使う。実行後に uploaded file を削除する。
 3. `documents.source` / `document_id` はホスト相対パスから決める。Langflow 側の `user_id/file_id` は親 ID に使わない。
 4. 連携はホストスクリプト（`scripts/run_langflow_ingest.py`）とする。MCP ingest ツールは追加しない。

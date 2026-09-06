@@ -5,8 +5,8 @@ description: FastMCP、MCP Gateway、Chainlit、pgvector、Keycloak、Langfuse �
 tags: [architecture, mcp, tracing, langflow, keycloak, gateway]
 status: stable
 generated:
-  at: "2026-09-06T06:25:00Z"
-  by: process:cursor-agent
+  at: "2026-09-06T09:55:10Z"
+  by: process:codex-agent
 ---
 
 # アーキテクチャ
@@ -60,7 +60,7 @@ flowchart TB
     User -->|OAuth :8081| Keycloak
     Chainlit -->|token / userinfo :8080 コンテナ DNS| Keycloak
     User -->|HTTP :7860| Langflow
-    User -->|"host files (data/ingest)"| Adapter
+    User -->|"host files (docs)"| Adapter
     Adapter -->|"Files API + Flow API"| Langflow
     Langflow --> LFPG
     Langflow -->|embeddings| LLM

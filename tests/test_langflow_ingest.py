@@ -5,6 +5,7 @@ import httpx
 import pytest
 
 from knowledge_mcp.chunk_ids import PARENT_NAMESPACE
+from knowledge_mcp.config import Settings
 from knowledge_mcp.langflow_import import MappedChunk
 from knowledge_mcp.langflow_ingest import (
     FILE_COMPONENT_ID,
@@ -32,6 +33,14 @@ QUERY_FLOW = (ROOT / "infra" / "langflow" / "flows" / "QueryPgVector.json").read
     encoding="utf-8"
 )
 SCRIPT = (ROOT / "scripts" / "run_langflow_ingest.py").read_text(encoding="utf-8")
+
+
+def test_langflow_ingest_directory_defaults_to_docs(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("LANGFLOW_INGEST_DIR", raising=False)
+
+    settings = Settings(_env_file=None)
+
+    assert settings.langflow_ingest_dir == "docs"
 
 
 def test_resolve_ingest_paths_expands_directory_and_skips_hidden(tmp_path: Path) -> None:
