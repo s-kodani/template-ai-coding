@@ -2,6 +2,7 @@
 
 ## v?.?.? (未確定)
 
+- **Fixed**: `ingest-langflow` と `import-langflow` をどちら順で実行しても、同じ Collection chunk がホストパス文書と `langflow:` / Untitled の両方に載らないようにした。ホストパス側を残し、UI Ingest のみの fallback は従来どおり載せる（[Ingest](/current/features/ingest.md)）
 - **Changed**: チャット開始時のサーバー側 Gateway auto-connect をやめた。接続はプラグ UI の `POST /mcp`（ページ読込の seed、または My MCPs の再接続）だけ。ゴミ箱で削除したあと新規チャットしても裏で再接続しない（[UI 機能](/current/features/ui.md)、[認証認可](/current/features/authentication.md)、[ADR-0012](/decisions/ADR-0012-mcp-gateway-resource-server.md)）
 - **Fixed**: 再ログイン後に My MCPs が `connecting` のままになり、チャットで Gateway ツールが LLM に載らない問題を直した。`on_chat_start` が `mcp_tools` を消さない。既存セッション再利用時は tools を載せ直し、同一セッションの並行 connect を直列化する（[UI 機能](/current/features/ui.md)）
 - **Changed**: Chainlit の Gateway 発見を単一 `MCP_GATEWAY_URL` から Registry `gateways[].url`（複数可）へ移した。My MCPs の表示は `via {host:port}`。未使用の `MCP_SERVER_URL` / `MCP_BEARER_TOKEN` / `CHAINLIT_HOST` / `CHAINLIT_PORT` を `.env.example` から削除（[UI 機能](/current/features/ui.md)、[API 契約](/current/features/api.md)、[認証認可](/current/features/authentication.md)、[ADR-0013](/decisions/ADR-0013-mcp-gateway-per-server-streamable-http.md)）

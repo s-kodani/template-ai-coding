@@ -59,7 +59,7 @@ def test_langflow_postgres_is_published_on_5434() -> None:
 def test_seed_and_import_use_document_lifecycle() -> None:
     assert "fingerprint_matches" in SEED_PY
     assert "replace_document" in SEED_PY
-    assert "sync_document" in IMPORT_PY
+    assert "sync_mapped_chunks" in IMPORT_PY
     assert "upsert_document(" not in SEED_PY
     assert "upsert_document(" not in IMPORT_PY
     assert "delete_document" in DELETE_PY
