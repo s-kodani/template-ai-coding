@@ -13,6 +13,15 @@ from chat_ui.mcp_ui import (
     write_mcp_autoload_script,
 )
 
+
+def _passes_chainlit_212_persist(entry: dict) -> bool:
+    """Chainlit 2.12 Recoil persist (`abt`) drops entries without these fields."""
+    if not isinstance(entry.get("name"), str):
+        return False
+    if not isinstance(entry.get("tools"), list):
+        return False
+    return isinstance(entry.get("status"), str)
+
 _SAMPLE_GATEWAY_NAME = "docs-mcp"
 _SAMPLE_ENTRY = {
     "name": _SAMPLE_GATEWAY_NAME,
@@ -111,7 +120,7 @@ def test_render_mcp_autoload_js_seeds_gateway_display_entry() -> None:
     assert "Authorization" not in script
     assert "streamable-http" not in script
     assert "gateway-mcp" not in script
-    assert '"status"' not in script
+    assert '"status": "connecting"' in script
 
 
 def test_write_mcp_autoload_script_creates_public_js(tmp_path: Path) -> None:
@@ -150,7 +159,8 @@ def test_autoload_script_seeds_without_intercepting_mcp_requests(tmp_path: Path)
     assert gateway["type"] == GATEWAY_MCP_TYPE
     assert gateway["url"] == GATEWAY_MCP_URL_LABEL
     assert gateway["isUserProvided"] is False
-    assert "status" not in gateway
+    assert gateway["status"] == "connecting"
+    assert _passes_chainlit_212_persist(gateway)
     assert "clientType" not in gateway
 
     assert result["gateway"] == {"proxied": True}

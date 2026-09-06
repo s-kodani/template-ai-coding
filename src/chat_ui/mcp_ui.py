@@ -7,6 +7,7 @@ from typing import Any
 MCP_STORAGE_KEY = "mcp_storage_key"
 GATEWAY_MCP_TYPE = "gateway"
 GATEWAY_MCP_URL_LABEL = "via MCP Gateway"
+GATEWAY_MCP_STATUS = "connecting"
 
 
 def _display_entries(entries: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -21,6 +22,7 @@ def _display_entries(entries: list[dict[str, Any]]) -> list[dict[str, Any]]:
                 "tools": entry.get("tools") or [],
                 "type": GATEWAY_MCP_TYPE,
                 "url": GATEWAY_MCP_URL_LABEL,
+                "status": GATEWAY_MCP_STATUS,
                 "isUserProvided": False,
             }
         )

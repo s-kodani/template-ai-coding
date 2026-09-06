@@ -201,7 +201,7 @@ Compose では `MCP_JWKS_URI` があるので HTTP Bearer 必須。
 
 **プラグ UI（MCP Servers）**
 
-Registry の enabled サーバーを `mcp-autoload.js` が一覧 seed する。Gateway 名に対する `POST|DELETE /mcp` は `gateway_mcp_connect` ミドルウェアが JWT 注入 connect / disconnect として処理する（ブラウザ body に JWT は含めない）。My MCPs の OFF で MCP セッションを閉じ、ツールは LLM から外れる。ON で再接続する。チャット開始時は role 許可サーバーをサーバー側 auto-connect する。
+Registry の enabled サーバーを `mcp-autoload.js` が一覧 seed する（`status: connecting` 必須。無いと Chainlit 2.12 が一覧から捨てる）。Gateway 名に対する `POST|DELETE /mcp` は `gateway_mcp_connect` ミドルウェアが JWT 注入 connect / disconnect として処理する（ブラウザ body に JWT は含めない）。Gateway 名の `POST /mcp` は Cookie 不整合や JWT 欠落でも **403**（401 にするとクライアントが `/login` へ飛ばしてリロードループになる）。JWT は `request.cookies` から読む（Starlette の Request は scope の Mapping なので `get_token_from_cookies(request)` だと Cookie を見ない）。websocket セッションに user が未設定なら Cookie のユーザーを載せ、既存 user に `keycloak_sub` が無ければ Cookie 側から補う。UI の `POST /mcp` がチャット開始の `bind_session` より先でも、Cookie ユーザーの `keycloak_sub` で結び直し、既に auto-connect 済みなら既存セッションを 200 で返す。My MCPs の OFF で MCP セッションを閉じ、ツールは LLM から外れる。ON で再接続する。チャット開始時は role 許可サーバーをサーバー側 auto-connect する。
 
 **追加 MCP（allowlist）**
 

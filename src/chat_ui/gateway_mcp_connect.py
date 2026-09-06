@@ -27,6 +27,88 @@ def is_gateway_mcp_name(name: str, name_to_id: dict[str, str]) -> bool:
     return name in name_to_id
 
 
+def _mcp_client_from_entry(entry: Any) -> Any:
+    if isinstance(entry, (tuple, list)) and entry:
+        return entry[0]
+    client = getattr(entry, "client", None)
+    if client is not None:
+        return client
+    if hasattr(entry, "list_tools"):
+        return entry
+    return None
+
+
+async def existing_gateway_mcp_result(session: Any, ui_name: str) -> dict[str, Any] | None:
+    """Return a connect-success payload when this Gateway MCP is already open."""
+    entry = getattr(session, "mcp_sessions", {}).get(ui_name)
+    if entry is None:
+        return None
+    client = _mcp_client_from_entry(entry)
+    if client is None or not hasattr(client, "list_tools"):
+        return None
+    tool_list = await client.list_tools()
+    return {
+        "success": True,
+        "mcp": {
+            "name": ui_name,
+            "tools": [{"name": t.name} for t in tool_list.tools],
+            "isUserProvided": False,
+            "type": GATEWAY_MCP_TYPE,
+            "url": GATEWAY_MCP_URL_LABEL,
+        },
+    }
+
+
+async def access_token_for_gateway_session(
+    session: Any,
+    token_manager: AccessTokenSource,
+    *,
+    force_refresh: bool = False,
+) -> str | None:
+    """Resolve JWT by session id; bind keycloak_sub if the websocket id is not mapped yet."""
+    token = await token_manager.get_access_token(session.id, force_refresh=force_refresh)
+    if token:
+        return token
+    user = getattr(session, "user", None)
+    subject = (getattr(user, "metadata", None) or {}).get("keycloak_sub")
+    bind = getattr(token_manager, "bind_session", None)
+    if not subject or not callable(bind):
+        return None
+    await bind(str(subject), session.id)
+    return await token_manager.get_access_token(session.id, force_refresh=force_refresh)
+
+
+def gateway_mcp_auth_response(detail: str = "Unauthorized") -> JSONResponse:
+    """Reject Gateway MCP HTTP without 401 — Chainlit treats 401 as logout."""
+    return JSONResponse(status_code=403, content={"detail": detail})
+
+
+def gateway_cookie_token(request: Any) -> str | None:
+    """Read Chainlit JWT from request cookies. Do not pass Request to Mapping.get."""
+    from chainlit.auth.cookie import get_token_from_cookies
+
+    return get_token_from_cookies(getattr(request, "cookies", {}) or {})
+
+
+def bind_gateway_request_user(session: Any, current_user: Any) -> bool:
+    """Attach the cookie user to the websocket session. False on identifier mismatch."""
+    if current_user is None:
+        return True
+    if getattr(session, "user", None) is None:
+        session.user = current_user
+        return True
+    if getattr(session.user, "identifier", None) != getattr(current_user, "identifier", None):
+        return False
+    incoming = (getattr(current_user, "metadata", None) or {}).get("keycloak_sub")
+    if incoming:
+        metadata = getattr(session.user, "metadata", None)
+        if metadata is None:
+            session.user.metadata = {"keycloak_sub": incoming}
+        elif not metadata.get("keycloak_sub"):
+            metadata["keycloak_sub"] = incoming
+    return True
+
+
 async def connect_gateway_mcp(
     session: Any,
     ui_name: str,
@@ -53,9 +135,17 @@ async def connect_gateway_mcp(
     if not server_id:
         raise HTTPException(status_code=404, detail="UNKNOWN_GATEWAY_MCP")
 
-    token = await token_manager.get_access_token(session.id, force_refresh=force_refresh)
+    if not force_refresh:
+        existing = await existing_gateway_mcp_result(session, ui_name)
+        if existing is not None:
+            return existing
+
+    token = await access_token_for_gateway_session(
+        session, token_manager, force_refresh=force_refresh
+    )
     if not token:
-        raise HTTPException(status_code=401, detail="Not authenticated for MCP tools")
+        # 401 would trigger Chainlit's API on401 → /login redirect loop.
+        raise HTTPException(status_code=403, detail="Not authenticated for MCP tools")
 
     gateway_url = await resolve_gateway_url(gateway_client, server_id, token)
     if not gateway_url:
@@ -326,7 +416,6 @@ def register_gateway_mcp_connect(
             return await _replay_request(request, call_next, body)
 
         from chainlit.auth import get_current_user, require_login
-        from chainlit.auth.cookie import get_token_from_cookies
         from chainlit.context import init_ws_context
         from chainlit.session import WebsocketSession
 
@@ -336,17 +425,15 @@ def register_gateway_mcp_connect(
 
         init_ws_context(session)
         if require_login():
-            token = get_token_from_cookies(request)
+            token = gateway_cookie_token(request)
             if not token:
-                return JSONResponse(status_code=401, content={"detail": "Unauthorized"})
+                return gateway_mcp_auth_response()
             try:
                 current_user = await get_current_user(token)
             except HTTPException:
-                return JSONResponse(status_code=401, content={"detail": "Unauthorized"})
-            if current_user and (
-                not session.user or session.user.identifier != current_user.identifier
-            ):
-                return JSONResponse(status_code=401, content={"detail": "Unauthorized"})
+                return gateway_mcp_auth_response()
+            if not bind_gateway_request_user(session, current_user):
+                return gateway_mcp_auth_response()
 
         try:
             if request.method == "POST":
