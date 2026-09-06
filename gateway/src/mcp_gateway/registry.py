@@ -8,9 +8,33 @@ import yaml
 from mcp_gateway.errors import GatewayError
 
 
-def load_registry(path: str | Path) -> dict[str, Any]:
+def _normalize_url(url: str) -> str:
+    return url.rstrip("/")
+
+
+def _servers_for_process(data: dict[str, Any], public_base_url: str | None) -> Any:
+    gateways = data.get("gateways")
+    if isinstance(gateways, list) and gateways:
+        matched: dict[str, Any] | None = None
+        if public_base_url:
+            want = _normalize_url(public_base_url)
+            for gateway in gateways:
+                if not isinstance(gateway, dict):
+                    continue
+                if _normalize_url(str(gateway.get("url") or "")) == want:
+                    matched = gateway
+                    break
+        if matched is None and len(gateways) == 1 and isinstance(gateways[0], dict):
+            matched = gateways[0]
+        if matched is None:
+            return {}
+        return matched.get("servers") or {}
+    return data.get("servers") or {}
+
+
+def load_registry(path: str | Path, *, public_base_url: str | None = None) -> dict[str, Any]:
     data = yaml.safe_load(Path(path).read_text(encoding="utf-8")) or {}
-    servers = data.get("servers") or {}
+    servers = _servers_for_process(data, public_base_url)
     if not isinstance(servers, dict):
         raise TypeError("registry servers must be a mapping")
     return servers

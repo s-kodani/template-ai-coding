@@ -4,10 +4,29 @@ import json
 from pathlib import Path
 from typing import Any
 
+import httpx
+
 MCP_STORAGE_KEY = "mcp_storage_key"
 GATEWAY_MCP_TYPE = "gateway"
 GATEWAY_MCP_URL_LABEL = "via MCP Gateway"
 GATEWAY_MCP_STATUS = "connecting"
+
+
+def gateway_display_url(gateway_url: str | None) -> str:
+    """UI-only label. Not a connectable URL (avoid allowlist / destination checks)."""
+    raw = str(gateway_url or "").strip()
+    if not raw:
+        return GATEWAY_MCP_URL_LABEL
+    try:
+        parsed = httpx.URL(raw)
+    except Exception:  # noqa: BLE001 - invalid URL stays a generic label
+        return GATEWAY_MCP_URL_LABEL
+    host = parsed.host
+    if not host:
+        return GATEWAY_MCP_URL_LABEL
+    if parsed.port is None:
+        return f"via {host}"
+    return f"via {host}:{parsed.port}"
 
 
 def _display_entries(entries: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -21,7 +40,7 @@ def _display_entries(entries: list[dict[str, Any]]) -> list[dict[str, Any]]:
                 "name": name,
                 "tools": entry.get("tools") or [],
                 "type": GATEWAY_MCP_TYPE,
-                "url": GATEWAY_MCP_URL_LABEL,
+                "url": gateway_display_url(str(entry.get("gateway_url") or "")),
                 "status": GATEWAY_MCP_STATUS,
                 "isUserProvided": False,
             }

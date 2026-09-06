@@ -5,7 +5,7 @@ description: 未ログインの Chainlit アクセスから knowledge-mcp ツー
 tags: [authentication, authorization, keycloak, gateway, mcp, chainlit]
 status: stable
 generated:
-  at: "2026-09-01T15:50:00Z"
+  at: "2026-09-06T02:40:00Z"
   by: process:cursor-agent
 ---
 
@@ -114,13 +114,13 @@ sequenceDiagram
 
 1. `keycloak_sub` と Chainlit `session.id` を `chainlit_oauth_tokens` に紐付ける。
 2. 保存済み access token を取り出す。期限が近ければ refresh grant。401 後のツール再試行でも同じ refresh を一度だけ使う。
-3. `GET {MCP_GATEWAY_URL}/v1/mcp` に `Authorization: Bearer <Chainlit JWT>`。
+3. Registry の各 `gateways[].url` に対し `GET {url}/v1/mcp` に `Authorization: Bearer <Chainlit JWT>`。
 
 Gateway の `GET /v1/mcp`:
 
 1. Bearer が無ければ 401 `INVALID_TOKEN`。
 2. JWKS で Chainlit JWT を検証する。`iss`、`aud` に `mcp-gateway`、`azp=chainlit`、`sub` 必須。
-3. Registry（`infra/app/gateway-registry.yml`）の `enabled: true` を走査する。
+3. Registry（`infra/app/gateway-registry.yml`）の自 Gateway エントリ（`url` が `PUBLIC_BASE_URL` と一致）の `enabled: true` を走査する。
 4. 各サーバーの `authorization.required_roles` が空でなければ、JWT の `realm_access.roles` がそれをすべて含むこと。満たさないサーバーは **返さない**（404 にはしない。一覧から消す）。
 5. 下流 MCP は呼ばない。返すのは `{id, name, tools, url}`（`tools` は `allowed_tools`、`url` は `{PUBLIC_BASE_URL}/mcp/{id}`）。
 

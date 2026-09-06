@@ -6,7 +6,7 @@ tags: [decision, architecture, mcp, gateway, transport]
 status: stable
 decision_status: accepted
 generated:
-  at: "2026-09-01T15:50:00Z"
+  at: "2026-09-06T02:40:00Z"
   by: process:cursor-agent
 ---
 
@@ -43,3 +43,7 @@ Chainlit 2.12 は `mcp<2`、Gateway は公式 `mcp>=2` のため同一 Python �
 - Gateway は引き続き Resource Server 境界。Chainlit JWT は knowledge-mcp に届かない
 - FastMCP 2.14 Client が必要とするメソッドは `initialize` / `notifications/*` / `ping` / `tools/list` / `tools/call`。セッション ID は持たない
 - 現行シーケンスは [認証認可](/current/features/authentication.md)
+
+## 改訂
+
+Chainlit は単一の `MCP_GATEWAY_URL` を持たない。発見先は Registry `gateways[].url`（複数可）。Gateway プロセスは `PUBLIC_BASE_URL` と一致するエントリの `servers` だけを読む。カタログ `url` の作り方と Streamable HTTP 経路はこの ADR のまま。

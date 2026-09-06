@@ -12,7 +12,7 @@ status: stable
 
 ## Gateway HTTP
 
-Chainlit は `MCP_GATEWAY_URL` へ次を呼ぶ（Bearer は `aud=mcp-gateway` の Chainlit トークン）。ツール list/call の輸送は [ADR-0013](/decisions/ADR-0013-mcp-gateway-per-server-streamable-http.md)。
+Chainlit は Registry `gateways[].url` ごとに次を呼ぶ（Bearer は `aud=mcp-gateway` の Chainlit トークン）。ツール list/call の輸送は [ADR-0013](/decisions/ADR-0013-mcp-gateway-per-server-streamable-http.md)。
 
 | メソッド | パス | 用途 |
 |---|---|---|

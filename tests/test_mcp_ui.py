@@ -9,6 +9,7 @@ from pathlib import Path
 from chat_ui.mcp_ui import (
     GATEWAY_MCP_TYPE,
     GATEWAY_MCP_URL_LABEL,
+    gateway_display_url,
     render_mcp_autoload_js,
     write_mcp_autoload_script,
 )
@@ -26,7 +27,9 @@ _SAMPLE_GATEWAY_NAME = "docs-mcp"
 _SAMPLE_ENTRY = {
     "name": _SAMPLE_GATEWAY_NAME,
     "tools": [{"name": "search_docs"}, {"name": "get_document"}],
+    "gateway_url": "http://mcp-gateway:8082",
 }
+_SAMPLE_DISPLAY_URL = "via mcp-gateway:8082"
 
 HARNESS = r"""
 const fs = require("fs");
@@ -113,7 +116,8 @@ def test_render_mcp_autoload_js_seeds_gateway_display_entry() -> None:
     assert _SAMPLE_GATEWAY_NAME in script
     assert "unshift" in script
     assert GATEWAY_MCP_TYPE in script
-    assert GATEWAY_MCP_URL_LABEL in script
+    assert _SAMPLE_DISPLAY_URL in script
+    assert "http://mcp-gateway:8082" not in script
     assert "search_docs" in script
     assert "get_document" in script
     assert "http://mcp-server" not in script
@@ -157,7 +161,7 @@ def test_autoload_script_seeds_without_intercepting_mcp_requests(tmp_path: Path)
     assert names.count(_SAMPLE_GATEWAY_NAME) == 1
     gateway = next(item for item in stored if item["name"] == _SAMPLE_GATEWAY_NAME)
     assert gateway["type"] == GATEWAY_MCP_TYPE
-    assert gateway["url"] == GATEWAY_MCP_URL_LABEL
+    assert gateway["url"] == _SAMPLE_DISPLAY_URL
     assert gateway["isUserProvided"] is False
     assert gateway["status"] == "connecting"
     assert _passes_chainlit_212_persist(gateway)
@@ -180,3 +184,12 @@ def test_render_mcp_autoload_js_includes_all_gateway_entries() -> None:
     assert "docs-mcp" in script
     assert "other" in script
     assert "ping" in script
+    assert GATEWAY_MCP_URL_LABEL in script
+
+
+def test_gateway_display_url_uses_host_port_without_scheme() -> None:
+    assert gateway_display_url("http://mcp-gateway:8082") == "via mcp-gateway:8082"
+    assert gateway_display_url("http://gateway-b:8083/mcp/knowledge") == "via gateway-b:8083"
+    assert gateway_display_url("https://gw.example.com") == "via gw.example.com"
+    assert gateway_display_url("") == GATEWAY_MCP_URL_LABEL
+    assert gateway_display_url(None) == GATEWAY_MCP_URL_LABEL

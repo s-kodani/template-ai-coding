@@ -5,7 +5,7 @@ description: Keycloak OAuth 付きの Chainlit チャット UI。既定 knowledg
 tags: [chainlit, ui, mcp, oauth, keycloak, gateway]
 status: stable
 generated:
-  at: "2026-09-01T15:50:00Z"
+  at: "2026-09-06T02:51:00Z"
   by: process:cursor-agent
 ---
 
@@ -39,10 +39,10 @@ generated:
 
 - 追加 MCP へは、Chainlit コンテナから到達でき、allowlist に含まれる URL を指定する
 - 既定 allowlist: `http://mcp-server:8000`、`http://localhost:8000`、`http://127.0.0.1:8000`、`http://host.docker.internal:8000`
-- Gateway MCP は `mcp-autoload.js` が Registry から一覧へ載せる（表示 seed のみ。Chainlit 2.12 の persist が `status` を必須とするため seed に `connecting` を含める）。プラグ UI の `POST|DELETE /mcp` は Chainlit 標準のまま。Gateway 名は `gateway_mcp_connect` ミドルウェアが JWT 注入 connect として処理する。Cookie JWT は `request.cookies` から読む。`POST /mcp` は既存セッションがあればそれを返し、未バインドなら `keycloak_sub` で token store を結び直す
+- Gateway MCP は `mcp-autoload.js` が Registry から一覧へ載せる（表示 seed のみ。`url` は `via {host:port}` で Gateway を識別し、接続用 URL は載せない。Chainlit 2.12 の persist が `status` を必須とするため seed に `connecting` を含める）。プラグ UI の `POST|DELETE /mcp` は Chainlit 標準のまま。Gateway 名は `gateway_mcp_connect` ミドルウェアが JWT 注入 connect として処理する。Cookie JWT は `request.cookies` から読む。`POST /mcp` は既存セッションがあればそれを返し、未バインドなら `keycloak_sub` で token store を結び直す
 - 接続数バッジ（クリップアイコン右上）は Chainlit が MCP セッション状態を管理する。Gateway MCP の JWT は DevTools の `/mcp` body に含まれない
 - knowledge-mcp へ UI からヘッダーなしで直接接続しようとすると JWT 必須のため失敗する（allowlist 内でも Gateway 名はミドルウェア経由）
 
 ## 設定
 
-`CHAT_MODEL`、`OPENAI_API_KEY`、`MCP_GATEWAY_URL`、`MCP_GATEWAY_REGISTRY_PATH`、`TOKEN_STORE_*`、`CHAINLIT_AUTH_SECRET`、`OAUTH_GENERIC_*`、Langfuse キーはルートの `.env.example` を参照。トレースメタデータの一覧は [Langfuse OTEL トレーシング](/current/features/tracing.md)。
+`CHAT_MODEL`、`OPENAI_API_KEY`、`MCP_GATEWAY_REGISTRY_PATH`、`TOKEN_STORE_*`、`CHAINLIT_AUTH_SECRET`、`OAUTH_GENERIC_*`、Langfuse キーはルートの `.env.example` を参照。Gateway 到達 URL は Registry の `gateways[].url`。トレースメタデータの一覧は [Langfuse OTEL トレーシング](/current/features/tracing.md)。

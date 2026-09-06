@@ -14,7 +14,7 @@ from starlette.responses import Response
 from starlette.types import Message
 
 from chat_ui.gateway_client import MCPGatewayClient, resolve_gateway_url
-from chat_ui.mcp_ui import GATEWAY_MCP_TYPE, GATEWAY_MCP_URL_LABEL
+from chat_ui.mcp_ui import GATEWAY_MCP_TYPE, gateway_display_url
 
 
 class AccessTokenSource(Protocol):
@@ -38,7 +38,9 @@ def _mcp_client_from_entry(entry: Any) -> Any:
     return None
 
 
-async def existing_gateway_mcp_result(session: Any, ui_name: str) -> dict[str, Any] | None:
+async def existing_gateway_mcp_result(
+    session: Any, ui_name: str, *, gateway_url: str | None = None
+) -> dict[str, Any] | None:
     """Return a connect-success payload when this Gateway MCP is already open."""
     entry = getattr(session, "mcp_sessions", {}).get(ui_name)
     if entry is None:
@@ -54,7 +56,7 @@ async def existing_gateway_mcp_result(session: Any, ui_name: str) -> dict[str, A
             "tools": [{"name": t.name} for t in tool_list.tools],
             "isUserProvided": False,
             "type": GATEWAY_MCP_TYPE,
-            "url": GATEWAY_MCP_URL_LABEL,
+            "url": gateway_display_url(gateway_url),
         },
     }
 
@@ -117,6 +119,7 @@ async def connect_gateway_mcp(
     token_manager: AccessTokenSource,
     gateway_client: MCPGatewayClient,
     force_refresh: bool = False,
+    name_to_gateway_url: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     """Open a Chainlit MCP session to a Gateway server with server-side JWT injection."""
     from chainlit.config import config
@@ -136,7 +139,11 @@ async def connect_gateway_mcp(
         raise HTTPException(status_code=404, detail="UNKNOWN_GATEWAY_MCP")
 
     if not force_refresh:
-        existing = await existing_gateway_mcp_result(session, ui_name)
+        existing = await existing_gateway_mcp_result(
+            session,
+            ui_name,
+            gateway_url=(name_to_gateway_url or {}).get(ui_name),
+        )
         if existing is not None:
             return existing
 
@@ -288,7 +295,7 @@ async def connect_gateway_mcp(
             "tools": [{"name": t.name} for t in tool_list.tools],
             "isUserProvided": False,
             "type": GATEWAY_MCP_TYPE,
-            "url": GATEWAY_MCP_URL_LABEL,
+            "url": gateway_display_url(gateway_url),
         },
     }
 
@@ -319,6 +326,7 @@ async def reconnect_gateway_mcp(
     name_to_id: dict[str, str],
     token_manager: AccessTokenSource,
     gateway_client: MCPGatewayClient,
+    name_to_gateway_url: dict[str, str] | None = None,
 ) -> None:
     if ui_name in session.mcp_sessions:
         await disconnect_gateway_mcp(session, ui_name)
@@ -329,6 +337,7 @@ async def reconnect_gateway_mcp(
         token_manager=token_manager,
         gateway_client=gateway_client,
         force_refresh=True,
+        name_to_gateway_url=name_to_gateway_url,
     )
 
 
@@ -339,6 +348,7 @@ async def auto_connect_gateway_mcps(
     id_to_name: dict[str, str],
     token_manager: AccessTokenSource,
     gateway_client: MCPGatewayClient,
+    name_to_gateway_url: dict[str, str] | None = None,
 ) -> list[str]:
     """Connect all role-allowed Gateway MCPs at chat start."""
     token = await token_manager.get_access_token(session.id)
@@ -357,6 +367,7 @@ async def auto_connect_gateway_mcps(
                 name_to_id=name_to_id,
                 token_manager=token_manager,
                 gateway_client=gateway_client,
+                name_to_gateway_url=name_to_gateway_url,
             )
             connected.append(ui_name)
         except HTTPException:
@@ -396,6 +407,7 @@ def register_gateway_mcp_connect(
     name_to_id: dict[str, str],
     token_manager: AccessTokenSource,
     gateway_client: MCPGatewayClient,
+    name_to_gateway_url: dict[str, str] | None = None,
 ) -> None:
     """Install middleware and HTTP handlers for Gateway MCP connect/disconnect."""
 
@@ -443,6 +455,7 @@ def register_gateway_mcp_connect(
                     name_to_id=name_to_id,
                     token_manager=token_manager,
                     gateway_client=gateway_client,
+                    name_to_gateway_url=name_to_gateway_url,
                 )
                 return JSONResponse(content=result)
             result = await disconnect_gateway_mcp(session, ui_name)

@@ -16,7 +16,12 @@ from chat_ui.gateway_mcp_connect import (
     reconnect_gateway_mcp,
     register_gateway_mcp_connect,
 )
-from chat_ui.gateway_registry import load_id_to_name, load_name_index, load_ui_servers
+from chat_ui.gateway_registry import (
+    load_gateway_urls,
+    load_id_to_name,
+    load_name_index,
+    load_ui_servers,
+)
 from chat_ui.mcp_bridge import build_openai_client
 from chat_ui.mcp_tools import (
     call_session_tool,
@@ -42,13 +47,16 @@ instrument_asyncpg()
 
 settings = get_settings()
 openai_client = build_openai_client(settings)
-gateway_client = MCPGatewayClient(settings.mcp_gateway_url)
+_registry_path = Path(settings.mcp_gateway_registry_path)
+gateway_client = MCPGatewayClient(load_gateway_urls(_registry_path))
 token_manager = build_token_manager(settings)
 set_token_manager(token_manager)
-_registry_path = Path(settings.mcp_gateway_registry_path)
 _ui_servers = load_ui_servers(_registry_path)
 _ui_name_to_id = load_name_index(_registry_path)
 _ui_id_to_name = load_id_to_name(_registry_path)
+_ui_name_to_gateway_url = {
+    str(entry["name"]): str(entry.get("gateway_url") or "") for entry in _ui_servers
+}
 write_mcp_autoload_script(Path.cwd() / "public", _ui_servers)
 register_oauth_callback()
 register_gateway_mcp_connect(
@@ -56,6 +64,7 @@ register_gateway_mcp_connect(
     name_to_id=_ui_name_to_id,
     token_manager=token_manager,
     gateway_client=gateway_client,
+    name_to_gateway_url=_ui_name_to_gateway_url,
 )
 
 SYSTEM_PROMPT = (
@@ -89,6 +98,7 @@ async def on_chat_start() -> None:
             id_to_name=_ui_id_to_name,
             token_manager=token_manager,
             gateway_client=gateway_client,
+            name_to_gateway_url=_ui_name_to_gateway_url,
         )
 
 
@@ -169,6 +179,7 @@ async def _dispatch_tool(name: str, arguments: dict[str, Any]) -> dict[str, Any]
             name_to_id=_ui_name_to_id,
             token_manager=token_manager,
             gateway_client=gateway_client,
+            name_to_gateway_url=_ui_name_to_gateway_url,
         )
         entry = cl.context.session.mcp_sessions.get(target)
         if not entry:

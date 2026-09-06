@@ -157,6 +157,13 @@ async def test_existing_gateway_mcp_result_reuses_tuple_session() -> None:
     assert result["success"] is True
     assert result["mcp"]["name"] == "knowledge-mcp"
     assert result["mcp"]["tools"] == [{"name": "search_knowledge"}]
+    assert result["mcp"]["url"] == "via MCP Gateway"
+
+    labeled = await existing_gateway_mcp_result(
+        session, "knowledge-mcp", gateway_url="http://mcp-gateway:8082/mcp/knowledge"
+    )
+    assert labeled is not None
+    assert labeled["mcp"]["url"] == "via mcp-gateway:8082"
 
 
 @pytest.mark.asyncio
@@ -209,9 +216,11 @@ async def test_connect_reuses_existing_session_when_token_missing() -> None:
         name_to_id={"knowledge-mcp": "knowledge"},
         token_manager=_FakeManager([None]),
         gateway_client=MCPGatewayClient("http://gateway:8082"),
+        name_to_gateway_url={"knowledge-mcp": "http://mcp-gateway:8082"},
     )
     assert result["success"] is True
     assert result["mcp"]["name"] == "knowledge-mcp"
+    assert result["mcp"]["url"] == "via mcp-gateway:8082"
 
 
 @pytest.mark.asyncio
@@ -281,8 +290,9 @@ async def test_reconnect_gateway_mcp_refreshes_token() -> None:
         token_manager: object,
         gateway_client: object,
         force_refresh: bool = False,
+        name_to_gateway_url: dict[str, str] | None = None,
     ) -> dict[str, object]:
-        del ui_name, name_to_id, gateway_client
+        del ui_name, name_to_id, gateway_client, name_to_gateway_url
         calls.append(force_refresh)
         await token_manager.get_access_token("sess-1", force_refresh=force_refresh)  # type: ignore[union-attr]
         return {"success": True}
