@@ -5,8 +5,8 @@ description: Langfuse SDK 4 と OpenTelemetry による分散トレース、MCP 
 tags: [langfuse, tracing, otel, mcp, chainlit]
 status: stable
 generated:
-  at: "2026-09-03T23:15:00Z"
-  by: process:cursor-agent
+  at: "2026-09-06T11:23:04Z"
+  by: process:codex-agent
 ---
 
 # Langfuse OTEL トレーシング
@@ -65,6 +65,7 @@ flowchart TD
 | `LANGFUSE_TRACING_ENVIRONMENT` | 任意 | プロセス共通の `langfuse.environment`（例: `local`） |
 | `LANGFUSE_RELEASE` | 任意 | プロセス共通の `langfuse.release`（例: git SHA） |
 | `FASTMCP_TELEMETRY_MODE` | 推奨 | 既定 `native`（MCP `_meta` 伝播） |
+| `OTEL_SERVICE_NAME` | Compose 設定済み | OTel Resource の `service.name`。Chainlit は `chainlit`、MCP サーバーは `knowledge-mcp` |
 
 初回は Langfuse UI でサインアップし API キーを `.env` にコピーする（[インフラ](/current/infrastructure.md)）。
 
@@ -81,6 +82,7 @@ Chainlit の `on_message` 内で `chat_trace_attributes` → Langfuse `propagate
 | `langfuse.trace.metadata.chat_model` | 設定 | `CHAT_MODEL` |
 | `langfuse.environment` | env / SDK | `LANGFUSE_TRACING_ENVIRONMENT` |
 | `langfuse.release` | env / SDK | `LANGFUSE_RELEASE` |
+| `service.name` | Compose / OTel Resource | `chainlit` / `knowledge-mcp` |
 
 ### `chat.turn` の入出力
 

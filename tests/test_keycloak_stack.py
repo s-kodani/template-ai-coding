@@ -35,6 +35,21 @@ def test_app_compose_runs_keycloak_with_realm_import() -> None:
     assert env["KC_HEALTH_ENABLED"] == "true"
 
 
+def test_app_compose_assigns_distinct_otel_service_names() -> None:
+    compose = _compose()
+    service_names = {
+        name: compose["services"][name]["environment"]["OTEL_SERVICE_NAME"]
+        for name in ("mcp-server", "chainlit")
+    }
+
+    assert service_names == {
+        "mcp-server": "knowledge-mcp",
+        "chainlit": "chainlit",
+    }
+    assert len(set(service_names.values())) == len(service_names)
+    assert "unknown_service" not in service_names.values()
+
+
 def test_chainlit_waits_for_keycloak_and_splits_browser_and_backchannel_urls() -> None:
     compose = _compose()
     chainlit = compose["services"]["chainlit"]
