@@ -139,6 +139,50 @@ Goal、Scope、Acceptance Criteria の文言、Constraints など作業契約が
 
 ---
 
+## Issue と Pull Request の関係（1:N）
+
+1 Issue に対して PR は 0〜複数（**1:N**）。複数 PR に分割する場合も、作業契約は Issue 1 件に集約する。
+
+### 紐付けルール
+
+- 各 PR 本文には **`Refs #<issue>`** を付ける（`src/` 変更時は CI 必須）
+- Issue 本文の `Related Issue / PR:` に、紐づく PR の URL または番号を追記・更新する
+- 進捗コメントの `Related PR` に、その区切りで扱った PR を書く
+
+### `Refs` と `Closes` の使い分け
+
+| キーワード | 用途 | Issue Close |
+|---|---|---|
+| `Refs #<issue>` | **デフォルト**。作業中・後続 PR あり・1:N のいずれでも使う | 自動 Close しない |
+| `Closes #<issue>` | **本ワークフローでは PR 本文に使わない** | PR **merge** 時に GitHub が自動 Close し、Phase 8 前に Issue が閉じる恐れがある |
+
+Issue の Close は Phase 8 完了後に**手動**で行う。PR merge による自動 Close に頼らない。
+
+### Issue Close の順序
+
+Issue を Close する前に、次をすべて満たす。
+
+1. Phase 8（Review & Compliance）が `pass` または `pass-with-nits`
+2. Acceptance Criteria に未チェックが残っていない（または明示的撤回済み）
+3. **その Issue に紐づく作業 PR がすべて closed**（`merged` または `closed`。open が残っていない）
+
+1 Issue に複数 PR がある場合、**最後の PR が closed になるまで Issue を Close しない**。
+
+作業 PR の確認例:
+
+```bash
+gh pr list --state all --search "refs:#<issue-number>" --json number,state,title,url
+```
+
+Issue 本文の `Related Issue / PR:` と進捗コメントの `Related PR` も照合する。確認できない PR は `not checked` とし、Issue Close を進めない。
+
+### 例外
+
+- 作業に PR が存在しない変更（Skill / docs のみで PR を作らない運用など）では、PR Close 条件は該当しない
+- 誤って起票した PR を `closed`（未 merge）にした場合も「closed」として数える。残作業があるなら新しい PR を起票し、すべて closed になるまで Issue は open のまま
+
+---
+
 ## 実装・修正の進捗コメント（必須）
 
 エージェント側の実装または修正対応が一段落するたびに、紐づく作業 Issue へ進捗コメントを残し、本文の Acceptance Criteria タスクリストを再評価する。セッション終了時の Work Checkpoint（`references/session-handoff.md`）とは別物である。

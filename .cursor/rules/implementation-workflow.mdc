@@ -27,10 +27,10 @@ alwaysApply: false
 7. 実装後: Phase 5 検証（`project-verification` Skill、`test-strategy`、必要時 `test-driven-development`）
 8. 実装または修正の区切りごとに、紐づく GitHub Issue へ進捗コメントを残し、本文の Acceptance Criteria タスクリスト（`- [ ]` / `- [x]`）を再評価する（投稿確認まで完了としない。`gh` が read-only なら PR コメントへフォールバックし、本文を更新したと偽らない）
 9. Phase 6: 観測可能な変更があれば `docs/releases/log.md` の `## v?.?.? (未確定)` へ追記
-10. 一連の完了後: Phase 8 でコードレビューとワークフロー遵守をチェックし、結果を Issue（またはフォールバック先）へ残してから Close する
+10. 一連の完了後: Phase 8 でコードレビューとワークフロー遵守をチェックし、結果を Issue（またはフォールバック先）へ残す。紐づく作業 PR がすべて closed になったあと Issue を手動 Close する（Issue:PR は 1:N。PR 本文の `Closes` は使わない）
 
 MCP サーバー作業では、追加で `mcp-server-engineering` の `references/mcp-completion-checklist.md` を参照する。
 
-Pull Request 本文には `Refs #<issue>` または `Closes #<issue>` を含める（`src/` 変更時は CI で必須）。`src/` / `infra/` 変更時は `Release-Note: required` または `Release-Note: not-required` + `Reason:` を宣言する。
+Pull Request 本文には **`Refs #<issue>`** を含める（`src/` 変更時は CI で `Refs` または `Closes` を検証。運用上は `Refs` を使い Issue Close は Phase 8 後に手動）。`src/` / `infra/` 変更時は `Release-Note: required` または `Release-Note: not-required` + `Reason:` を宣言する。
 
 自前 Skill は `.apm/skills/`、自前 Agent は `.apm/agents/` を編集し、`apm install` のあと `uv run python scripts/check_skill_deploy.py --check` を実行する。展開先は手編集しない。

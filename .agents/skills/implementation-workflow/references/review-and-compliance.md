@@ -2,6 +2,8 @@
 
 Phase 8 の詳細。Phase 7 Completion Report のあと、Issue を Close する前に実施する。
 
+Issue と PR は **1:N**。Issue Close は、紐づく**作業 PR がすべて closed**（merged または closed）になったあと、Phase 8 が pass したときに**手動**で行う。PR 本文の `Closes #<issue>` による自動 Close は使わない。詳細は `references/github-issue-workflow.md`。
+
 ## 目的
 
 一連のワークフローが完了した最終状態について、次を確認する。
@@ -15,7 +17,7 @@ Phase 8 の詳細。Phase 7 Completion Report のあと、Issue を Close する
 
 1. Phase 5〜7 まで完了したあと
 2. ユーザーへ「完了」と報告する前
-3. Issue を Close する前
+3. Issue を Close する前（**紐づく作業 PR がすべて closed であることも確認する**）
 
 計画のみ・質問のみでコードも Skill も変えていない場合は Phase 8 不要。
 
@@ -40,7 +42,8 @@ Phase 8 の詳細。Phase 7 Completion Report のあと、Issue を Close する
 
 ```markdown
 - [ ] 最新 default branch を取り込んだ
-- [ ] 作業 Issue を確定し、PR に `Refs` / `Closes` を付けた（該当時）
+- [ ] 作業 Issue を確定し、各 PR に `Refs #<issue>` を付けた（該当時。`Closes` は使わない）
+- [ ] 紐づく作業 PR を Issue 本文または `gh pr list` で把握した（1:N の場合は一覧を Review コメントに残す）
 - [ ] Implementation Plan を `.plans/` へ書き出し、承認後に実装した
 - [ ] 変更強度に応じた grilling を行った、または省略理由が「軽微」である
 - [ ] Phase 3 Decision Check を行い、必要な ADR を扱った
@@ -49,6 +52,7 @@ Phase 8 の詳細。Phase 7 Completion Report のあと、Issue を Close する
 - [ ] Phase 5 検証を実行し、未実施を成功と報告していない
 - [ ] Phase 6 で恒久ドキュメント / Release Log を最終実装へ合わせた
 - [ ] Phase 7 Completion Report を Issue へ残した
+- [ ] 紐づく作業 PR がすべて closed（merged または closed）。open が残っている場合は Issue を Close しない
 - [ ] 本レビュー結果を Issue へ残した
 ```
 
@@ -58,13 +62,13 @@ Phase 8 の詳細。Phase 7 Completion Report のあと、Issue を Close する
 
 | 判定 | 意味 | 次の行動 |
 |---|---|---|
-| `pass` | must-fix なし。未チェックの Acceptance Criteria もなし（または明示的撤回済み） | Issue を Close してよい（後続 PR がある場合は Close しない） |
-| `pass-with-nits` | 任意改善のみ | nits を残課題としてコメントし、Close してよい |
-| `must-fix` | 欠陥またはワークフロー欠落 | Phase 4 に戻る。修正後は進捗コメント → 再検証 → Phase 8 をやり直す |
+| `pass` | must-fix なし。未チェックの Acceptance Criteria もなし（または明示的撤回済み）。紐づく作業 PR はすべて closed | Issue を**手動** Close してよい |
+| `pass-with-nits` | 任意改善のみ。PR はすべて closed | nits を残課題としてコメントし、Issue を**手動** Close してよい |
+| `must-fix` | 欠陥、ワークフロー欠落、または open の作業 PR が残っている | Phase 4 に戻る、または PR を merge/close してから Phase 8 をやり直す |
 
-must-fix の無限ループを避ける。再レビューは修正範囲に限定する。任意改善は残課題に回し、Close を止めない。
+must-fix の無限ループを避ける。再レビューは修正範囲に限定する。任意改善は残課題に回し、**open PR が無い**場合は Close を止めない。
 
-Issue Close の条件は `references/completion-report.md` も満たすこと。
+Issue Close の条件は `references/completion-report.md` も満たすこと。作業 PR が存在しない変更では PR Close 条件は該当しない。
 
 ## Review コメント Format
 

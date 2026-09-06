@@ -56,7 +56,7 @@ Implementation Plan は一時的な作業成果物。`.plans/` 配下の Markdow
 9. **GitHub Issue を Coordination Ledger として使う** — 本文は作業契約、コメントは追記型履歴。Acceptance Criteria は本文のタスクリスト（`[ ]` / `[x]`）で充足状態を持つ。叙事的進捗はコメント。Issue を恒久ドキュメントの代替にしない。
 10. **実装・修正の区切りごとに Issue 進捗コメントを残し、AC タスクリストを再評価する** — 投稿成功を確認するまでその区切りを完了としない。詳細は `references/github-issue-workflow.md`。
 11. **セッション終了時に Checkpoint を残す** — 別セッションが Repository 状態と照合して再開できる事実を残す。
-12. **一連のワークフロー完了後にレビューする** — コードレビューとワークフロー遵守チェックを行い、must-fix が無いことを確認してから Issue を Close する。詳細は `references/review-and-compliance.md`。
+12. **一連のワークフロー完了後にレビューする** — コードレビューとワークフロー遵守チェックを行い、must-fix が無いことを確認してから Issue を Close する。Issue と PR は 1:N。紐づく作業 PR がすべて closed（merged または closed）になる前に Issue を Close しない。詳細は `references/review-and-compliance.md` と `references/github-issue-workflow.md`。
 
 ---
 
@@ -88,7 +88,9 @@ Phase 7: Completion Report（Issue 最終コメント。この時点では Close
 Phase 8: Review & Compliance（コードレビュー + ワークフロー遵守）
         │  must-fix があれば Phase 4 に戻る（進捗コメント必須）
         ↓
-Issue Close
+紐づく作業 PR がすべて closed（merged または closed）
+        ↓
+Issue Close（手動。PR 本文の `Closes` による自動 Close は使わない）
 ```
 
 ---
@@ -174,7 +176,7 @@ Changes、Verification、Documentation 更新を Issue 最終コメントとし�
 
 ## Phase 8: Review & Compliance
 
-一連のワークフロー完了後、最終差分のコードレビューとワークフロー遵守チェックを行う。結果を Issue コメントへ残す。must-fix があれば Phase 4 に戻り、再検証してからレビューをやり直す。must-fix が無く、未チェックの Acceptance Criteria が残っていない（または明示的に撤回した）ことを確認してから Issue を Close する。詳細は `references/review-and-compliance.md`。
+一連のワークフロー完了後、最終差分のコードレビューとワークフロー遵守チェックを行う。結果を Issue コメントへ残す。must-fix があれば Phase 4 に戻り、再検証してからレビューをやり直す。must-fix が無く、未チェックの Acceptance Criteria が残っていない（または明示的に撤回した）こと、かつ紐づく作業 PR がすべて closed であることを確認してから Issue を手動 Close する。詳細は `references/review-and-compliance.md`。
 
 ---
 
@@ -189,4 +191,4 @@ Issue で作業契約を明確にする。
 実装して検証する。実装・修正の区切りごとに Issue へ進捗コメントを残し、Acceptance Criteria タスクリストを再評価する。  
 最終状態を OKF で構造化された恒久知識へ整合させる。  
 Release Note は Phase 6 で `## v?.?.? (未確定)` へ追記し、タグ確定時に SemVer 見出しへ置き換える。  
-完了後にコードレビューとワークフロー遵守を確認してから Issue を Close する。**
+紐づく作業 PR がすべて closed になったあと、コードレビューとワークフロー遵守を確認してから Issue を手動 Close する。**
