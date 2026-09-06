@@ -18,6 +18,10 @@ async def test_search_knowledge_tool_schema() -> None:
     assert "query" in search.parameters["properties"]
     assert "top_k" in search.parameters["properties"]
 
+    get_document = by_name["get_document"]
+    assert "chunk" in get_document.description.lower()
+    assert "full document" not in get_document.description.lower()
+
 
 @pytest.mark.asyncio
 async def test_search_knowledge_tool_validation_message() -> None:

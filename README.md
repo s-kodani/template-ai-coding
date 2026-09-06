@@ -11,7 +11,11 @@ cp .env.example .env
 cp infra/langfuse/env.example infra/langfuse/.env
 ```
 
-2. `.env` に `OPENAI_API_KEY` を設定します。
+2. `.env` に `OPENAI_API_KEY` を設定します。あわせて次のコマンドで 64 文字の hex を生成し、`infra/langfuse/.env` の `ENCRYPTION_KEY` をその値へ置き換えます。プレースホルダーのまま起動すると Langfuse UI は 500 になります。
+
+```bash
+openssl rand -hex 32
+```
 
 3. スタックを起動します。
 
@@ -77,15 +81,17 @@ make -C infra langflow-down
 ## 開発
 
 ```bash
-uv sync --extra dev
+uv sync --frozen --extra dev
+uv sync --directory gateway --frozen --extra dev
 uv run pytest
+uv run --directory gateway pytest
 ```
 
 ## MCP Inspector
 
 ```bash
+uv run python scripts/mcp_dev_token.py
 npx @modelcontextprotocol/inspector
-TOKEN=$(uv run python scripts/mcp_dev_token.py)
 ```
 
-`http://127.0.0.1:8000/mcp`（Streamable HTTP）に接続し、Authorization に `Bearer $TOKEN` を設定します。knowledge-mcp は Keycloak JWT を要求します。
+1 行目の出力をコピーします。Inspector で `http://127.0.0.1:8000/mcp`（Streamable HTTP）に接続し、Authorization に `Bearer <コピーしたトークン>` を設定します。knowledge-mcp は Keycloak JWT を要求します。

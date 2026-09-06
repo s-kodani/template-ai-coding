@@ -1,2 +1,4 @@
-docker-compose.yml の取得元: https://github.com/langfuse/langfuse/blob/main/docker-compose.yml
+docker-compose.yml の取得元: https://github.com/langfuse/langfuse/blob/62751446149b702b419a9292ddfc2280cdf74b8c/docker-compose.yml
+upstream commit: 62751446149b702b419a9292ddfc2280cdf74b8c
+SHA-256: e0076c484db5ca676dc62eda9241ff781ebf64aa7c980d7fddb2ed51dc8510bf
 更新日: 2026-08-22

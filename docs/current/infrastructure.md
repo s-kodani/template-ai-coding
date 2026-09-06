@@ -5,8 +5,8 @@ description: アプリ、Keycloak、MCP Gateway、Langfuse、任意 Langflow の
 tags: [docker, langfuse, langflow, postgres, keycloak, gateway, ci, devsecops]
 status: stable
 generated:
-  at: "2026-09-06T02:40:00Z"
-  by: process:cursor-agent
+  at: "2026-09-06T08:41:05Z"
+  by: process:codex-agent
 ---
 
 # インフラ
@@ -116,7 +116,7 @@ Chainlit は Keycloak の `knowledge` realm で OAuth する（[ADR-0011](/decis
 
 | ワークフロー | ジョブ | 内容 |
 |---|---|---|
-| `.github/workflows/ci.yml` | quality | `ruff check`, `pytest`（ルートと `gateway/`）、`uv sync --frozen`、自前 Skill / Agent の展開一致（`scripts/check_skill_deploy.py`） |
+| `.github/workflows/ci.yml` | quality | `ruff check`, `pytest`（ルートと `gateway/`）、各環境の `uv sync --frozen --extra dev`、自前 Skill / Agent の展開一致（`scripts/check_skill_deploy.py`） |
 | | security | Bandit, `uv audit`, gitleaks |
 | | build-and-scan | `docker compose build`, Trivy（mcp-server / chainlit / mcp-gateway イメージ、`scanners: vuln`） |
 | `.github/workflows/okf.yml` | okf | OKF bundle 検証 |
@@ -124,7 +124,8 @@ Chainlit は Keycloak の `knowledge` realm で OAuth する（[ADR-0011](/decis
 ### ローカル検証
 
 ```bash
-uv sync --extra dev
+uv sync --frozen --extra dev
+uv sync --directory gateway --frozen --extra dev
 uv run ruff check src tests scripts gateway
 uv run pytest
 uv run --directory gateway pytest
