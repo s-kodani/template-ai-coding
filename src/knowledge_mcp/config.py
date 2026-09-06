@@ -42,7 +42,7 @@ class Settings(BaseSettings):
     langflow_flow_id: str = ""
     langflow_flow_name: str = "Ingest"
     langflow_timeout: float = 120.0
-    langflow_ingest_dir: str = "data/ingest"
+    langflow_ingest_dir: str = "docs"
 
     @property
     def langfuse_configured(self) -> bool:

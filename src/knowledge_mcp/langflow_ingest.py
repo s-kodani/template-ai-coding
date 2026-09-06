@@ -63,7 +63,7 @@ def resolve_ingest_paths(paths: Sequence[Path]) -> list[Path]:
     unique = list(dict.fromkeys(files))
     if not unique:
         raise LangflowAPIError(
-            "No ingest files found. Put files in data/ingest or pass paths."
+            "No ingest files found. Put files in docs or pass paths."
         )
     return unique
 

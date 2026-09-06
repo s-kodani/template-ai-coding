@@ -5,7 +5,7 @@ description: ホスト原本を Langflow Files / Flow API で Ingest し、adapt
 tags: [langflow, ingest]
 status: stable
 generated:
-  at: "2026-09-06T08:41:05Z"
+  at: "2026-09-06T09:55:10Z"
   by: process:codex-agent
 ---
 
@@ -17,7 +17,7 @@ generated:
 - 起動: `make -C infra langflow-up`
 - 停止: `make -C infra langflow-down`
 - システムインデックスへ複製: `make -C infra import-langflow`（ホスト `localhost:5434`。ポートが開かない場合は `langflow-down` のあと `langflow-up` で作り直す）
-- API Ingest: `make -C infra ingest-langflow`（既定 `data/ingest/`。個別指定は `FILES='path1 path2'`）
+- API Ingest: `make -C infra ingest-langflow`（既定 `docs/`。個別指定は `FILES='path1 path2'`）
 
 デフォルトの `make -C infra up` には含まれない。
 
@@ -25,7 +25,7 @@ generated:
 
 原本の所在はホスト側である（[ADR-0008](/decisions/ADR-0008-host-originals-langflow-api.md)）。Langflow My Files は原本置き場ではない。
 
-- 置き場: `data/ingest/`、または `make -C infra ingest-langflow FILES='...'` で渡すパス
+- 置き場: `docs/`、または `make -C infra ingest-langflow FILES='...'` で渡すパス
 - `scripts/run_langflow_ingest.py` が Files API（`/api/v2/files`）へアップロードし、Flow API（`/api/v1/run/{flow}`）で Ingest を実行し、終わったら uploaded file を削除する
 - `documents.source` と親 `document_id` はホスト相対パスから決める。Files API が返す upload path をホスト相対パスへ対応付けるため、異なるディレクトリに同じファイル名があっても上書きしない。basename の対応付けは、その名前が投入対象内で一意な場合だけ互換用 fallback として使う
 - `title` は metadata に実名がなければホストファイル名を使う（`Untitled` は source が無い行のフォールバック）
