@@ -347,7 +347,9 @@
         "roles",
         "mcp-tools"
       ],
-      "optionalClientScopes": []
+      "optionalClientScopes": [
+        "web-search-mcp-tools"
+      ]
     },
     {
       "clientId": "knowledge-mcp",

@@ -118,6 +118,9 @@ def test_realm_defines_mcp_gateway_and_knowledge_mcp_clients() -> None:
     assert gateway["implicitFlowEnabled"] is False
     assert gateway["attributes"]["standard.token.exchange.enabled"] == "true"
     assert gateway["secret"] == "mcp-gateway-local-secret"
+    for required in ("basic", "roles", "mcp-tools"):
+        assert required in (gateway.get("defaultClientScopes") or [])
+    assert "web-search-mcp-tools" in (gateway.get("optionalClientScopes") or [])
 
     mcp = clients["knowledge-mcp"]
     assert mcp["enabled"] is True
