@@ -2,6 +2,7 @@
 
 ## v?.?.? (未確定)
 
+- **Added**: Brave Search API ベースの `web-search-mcp` を Gateway 経由で追加。realm role `web-search-reader` で `dev`（knowledge + web-search）、`dev2`（web-search のみ）、`readerless`（どちらも不可）をローカル検証できる（[API 契約](/current/features/api.md)、[認証認可](/current/features/authentication.md)、[インフラ](/current/infrastructure.md)）
 - **Fixed**: Langfuse に送信する OTel Resource の `service.name` を Compose でサービス別に設定し、Chainlit は `chainlit`、MCP サーバーは `knowledge-mcp` として `unknown_service` を解消した（[トレーシング](/current/features/tracing.md)、[インフラ](/current/infrastructure.md)）
 - **Changed**: `ingest-langflow` の既定対象を `data/ingest/` から OKF Knowledge Bundle の `docs/` へ変更し、旧ディレクトリを削除した。任意パスの `FILES` 指定は維持する（[Ingest](/current/features/ingest.md)）
 - **Fixed**: Langflow API Ingest で異なるディレクトリの同名ファイルを同時投入しても、Files API の upload path ごとに正しいホスト相対 `source` / `document_id` を保持する。basename fallback は投入対象内で一意な場合だけ使う（[Ingest](/current/features/ingest.md)）

@@ -30,7 +30,8 @@ generated:
 | Langfuse UI | 3000 |
 | Chainlit | 8080 |
 | Keycloak | 8081 |
-| FastMCP | 127.0.0.1:8000 |
+| FastMCP（knowledge-mcp） | 127.0.0.1:8000 |
+| FastMCP（web-search-mcp） | 127.0.0.1:8001 |
 | MCP Gateway | 非公開（compose 内部のみ） |
 | アプリ Postgres | 5433 |
 | Langflow UI | 7860 |
@@ -120,7 +121,7 @@ Chainlit は Keycloak の `knowledge` realm で OAuth する（[ADR-0011](/decis
 |---|---|---|
 | `.github/workflows/ci.yml` | quality | `ruff check`, `pytest`（ルートと `gateway/`）、各環境の `uv sync --frozen --extra dev`、自前 Skill / Agent の展開一致（`scripts/check_skill_deploy.py`） |
 | | security | Bandit, `uv audit`, gitleaks |
-| | build-and-scan | `docker compose build`, Trivy（mcp-server / chainlit / mcp-gateway イメージ、`scanners: vuln`） |
+| | build-and-scan | `docker compose build`, Trivy（mcp-server / web-search-mcp / chainlit / mcp-gateway イメージ、`scanners: vuln`） |
 | `.github/workflows/okf.yml` | okf | OKF bundle 検証 |
 
 ### ローカル検証

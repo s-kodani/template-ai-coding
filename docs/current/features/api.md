@@ -1,14 +1,14 @@
 ---
 type: API Contract
 title: MCP ツール契約
-description: ベクトル検索と文書取得の FastMCP ツール。
+description: ベクトル検索・文書取得・Web 検索の FastMCP ツール。
 tags: [mcp, api]
 status: stable
 ---
 
 # MCP ツール契約
 
-トランスポート: **Streamable HTTP**、stateless、パス `/mcp`。Compose 上では Keycloak JWT（`aud=http://localhost:8000/mcp`、scope `mcp-tools`、role `knowledge-mcp-reader`）が必要（[ADR-0012](/decisions/ADR-0012-mcp-gateway-resource-server.md)）。ログインからツール実行までのシーケンスは [認証認可](/current/features/authentication.md)。Inspector は `scripts/mcp_dev_token.py` で Bearer を発行する。
+トランスポート: **Streamable HTTP**、stateless、パス `/mcp`。knowledge-mcp は Keycloak JWT（`aud=http://localhost:8000/mcp`、scope `mcp-tools`、role `knowledge-mcp-reader`）。web-search-mcp は `aud=http://localhost:8001/mcp`、scope `web-search-mcp-tools`、role `web-search-reader`（[ADR-0012](/decisions/ADR-0012-mcp-gateway-resource-server.md)）。ログインからツール実行までのシーケンスは [認証認可](/current/features/authentication.md)。Inspector は `scripts/mcp_dev_token.py` で Bearer を発行する。
 
 ## Gateway HTTP
 
@@ -47,6 +47,15 @@ Langfuse では Chainlit 側の `chat.turn` 配下に tool observation として
 ヒット行の `content`（chunk 本文）を返すか、見つからない場合はエラーを返します。親文書の全文結合はしません。
 
 Langfuse では Chainlit 側の `chat.turn` 配下に tool observation として **input** `{"document_id": "..."}` と **output**（文書メタデータと chunk 本文の先頭 500 文字）がネスト記録されます。MCP サーバー側は FastMCP の server span に同じ input / output が付与されます。ツール routing metadata 等の一覧は [Langfuse OTEL トレーシング](/current/features/tracing.md) を参照。
+
+### `search_web`（web-search-mcp）
+
+| フィールド | 型 | 備考 |
+|---|---|---|
+| `query` | string | 必須、空不可 |
+| `count` | integer | 既定 5、最小 1、最大 20 |
+
+Brave Search API の結果として `title`、`url`、`snippet` を含むヒットを返します。`BRAVE_SEARCH_API_KEY` 未設定時は `{ "error": "..." }` を返します。
 
 ## MCP では公開しないもの
 

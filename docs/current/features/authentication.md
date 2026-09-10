@@ -28,10 +28,11 @@ Chainlit の Keycloak トークンは knowledge-mcp に渡さない。
 
 ローカル開発ユーザー:
 
-| ユーザー | パスワード | realm role | Gateway での knowledge |
-|---|---|---|---|
-| `dev` | `dev` | `knowledge-mcp-reader` あり | 一覧に出る。ツール実行可 |
-| `readerless` | `readerless` | `knowledge-mcp-reader` なし | `GET /v1/mcp` から消える。`tools/call` は 403 |
+| ユーザー | パスワード | realm role | Gateway での knowledge | Gateway での web-search |
+|---|---|---|---|---|
+| `dev` | `dev` | `knowledge-mcp-reader`, `web-search-reader` | 一覧に出る。ツール実行可 | 一覧に出る。ツール実行可 |
+| `dev2` | `dev2` | `web-search-reader` のみ | 非表示 | 一覧に出る。ツール実行可 |
+| `readerless` | `readerless` | `knowledge-mcp-reader` なし | `GET /v1/mcp` から消える | 非表示 |
 
 サーバーごとの実行条件は Registry の `authorization.required_roles` と Keycloak の `users[].realmRoles` を揃える。ユーザー → サーバーの個別 allowlist は持たない。
 

@@ -39,11 +39,12 @@ def test_app_compose_assigns_distinct_otel_service_names() -> None:
     compose = _compose()
     service_names = {
         name: compose["services"][name]["environment"]["OTEL_SERVICE_NAME"]
-        for name in ("mcp-server", "chainlit")
+        for name in ("mcp-server", "web-search-mcp", "chainlit")
     }
 
     assert service_names == {
         "mcp-server": "knowledge-mcp",
+        "web-search-mcp": "web-search-mcp",
         "chainlit": "chainlit",
     }
     assert len(set(service_names.values())) == len(service_names)
@@ -92,6 +93,7 @@ def test_realm_defines_chainlit_client_and_dev_user() -> None:
     passwords = [item["value"] for item in dev["credentials"] if item["type"] == "password"]
     assert passwords == ["dev"]
     assert "knowledge-mcp-reader" in (dev.get("realmRoles") or [])
+    assert "web-search-reader" in (dev.get("realmRoles") or [])
     assert "mcp-reader" not in (dev.get("realmRoles") or [])
 
 
@@ -122,6 +124,10 @@ def test_realm_defines_mcp_gateway_and_knowledge_mcp_clients() -> None:
     assert mcp["standardFlowEnabled"] is False
     assert mcp["directAccessGrantsEnabled"] is False
     assert mcp["implicitFlowEnabled"] is False
+
+    web_search = clients["web-search-mcp"]
+    assert web_search["enabled"] is True
+    assert "web-search-mcp-tools" in (web_search.get("defaultClientScopes") or [])
 
 
 def test_realm_keeps_oidc_scopes_needed_for_sub_email_and_roles() -> None:
@@ -167,17 +173,35 @@ def test_realm_audience_mappers_bind_gateway_and_mcp_resource() -> None:
     resource_aud = _audience_mapper_config(_client_scope(realm, "mcp-tools"), "knowledge-mcp-resource")
     assert resource_aud["included.custom.audience"] == "http://localhost:8000/mcp"
 
+    web_search_aud = _audience_mapper_config(
+        _client_scope(realm, "web-search-mcp-tools"), "web-search-mcp-resource"
+    )
+    assert web_search_aud["included.custom.audience"] == "http://localhost:8001/mcp"
+
 
 def test_realm_defines_mcp_reader_role_and_readerless_user() -> None:
     realm = _realm()
     role_names = [role["name"] for role in (realm.get("roles") or {}).get("realm") or []]
     assert "knowledge-mcp-reader" in role_names
+    assert "web-search-reader" in role_names
     assert "mcp-reader" not in role_names
 
     users = {user["username"]: user for user in realm["users"]}
     assert "knowledge-mcp-reader" not in (users["readerless"].get("realmRoles") or [])
+    assert "web-search-reader" not in (users["readerless"].get("realmRoles") or [])
     assert "mcp-reader" not in (users["readerless"].get("realmRoles") or [])
     assert users["readerless"]["enabled"] is True
+
+
+def test_realm_defines_dev2_web_search_only_user() -> None:
+    realm = _realm()
+    users = {user["username"]: user for user in realm["users"]}
+    dev2 = users["dev2"]
+    roles = dev2.get("realmRoles") or []
+    assert "web-search-reader" in roles
+    assert "knowledge-mcp-reader" not in roles
+    passwords = [item["value"] for item in dev2["credentials"] if item["type"] == "password"]
+    assert passwords == ["dev2"]
 
 
 def test_env_example_documents_keycloak_oauth() -> None:
@@ -202,6 +226,7 @@ def test_env_example_documents_keycloak_oauth() -> None:
         "MCP_JWKS_URI",
         "MCP_AUDIENCE",
         "GATEWAY_CLIENT_SECRET",
+        "BRAVE_SEARCH_API_KEY",
     ):
         assert f"{name}=" in text
     assert "OAUTH_GENERIC_NAME=keycloak" in text

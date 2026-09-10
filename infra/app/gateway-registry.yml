@@ -22,3 +22,23 @@ gateways:
           required_roles:
             - knowledge-mcp-reader
         timeout_seconds: 30
+      web-search:
+        enabled: true
+        ui:
+          name: web-search-mcp
+        transport:
+          type: streamable_http
+          url: http://web-search-mcp:8001/mcp
+        protocol:
+          mode: auto
+        authentication:
+          mode: keycloak_token_exchange
+          resource: http://localhost:8001/mcp
+          scopes:
+            - web-search-mcp-tools
+        authorization:
+          allowed_tools:
+            - search_web
+          required_roles:
+            - web-search-reader
+        timeout_seconds: 30

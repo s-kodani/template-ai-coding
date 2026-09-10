@@ -104,6 +104,13 @@ def test_registry_does_not_use_client_id_as_exchange_audience() -> None:
         "knowledge-mcp-reader"
     ]
 
+    web_search = registry["gateways"][0]["servers"]["web-search"]
+    web_auth = web_search["authentication"]
+    assert web_auth["resource"] == "http://localhost:8001/mcp"
+    assert web_auth["scopes"] == ["web-search-mcp-tools"]
+    assert web_search["authorization"]["required_roles"] == ["web-search-reader"]
+    assert web_search["authorization"]["allowed_tools"] == ["search_web"]
+
 
 async def test_exchange_token_omits_audience_for_keycloak_v2() -> None:
     captured: dict[str, object] = {}
@@ -263,6 +270,24 @@ def test_list_servers_hides_servers_missing_required_roles(
             }
         ]
     }
+
+
+def test_list_servers_web_search_only_for_web_search_reader(
+    rsa_keys: tuple[object, str],
+) -> None:
+    private_key, _ = rsa_keys
+    settings = Settings(registry_path=str(REGISTRY), keycloak_issuer=ISSUER)
+    app = create_app(settings, jwt_signing_key=private_key)
+    client = TestClient(app)
+
+    dev2_token = _token(
+        private_key,
+        realm_access={"roles": ["web-search-reader", "default-roles-knowledge"]},
+    )
+    response = client.get("/v1/mcp", headers={"Authorization": f"Bearer {dev2_token}"})
+    assert response.status_code == 200
+    server_ids = {item["id"] for item in response.json()["servers"]}
+    assert server_ids == {"web-search"}
 
 
 def test_list_servers_uses_public_base_url(
