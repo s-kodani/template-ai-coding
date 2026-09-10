@@ -279,4 +279,6 @@ def test_compose_defines_internal_mcp_gateway() -> None:
 def test_mcp_dev_token_script_omits_keycloak_v2_audience() -> None:
     text = (ROOT / "scripts" / "mcp_dev_token.py").read_text(encoding="utf-8")
     assert '"audience"' not in text
-    assert '"scope": "mcp-tools"' in text
+    assert "TARGET_SCOPES" in text
+    assert '"web-search": "web-search-mcp-tools"' in text
+    assert '"knowledge": "mcp-tools"' in text

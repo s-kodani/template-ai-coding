@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Issue a knowledge-mcp Bearer token for MCP Inspector (local password grant + token exchange)."""
+"""Issue a downstream MCP Bearer token for MCP Inspector (password grant + token exchange)."""
 
 from __future__ import annotations
 
@@ -12,9 +12,34 @@ import httpx
 EXCHANGE_GRANT = "urn:ietf:params:oauth:grant-type:token-exchange"
 ACCESS_TYPE = "urn:ietf:params:oauth:token-type:access_token"
 
+TARGET_SCOPES = {
+    "knowledge": "mcp-tools",
+    "web-search": "web-search-mcp-tools",
+}
+
+
+def resolve_scope(*, target: str, scope: str | None) -> str:
+    if scope:
+        return scope
+    try:
+        return TARGET_SCOPES[target]
+    except KeyError as exc:
+        raise SystemExit(f"unknown target: {target}") from exc
+
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--target",
+        choices=sorted(TARGET_SCOPES),
+        default="knowledge",
+        help="MCP server target (selects token exchange scope when --scope is omitted)",
+    )
+    parser.add_argument(
+        "--scope",
+        default=None,
+        help="Override token exchange scope (default: depends on --target)",
+    )
     parser.add_argument(
         "--token-url",
         default=os.environ.get(
@@ -35,6 +60,7 @@ def main() -> int:
         default=os.environ.get("GATEWAY_CLIENT_SECRET", "mcp-gateway-local-secret"),
     )
     args = parser.parse_args()
+    exchange_scope = resolve_scope(target=args.target, scope=args.scope)
 
     with httpx.Client(timeout=10.0) as client:
         password_grant = client.post(
@@ -63,7 +89,7 @@ def main() -> int:
                 "client_secret": args.gateway_client_secret,
                 "subject_token": subject_token,
                 "subject_token_type": ACCESS_TYPE,
-                "scope": "mcp-tools",
+                "scope": exchange_scope,
             },
         )
         if exchanged.status_code >= 400:
