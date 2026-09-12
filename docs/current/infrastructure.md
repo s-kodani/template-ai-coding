@@ -30,7 +30,8 @@ generated:
 | Langfuse UI | 3000 |
 | Chainlit | 8080 |
 | Keycloak | 8081 |
-| FastMCP | 127.0.0.1:8000 |
+| FastMCP（knowledge-mcp） | 127.0.0.1:8000 |
+| FastMCP（web-search-mcp） | 127.0.0.1:8001 |
 | MCP Gateway | 非公開（compose 内部のみ） |
 | アプリ Postgres | 5433 |
 | Langflow UI | 7860 |

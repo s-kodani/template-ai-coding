@@ -21,7 +21,7 @@ generated:
 ## 動作
 
 - 未ログインではチャットできない。Keycloak（`knowledge` realm）でログインする
-- 開発ユーザーは `dev` / `dev`（email `dev@localhost`、role `knowledge-mcp-reader`）。`readerless` はログインできるが `GET /v1/mcp` に knowledge が出ず、ツール実行も Gateway が拒否する。管理者コンソールは http://localhost:8081
+- 開発ユーザー: `dev` / `dev`（knowledge + web-search）、`dev2` / `dev2`（web-search のみ）、`readerless` / `readerless`（MCP reader role なし）。管理者コンソールは http://localhost:8081
 - Gateway MCP の接続はプラグ UI の `POST /mcp` だけ（ページ読込の seed、または My MCPs の再接続）。`on_chat_start` はサーバー側 auto-connect しない。UI の `POST /mcp` が先に成功していても `mcp_tools` は消さない。既存セッション再利用時も `on_mcp_connect` 相当で tools を載せ直す。同一 websocket・同一 Gateway 名の connect は直列化する。`tools/list` で得た schema は LLM 名 `{server_id}__{mcp_tool_name}` に接頭辞付けする。実行は同じ MCP セッションの `tools/call`（[ADR-0013](/decisions/ADR-0013-mcp-gateway-per-server-streamable-http.md)）
 - Chainlit の Keycloak トークンを knowledge-mcp へ渡さない
 - refresh token はアプリ Postgres（`TOKEN_STORE_DATABASE_URL` + pgcrypto）に保存する。Chainlit 内蔵 data layer の `DATABASE_URL` は空

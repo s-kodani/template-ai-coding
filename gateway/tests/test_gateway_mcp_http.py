@@ -15,6 +15,7 @@ from mcp_gateway.config import Settings
 
 ISSUER = "http://localhost:8081/realms/knowledge"
 RESOURCE = "http://localhost:8000/mcp"
+WEB_SEARCH_RESOURCE = "http://localhost:8001/mcp"
 REGISTRY = Path(__file__).resolve().parents[2] / "infra" / "app" / "gateway-registry.yml"
 
 
@@ -229,6 +230,53 @@ def test_mcp_tools_call_forwards_client_meta(
     meta = seen["meta"]
     assert isinstance(meta, dict)
     assert meta["traceparent"].startswith("00-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-")
+
+
+def test_mcp_tools_call_web_search_exchanges_scope_and_forwards_call(
+    rsa_keys: tuple[object, str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    private_key, _ = rsa_keys
+    seen: dict[str, object] = {}
+
+    async def fake_caller(**kwargs: object) -> dict[str, str]:
+        seen.update(kwargs)
+        return {"query": "news", "results": []}
+
+    async def fake_exchange(**kwargs: object) -> dict[str, object]:
+        seen["exchange_scope"] = kwargs["scope"]
+        seen["subject_token"] = kwargs["subject_token"]
+        mcp_token = _token(
+            private_key,
+            aud=[WEB_SEARCH_RESOURCE],
+            azp="mcp-gateway",
+            scope="web-search-mcp-tools",
+        )
+        return {"access_token": mcp_token, "expires_in": 300}
+
+    monkeypatch.setattr("mcp_gateway.app.exchange_token", fake_exchange)
+    settings = Settings(registry_path=str(REGISTRY), keycloak_issuer=ISSUER)
+    app = create_app(settings, jwt_signing_key=private_key, tool_caller=fake_caller)
+    client = TestClient(app)
+    token = _token(
+        private_key,
+        realm_access={"roles": ["web-search-reader", "default-roles-knowledge"]},
+    )
+    response = client.post(
+        "/mcp/web-search",
+        headers={"Authorization": f"Bearer {token}"},
+        json=_rpc(
+            "tools/call",
+            {"name": "search_web", "arguments": {"query": "news", "count": 3}},
+        ),
+    )
+    assert response.status_code == 200, response.text
+    content = response.json()["result"]["content"]
+    assert '"query": "news"' in content[0]["text"]
+    assert seen["exchange_scope"] == "web-search-mcp-tools"
+    assert seen["subject_token"] == token
+    assert seen["tool_name"] == "search_web"
+    assert seen["arguments"] == {"query": "news", "count": 3}
+    assert seen["url"] == "http://web-search-mcp:8001/mcp"
 
 
 def test_mcp_tools_call_denies_missing_role(rsa_keys: tuple[object, str]) -> None:

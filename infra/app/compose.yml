@@ -68,6 +68,42 @@ services:
       - observability
       - langfuse_internal
 
+  web-search-mcp:
+    build:
+      context: ../..
+      dockerfile: infra/app/Dockerfile.mcp
+    command: ["python", "-m", "web_search_mcp.server"]
+    env_file:
+      - ../../.env
+    environment:
+      MCP_HOST: 0.0.0.0
+      MCP_PORT: 8001
+      MCP_PATH: /mcp
+      FASTMCP_STATELESS_HTTP: "true"
+      FASTMCP_TELEMETRY_MODE: native
+      LANGFUSE_HOST: http://langfuse-web:3000
+      OTEL_SERVICE_NAME: web-search-mcp
+      MCP_JWKS_URI: http://keycloak:8080/realms/knowledge/protocol/openid-connect/certs
+      MCP_ISSUER: http://localhost:8081/realms/knowledge
+      MCP_AUDIENCE: http://localhost:8001/mcp
+      MCP_AUTHORIZATION_SERVER: http://localhost:8081/realms/knowledge
+      MCP_RESOURCE_BASE_URL: http://localhost:8001
+      BRAVE_SEARCH_API_KEY: ${BRAVE_SEARCH_API_KEY:-}
+    ports:
+      - "127.0.0.1:8001:8001"
+    depends_on:
+      keycloak:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import socket; socket.create_connection(('127.0.0.1',8001),3).close()\""]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    networks:
+      - observability
+      - langfuse_internal
+
   mcp-gateway:
     build:
       context: ../..
@@ -88,6 +124,8 @@ services:
       keycloak:
         condition: service_healthy
       mcp-server:
+        condition: service_healthy
+      web-search-mcp:
         condition: service_healthy
     healthcheck:
       test:

@@ -12,6 +12,12 @@
         "description": "Call knowledge-mcp search tools",
         "composite": false,
         "clientRole": false
+      },
+      {
+        "name": "web-search-reader",
+        "description": "Call web-search-mcp tools",
+        "composite": false,
+        "clientRole": false
       }
     ]
   },
@@ -234,6 +240,29 @@
       ]
     },
     {
+      "name": "web-search-mcp-tools",
+      "description": "MCP tool invocation bound to web-search-mcp resource",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "false"
+      },
+      "protocolMappers": [
+        {
+          "name": "web-search-mcp-resource",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.custom.audience": "http://localhost:8001/mcp",
+            "id.token.claim": "false",
+            "access.token.claim": "true",
+            "introspection.token.claim": "true"
+          }
+        }
+      ]
+    },
+    {
       "name": "mcp-tools",
       "description": "MCP tool invocation bound to knowledge-mcp resource",
       "protocol": "openid-connect",
@@ -318,7 +347,9 @@
         "roles",
         "mcp-tools"
       ],
-      "optionalClientScopes": []
+      "optionalClientScopes": [
+        "web-search-mcp-tools"
+      ]
     },
     {
       "clientId": "knowledge-mcp",
@@ -343,6 +374,30 @@
         "mcp-tools"
       ],
       "optionalClientScopes": []
+    },
+    {
+      "clientId": "web-search-mcp",
+      "name": "web-search-mcp",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "web-search-mcp-local-secret",
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "implicitFlowEnabled": false,
+      "serviceAccountsEnabled": false,
+      "fullScopeAllowed": false,
+      "attributes": {
+        "pkce.code.challenge.method": ""
+      },
+      "defaultClientScopes": [
+        "web-origins",
+        "acr",
+        "basic",
+        "roles",
+        "web-search-mcp-tools"
+      ],
+      "optionalClientScopes": []
     }
   ],
   "users": [
@@ -360,7 +415,23 @@
           "temporary": false
         }
       ],
-      "realmRoles": ["knowledge-mcp-reader", "default-roles-knowledge"]
+      "realmRoles": ["knowledge-mcp-reader", "web-search-reader", "default-roles-knowledge"]
+    },
+    {
+      "username": "dev2",
+      "enabled": true,
+      "email": "dev2@localhost",
+      "emailVerified": true,
+      "firstName": "Dev",
+      "lastName": "Two",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "dev2",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["web-search-reader", "default-roles-knowledge"]
     },
     {
       "username": "readerless",
