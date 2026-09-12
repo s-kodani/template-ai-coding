@@ -87,6 +87,7 @@ Chainlit は Keycloak の `knowledge` realm で OAuth する（[ADR-0011](/decis
 - MCP Gateway はホストポートを公開しない。Chainlit は Registry `gateways[].url`（既定 `http://mcp-gateway:8082`）へ到達する。カタログ `url` は各 Gateway の `PUBLIC_BASE_URL`
 - knowledge-mcp は `MCP_JWKS_URI` 設定時に Bearer 必須。Inspector は `uv run python scripts/mcp_dev_token.py` でトークンを取る
 - realm 定義は `infra/app/keycloak/knowledge-realm.json`。変更後は Keycloak コンテナを再作成する
+- セッション寿命は realm の `ssoSessionIdleTimeout` / `ssoSessionMaxLifespan` と `.chainlit/config.toml` の `user_session_timeout` の組で決まる。現行値と失効時の挙動は [認証認可](/current/features/authentication.md)
 - Token Exchange（Keycloak 26 V2）は `audience` を送らない。knowledge-mcp の `aud` は `mcp-tools` の custom audience mapper が付ける
 
 ## 手動検証

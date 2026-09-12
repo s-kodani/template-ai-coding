@@ -16,8 +16,10 @@ from starlette.types import Message
 
 from chat_ui.gateway_client import MCPGatewayClient, resolve_gateway_url
 from chat_ui.mcp_ui import GATEWAY_MCP_TYPE, gateway_display_url
+from chat_ui.token_manager import ReauthRequired
 
 LIST_TOOLS_TIMEOUT = 5.0
+REAUTH_REQUIRED_DETAIL = "Keycloak セッションが失効しました。再ログインしてください"
 GATEWAY_MCP_STATUS_CONNECTED = "connected"
 _connect_locks: dict[tuple[str, str], asyncio.Lock] = {}
 
@@ -209,9 +211,12 @@ async def _connect_gateway_mcp(
         if existing is not None:
             return existing
 
-    token = await access_token_for_gateway_session(
-        session, token_manager, force_refresh=force_refresh
-    )
+    try:
+        token = await access_token_for_gateway_session(
+            session, token_manager, force_refresh=force_refresh
+        )
+    except ReauthRequired as exc:
+        raise HTTPException(status_code=403, detail=REAUTH_REQUIRED_DETAIL) from exc
     if not token:
         # 401 would trigger Chainlit's API on401 → /login redirect loop.
         raise HTTPException(status_code=403, detail="Not authenticated for MCP tools")

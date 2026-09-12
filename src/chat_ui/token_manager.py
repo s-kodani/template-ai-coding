@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import os
 import time
 from dataclasses import dataclass
@@ -10,6 +11,12 @@ import httpx
 
 from chat_ui.jwt_util import jwt_claims
 from knowledge_mcp.config import Settings
+
+logger = logging.getLogger(__name__)
+
+
+class ReauthRequired(Exception):
+    """Keycloak refused the refresh token. The user has to sign in again."""
 
 
 @dataclass
@@ -181,20 +188,46 @@ class KeycloakTokenManager:
             return tokens.access_token
         if not tokens.refresh_token or not self._token_url:
             return None
-        async with httpx.AsyncClient(timeout=5.0) as client:
-            response = await client.post(
-                self._token_url,
-                data={
-                    "grant_type": "refresh_token",
-                    "refresh_token": tokens.refresh_token,
-                    "client_id": self._client_id,
-                    "client_secret": self._client_secret,
-                },
+        try:
+            async with httpx.AsyncClient(timeout=5.0) as client:
+                response = await client.post(
+                    self._token_url,
+                    data={
+                        "grant_type": "refresh_token",
+                        "refresh_token": tokens.refresh_token,
+                        "client_id": self._client_id,
+                        "client_secret": self._client_secret,
+                    },
+                )
+        except httpx.HTTPError as exc:
+            # Transient: keep the stored tokens so a later attempt can still refresh.
+            logger.warning("Keycloak refresh request failed: %s", type(exc).__name__)
+            return None
+        if 400 <= response.status_code < 500:
+            # Keycloak dropped the SSO session. The stored tokens are dead for good.
+            logger.warning(
+                "Keycloak rejected the refresh_token grant (status=%s, error=%s); "
+                "clearing stored tokens and requiring re-login",
+                response.status_code,
+                _error_code(response),
             )
-        if response.status_code >= 400:
+            await self._store.delete_by_session(session_id)
+            raise ReauthRequired("Keycloak session expired")
+        if response.status_code >= 500:
+            logger.warning("Keycloak refresh failed with status %s", response.status_code)
             return None
         refreshed = await self.save_response(response.json(), session_id=session_id)
         return None if refreshed is None else refreshed.access_token
+
+
+def _error_code(response: httpx.Response) -> str:
+    """OAuth error code for logs. Never log the token values themselves."""
+    try:
+        payload = response.json()
+    except ValueError:
+        return "unknown"
+    code = payload.get("error") if isinstance(payload, dict) else None
+    return str(code or "unknown")
 
 
 def build_token_manager(settings: Settings) -> KeycloakTokenManager:

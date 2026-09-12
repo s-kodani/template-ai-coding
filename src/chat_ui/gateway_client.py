@@ -6,6 +6,7 @@ from typing import Any, Protocol
 import httpx
 
 from chat_ui.mcp_tools import catalog_from_listed_tools, parse_tool_result
+from chat_ui.token_manager import ReauthRequired
 from knowledge_mcp.tracing import (
     inject_langfuse_propagated_meta,
     record_tool_output,
@@ -149,20 +150,33 @@ async def call_gateway_tool(
     *,
     tool_metadata: dict[str, str] | None = None,
 ) -> dict[str, Any]:
-    token = await token_source.get_access_token(session_id)
+    try:
+        token = await token_source.get_access_token(session_id)
+    except ReauthRequired:
+        return _reauth_error()
     if not token:
         return {"error": "Not authenticated for MCP tools"}
     result = await client.call_tool(
         server_id, name, arguments, token, tool_metadata=tool_metadata
     )
     if result.get("status_code") == 401:
-        token = await token_source.get_access_token(session_id, force_refresh=True)
+        try:
+            token = await token_source.get_access_token(session_id, force_refresh=True)
+        except ReauthRequired:
+            return _reauth_error()
         if not token:
             return result
         result = await client.call_tool(
             server_id, name, arguments, token, tool_metadata=tool_metadata
         )
     return result
+
+
+def _reauth_error() -> dict[str, Any]:
+    return {
+        "error": "REAUTH_REQUIRED",
+        "message": "Keycloak セッションが失効しました。再ログインしてください",
+    }
 
 
 def _mcp_error(exc: BaseException) -> dict[str, Any]:

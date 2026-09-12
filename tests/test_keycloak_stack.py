@@ -9,6 +9,7 @@ ROOT = Path(__file__).resolve().parents[1]
 COMPOSE_PATH = ROOT / "infra" / "app" / "compose.yml"
 REALM_PATH = ROOT / "infra" / "app" / "keycloak" / "knowledge-realm.json"
 ENV_EXAMPLE = ROOT / ".env.example"
+CHAINLIT_CONFIG = ROOT / ".chainlit" / "config.toml"
 MAKEFILE = ROOT / "infra" / "Makefile"
 
 
@@ -282,3 +283,22 @@ def test_mcp_dev_token_script_omits_keycloak_v2_audience() -> None:
     assert "TARGET_SCOPES" in text
     assert '"web-search": "web-search-mcp-tools"' in text
     assert '"knowledge": "mcp-tools"' in text
+
+
+def test_realm_pins_sso_session_lifetimes() -> None:
+    realm = _realm()
+
+    # Keycloak defaults leave the SSO session far shorter than the Chainlit cookie,
+    # which stranded logged-in users with an unusable Gateway MCP connection.
+    assert realm["ssoSessionIdleTimeout"] == 28800
+    assert realm["ssoSessionMaxLifespan"] == 36000
+    assert realm["accessTokenLifespan"] == 300
+
+
+def test_chainlit_cookie_does_not_outlive_the_keycloak_session() -> None:
+    import tomllib
+
+    config = tomllib.loads(CHAINLIT_CONFIG.read_text(encoding="utf-8"))
+    realm = _realm()
+
+    assert config["project"]["user_session_timeout"] <= realm["ssoSessionMaxLifespan"]

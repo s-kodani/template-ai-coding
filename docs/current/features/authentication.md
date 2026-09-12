@@ -5,8 +5,8 @@ description: 未ログインの Chainlit アクセスから knowledge-mcp ツー
 tags: [authentication, authorization, keycloak, gateway, mcp, chainlit]
 status: stable
 generated:
-  at: "2026-09-06T06:25:00Z"
-  by: process:cursor-agent
+  at: "2026-09-12T11:40:00Z"
+  by: process:claude-code
 ---
 
 # Chainlit × Gateway × knowledge-mcp の認証認可
@@ -46,6 +46,38 @@ Chainlit の Keycloak トークンは knowledge-mcp に渡さない。
 | ブラウザ | 直接持たない（Cookie / Chainlit セッション） | 持たない |
 
 Chainlit 用 JWT に `sub` と roles を載せるため、realm import は `basic` / `profile` / `email` / `roles` / `chainlit-mcp-gateway` を client scope として残す。
+
+## セッション寿命と失効時の挙動
+
+セッションも 2 種類あり、寿命の正本が別々にある。
+
+| | Chainlit ログインセッション | Keycloak SSO セッション |
+|---|---|---|
+| 実体 | Cookie の JWT | Keycloak 側のセッション。refresh token がこれに紐づく |
+| 正本 | `.chainlit/config.toml` の `user_session_timeout` | `infra/app/keycloak/knowledge-realm.json` |
+| 現行値 | 36000 秒（10 時間） | Idle 28800 秒（8 時間）、Max 36000 秒（10 時間） |
+| 期限の性質 | ログイン時刻からの絶対期限 | Idle は最終利用からの相対、Max は絶対 |
+
+access token の寿命は `accessTokenLifespan` の 300 秒。`offline_access` は要求しないため、refresh token は SSO セッションが生きている間だけ有効。
+
+Chainlit が Keycloak を叩くのは MCP 接続とツール実行のときだけで、チャットしているだけでは SSO セッションは延命されない。Chainlit Cookie が Keycloak の Max を超えないよう `user_session_timeout <= ssoSessionMaxLifespan` を保つ（`tests/test_keycloak_stack.py` で検証）。それでも Idle は相対期限なので、アイドルが Idle を超えると Chainlit ログインだけが残る状態になりうる。その場合は refresh 失敗として扱う。
+
+`KeycloakTokenManager.get_access_token` の refresh 結果:
+
+| Keycloak の応答 | 挙動 |
+|---|---|
+| 2xx | 新しい access / refresh を保存して返す |
+| 4xx（`invalid_grant` など） | WARNING ログ → `chainlit_oauth_tokens` の該当行を削除 → `ReauthRequired` |
+| 5xx / 接続失敗 | WARNING ログ → 行は残す → `None`（一時障害） |
+
+ログに載せるのは status code と OAuth の `error` だけで、トークン値は出さない。
+
+`ReauthRequired` は UI まで次のように伝わる。
+
+- プラグ UI の `POST /mcp`: **403** `Keycloak セッションが失効しました。再ログインしてください`（401 にすると `/login` リロードループ）
+- ツール実行中の reconnect: `_dispatch_tool` が `HTTPException` を捕まえ、同じ文言をツール結果として返す。チャットターンは落ちない
+
+行を消すのは、失効した refresh token で Keycloak を叩き続けないため。再ログインすれば `oauth_callback` が新しいトークンを入れ直す。
 
 ## 全体シーケンス
 
@@ -114,7 +146,7 @@ sequenceDiagram
 `on_chat_start`:
 
 1. `keycloak_sub` と Chainlit `session.id` を `chainlit_oauth_tokens` に紐付ける。
-2. 保存済み access token を取り出す。期限が近ければ refresh grant。401 後のツール再試行でも同じ refresh を一度だけ使う。
+2. 保存済み access token を取り出す。期限が近ければ refresh grant。401 後のツール再試行でも同じ refresh を一度だけ使う。refresh が拒否されたときの扱いは「セッション寿命と失効時の挙動」。
 3. Registry の各 `gateways[].url` に対し `GET {url}/v1/mcp` に `Authorization: Bearer <Chainlit JWT>`。
 
 Gateway の `GET /v1/mcp`:
@@ -188,6 +220,8 @@ Compose では `MCP_JWKS_URI` があるので HTTP Bearer 必須。
 | Gateway に Bearer なし | 401 `INVALID_TOKEN` |
 | `aud` に `mcp-gateway` がない / `azp` が `chainlit` でない | 403 `INVALID_AUDIENCE` |
 | 期限切れ JWT | 401 `TOKEN_EXPIRED`（Chainlit は refresh して再試行） |
+| Keycloak が refresh token を拒否 | Chainlit が保存トークンを消し、403 `Keycloak セッションが失効しました。再ログインしてください` |
+| Keycloak が 5xx / 到達不可 | 保存トークンは残す。403 `Not authenticated for MCP tools` |
 | `knowledge-mcp-reader` なしで `GET /v1/mcp` | knowledge が配列に無い（200） |
 | `knowledge-mcp-reader` なしで `POST /mcp/knowledge` tools/call | 403 `ACCESS_DENIED` |
 | 未知 / disabled の `server_id` | 404 `MCP_SERVER_NOT_FOUND` |

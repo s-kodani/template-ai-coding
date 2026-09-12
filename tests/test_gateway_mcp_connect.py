@@ -11,6 +11,7 @@ from fastapi import HTTPException
 
 from chat_ui.gateway_client import MCPGatewayClient, resolve_gateway_url
 from chat_ui.gateway_mcp_connect import (
+    REAUTH_REQUIRED_DETAIL,
     access_token_for_gateway_session,
     bind_gateway_request_user,
     connect_gateway_mcp,
@@ -21,6 +22,7 @@ from chat_ui.gateway_mcp_connect import (
     is_gateway_mcp_name,
     reconnect_gateway_mcp,
 )
+from chat_ui.token_manager import ReauthRequired
 
 
 class _FakeManager:
@@ -393,3 +395,42 @@ def test_on_chat_start_does_not_clear_mcp_tools() -> None:
     assert 'set("mcp_tools", {})' not in body
     assert 'set("gateway_server_by_connection", {})' not in body
     assert "auto_connect_gateway_mcps" not in body
+
+
+@pytest.mark.asyncio
+async def test_connect_asks_for_relogin_when_keycloak_session_expired() -> None:
+    class ExpiredManager:
+        async def get_access_token(self, session_id: str, *, force_refresh: bool = False) -> str:
+            del session_id, force_refresh
+            raise ReauthRequired("Keycloak session expired")
+
+    session = _FakeSession()
+    with pytest.raises(HTTPException) as exc:
+        await connect_gateway_mcp(
+            session,
+            "knowledge-mcp",
+            name_to_id={"knowledge-mcp": "knowledge"},
+            token_manager=ExpiredManager(),
+            gateway_client=MCPGatewayClient("http://gateway:8082"),
+        )
+    # 401 would make Chainlit redirect to /login and reload-loop.
+    assert exc.value.status_code == 403
+    assert exc.value.detail == REAUTH_REQUIRED_DETAIL
+
+
+def test_dispatch_tool_reports_reconnect_failure_instead_of_raising() -> None:
+    source = Path("src/chat_ui/app.py").read_text()
+    tree = ast.parse(source)
+    func = next(
+        node
+        for node in tree.body
+        if isinstance(node, ast.AsyncFunctionDef) and node.name == "_dispatch_tool"
+    )
+    handlers = [
+        handler
+        for node in ast.walk(func)
+        if isinstance(node, ast.Try)
+        for handler in node.handlers
+        if isinstance(handler.type, ast.Name) and handler.type.id == "HTTPException"
+    ]
+    assert handlers, "_dispatch_tool must turn connect/reconnect 4xx into a tool result"
