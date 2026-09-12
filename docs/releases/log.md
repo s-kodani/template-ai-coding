@@ -3,7 +3,7 @@
 ## v?.?.? (未確定)
 
 - **Fixed**: Chainlit のログインが生きたままアイドルすると Gateway MCP が `Forbidden: Not authenticated for MCP tools` のまま復旧しなかった問題を直した。Keycloak が refresh token を拒否したら保存トークンを削除し、403 で再ログインを促す。5xx / 接続失敗は一時障害として保存トークンを残す。ツール実行中の再接続失敗でチャットターンが落ちない（[認証認可](/current/features/authentication.md)、[UI 機能](/current/features/ui.md)）
-- **Changed**: Keycloak realm に SSO セッション寿命（Idle 8 時間 / Max 10 時間）と `accessTokenLifespan` を明示し、Chainlit の `user_session_timeout` を SSO Max 以下（10 時間）に設定した。Chainlit Cookie が Keycloak セッションより長生きしない（[認証認可](/current/features/authentication.md)、[インフラ](/current/infrastructure.md)）
+- **Changed**: Keycloak realm に SSO セッション寿命（Idle 8 時間 / Max 10 時間）と `accessTokenLifespan` を明示し、Chainlit の `user_session_timeout` を SSO Max 以下（10 時間）に設定した。Idle は相対期限のため差は残るが、失効時は再ログインを促す（[認証認可](/current/features/authentication.md)、[インフラ](/current/infrastructure.md)）
 - **Added**: Brave Search API ベースの `web-search-mcp` を Gateway 経由で追加。realm role `web-search-reader` で `dev`（knowledge + web-search）、`dev2`（web-search のみ）、`readerless`（どちらも不可）をローカル検証できる（[API 契約](/current/features/api.md)、[認証認可](/current/features/authentication.md)、[インフラ](/current/infrastructure.md)）
 - **Fixed**: Langfuse に送信する OTel Resource の `service.name` を Compose でサービス別に設定し、Chainlit は `chainlit`、MCP サーバーは `knowledge-mcp` として `unknown_service` を解消した（[トレーシング](/current/features/tracing.md)、[インフラ](/current/infrastructure.md)）
 - **Changed**: `ingest-langflow` の既定対象を `data/ingest/` から OKF Knowledge Bundle の `docs/` へ変更し、旧ディレクトリを削除した。任意パスの `FILES` 指定は維持する（[Ingest](/current/features/ingest.md)）

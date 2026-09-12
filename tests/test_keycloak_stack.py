@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import tomllib
 from pathlib import Path
 
 import yaml
@@ -296,8 +297,6 @@ def test_realm_pins_sso_session_lifetimes() -> None:
 
 
 def test_chainlit_cookie_does_not_outlive_the_keycloak_session() -> None:
-    import tomllib
-
     config = tomllib.loads(CHAINLIT_CONFIG.read_text(encoding="utf-8"))
     realm = _realm()
 

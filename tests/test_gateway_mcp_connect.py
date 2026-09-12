@@ -11,7 +11,6 @@ from fastapi import HTTPException
 
 from chat_ui.gateway_client import MCPGatewayClient, resolve_gateway_url
 from chat_ui.gateway_mcp_connect import (
-    REAUTH_REQUIRED_DETAIL,
     access_token_for_gateway_session,
     bind_gateway_request_user,
     connect_gateway_mcp,
@@ -22,7 +21,7 @@ from chat_ui.gateway_mcp_connect import (
     is_gateway_mcp_name,
     reconnect_gateway_mcp,
 )
-from chat_ui.token_manager import ReauthRequired
+from chat_ui.token_manager import REAUTH_REQUIRED_DETAIL, ReauthRequired
 
 
 class _FakeManager:
@@ -274,6 +273,9 @@ async def test_connect_gateway_mcp_requires_auth() -> None:
             gateway_client=MCPGatewayClient("http://gateway:8082"),
         )
     assert exc.value.status_code == 403
+    # A second attempt after the dead tokens were dropped must stay actionable
+    # instead of falling back to the old generic wording.
+    assert exc.value.detail == REAUTH_REQUIRED_DETAIL
 
 
 @pytest.mark.asyncio
@@ -434,3 +436,7 @@ def test_dispatch_tool_reports_reconnect_failure_instead_of_raising() -> None:
         if isinstance(handler.type, ast.Name) and handler.type.id == "HTTPException"
     ]
     assert handlers, "_dispatch_tool must turn connect/reconnect 4xx into a tool result"
+    assert all(
+        any(isinstance(stmt, ast.Return) for stmt in ast.walk(handler))
+        for handler in handlers
+    ), "the handler must return the failure to the caller, not swallow it"

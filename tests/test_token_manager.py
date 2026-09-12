@@ -7,6 +7,7 @@ from unittest.mock import AsyncMock
 import pytest
 
 from chat_ui.token_manager import (
+    REAUTH_REQUIRED_DETAIL,
     KeycloakTokenManager,
     MemoryTokenStore,
     PostgresTokenStore,
@@ -152,10 +153,27 @@ async def test_rejected_refresh_requires_reauth_and_drops_stored_tokens(
 @pytest.mark.asyncio
 async def test_upstream_refresh_failure_keeps_stored_tokens(
     monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
 ) -> None:
     store = MemoryTokenStore()
     mgr = await _expired_manager(store)
     _patch_post(monkeypatch, AsyncMock(return_value=_Response(503)))
+
+    with caplog.at_level("WARNING"):
+        assert await mgr.get_access_token("sess") is None
+    assert await store.get_by_session("sess") is not None
+    assert "503" in caplog.text
+    assert "rt-secret-value" not in caplog.text
+
+
+@pytest.mark.asyncio
+async def test_misconfigured_client_does_not_force_reauth(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """invalid_client means a broken client secret, not a dead SSO session."""
+    store = MemoryTokenStore()
+    mgr = await _expired_manager(store)
+    _patch_post(monkeypatch, AsyncMock(return_value=_Response(401, {"error": "invalid_client"})))
 
     assert await mgr.get_access_token("sess") is None
     assert await store.get_by_session("sess") is not None
@@ -164,6 +182,7 @@ async def test_upstream_refresh_failure_keeps_stored_tokens(
 @pytest.mark.asyncio
 async def test_transport_refresh_failure_keeps_stored_tokens(
     monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
 ) -> None:
     import httpx
 
@@ -171,8 +190,15 @@ async def test_transport_refresh_failure_keeps_stored_tokens(
     mgr = await _expired_manager(store)
     _patch_post(monkeypatch, AsyncMock(side_effect=httpx.ConnectError("boom")))
 
-    assert await mgr.get_access_token("sess") is None
+    with caplog.at_level("WARNING"):
+        assert await mgr.get_access_token("sess") is None
     assert await store.get_by_session("sess") is not None
+    assert "ConnectError" in caplog.text
+    assert "rt-secret-value" not in caplog.text
+
+
+def test_reauth_detail_tells_the_user_what_to_do() -> None:
+    assert "再ログイン" in REAUTH_REQUIRED_DETAIL
 
 
 @pytest.mark.asyncio

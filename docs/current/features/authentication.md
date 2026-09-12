@@ -67,14 +67,15 @@ Chainlit が Keycloak を叩くのは MCP 接続とツール実行のときだ�
 | Keycloak の応答 | 挙動 |
 |---|---|
 | 2xx | 新しい access / refresh を保存して返す |
-| 4xx（`invalid_grant` など） | WARNING ログ → `chainlit_oauth_tokens` の該当行を削除 → `ReauthRequired` |
+| 4xx かつ `invalid_grant` / `invalid_token` | WARNING ログ → `chainlit_oauth_tokens` の該当行を削除 → `ReauthRequired` |
+| その他の 4xx（`invalid_client` など設定不備） | WARNING ログ → 行は残す → `None` |
 | 5xx / 接続失敗 | WARNING ログ → 行は残す → `None`（一時障害） |
 
 ログに載せるのは status code と OAuth の `error` だけで、トークン値は出さない。
 
 `ReauthRequired` は UI まで次のように伝わる。
 
-- プラグ UI の `POST /mcp`: **403** `Keycloak セッションが失効しました。再ログインしてください`（401 にすると `/login` リロードループ）
+- プラグ UI の `POST /mcp`: **403** `Keycloak セッションが無効です。再ログインしてください`（401 にすると `/login` リロードループ）。トークンがそもそも取り出せない場合も同じ文言を返す。失効行を消した直後の再試行で文言が変わらないようにするため
 - ツール実行中の reconnect: `_dispatch_tool` が `HTTPException` を捕まえ、同じ文言をツール結果として返す。チャットターンは落ちない
 
 行を消すのは、失効した refresh token で Keycloak を叩き続けないため。再ログインすれば `oauth_callback` が新しいトークンを入れ直す。
@@ -220,8 +221,8 @@ Compose では `MCP_JWKS_URI` があるので HTTP Bearer 必須。
 | Gateway に Bearer なし | 401 `INVALID_TOKEN` |
 | `aud` に `mcp-gateway` がない / `azp` が `chainlit` でない | 403 `INVALID_AUDIENCE` |
 | 期限切れ JWT | 401 `TOKEN_EXPIRED`（Chainlit は refresh して再試行） |
-| Keycloak が refresh token を拒否 | Chainlit が保存トークンを消し、403 `Keycloak セッションが失効しました。再ログインしてください` |
-| Keycloak が 5xx / 到達不可 | 保存トークンは残す。403 `Not authenticated for MCP tools` |
+| Keycloak が refresh token を拒否 | Chainlit が保存トークンを消し、403 `Keycloak セッションが無効です。再ログインしてください` |
+| Keycloak が 5xx / 到達不可、または client 設定不備 | 保存トークンは残す。403 は同じ文言 |
 | `knowledge-mcp-reader` なしで `GET /v1/mcp` | knowledge が配列に無い（200） |
 | `knowledge-mcp-reader` なしで `POST /mcp/knowledge` tools/call | 403 `ACCESS_DENIED` |
 | 未知 / disabled の `server_id` | 404 `MCP_SERVER_NOT_FOUND` |

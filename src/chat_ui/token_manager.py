@@ -14,6 +14,13 @@ from knowledge_mcp.config import Settings
 
 logger = logging.getLogger(__name__)
 
+# Shown to the user whenever no usable Keycloak token can be produced for a live
+# Chainlit login. Defined here so transport modules can reuse it without a cycle.
+REAUTH_REQUIRED_DETAIL = "Keycloak セッションが無効です。再ログインしてください"
+# Keycloak returns these when the SSO session is gone. Other 4xx (invalid_client,
+# unauthorized_client) mean the app is misconfigured, so the tokens stay put.
+_REAUTH_ERROR_CODES = frozenset({"invalid_grant", "invalid_token"})
+
 
 class ReauthRequired(Exception):
     """Keycloak refused the refresh token. The user has to sign in again."""
@@ -203,18 +210,26 @@ class KeycloakTokenManager:
             # Transient: keep the stored tokens so a later attempt can still refresh.
             logger.warning("Keycloak refresh request failed: %s", type(exc).__name__)
             return None
-        if 400 <= response.status_code < 500:
-            # Keycloak dropped the SSO session. The stored tokens are dead for good.
+        if response.status_code >= 400:
+            error = _error_code(response)
+            if 400 <= response.status_code < 500 and error in _REAUTH_ERROR_CODES:
+                # Keycloak dropped the SSO session. The stored tokens are dead for good.
+                logger.warning(
+                    "Keycloak rejected the refresh_token grant (status=%s, error=%s); "
+                    "clearing stored tokens and requiring re-login",
+                    response.status_code,
+                    error,
+                )
+                await self._store.delete_by_session(session_id)
+                raise ReauthRequired("Keycloak session expired")
             logger.warning(
-                "Keycloak rejected the refresh_token grant (status=%s, error=%s); "
-                "clearing stored tokens and requiring re-login",
+                "Keycloak refresh failed (status=%s, error=%s); keeping stored tokens",
                 response.status_code,
-                _error_code(response),
+                error,
             )
-            await self._store.delete_by_session(session_id)
-            raise ReauthRequired("Keycloak session expired")
-        if response.status_code >= 500:
-            logger.warning("Keycloak refresh failed with status %s", response.status_code)
+            return None
+        if response.status_code >= 300:
+            logger.warning("Unexpected Keycloak refresh status %s", response.status_code)
             return None
         refreshed = await self.save_response(response.json(), session_id=session_id)
         return None if refreshed is None else refreshed.access_token
