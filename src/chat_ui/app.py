@@ -7,6 +7,7 @@ from typing import Any
 
 import chainlit as cl
 from chainlit.server import app as chainlit_app
+from fastapi import HTTPException
 from langfuse import observe
 
 from chat_ui.auth import register_oauth_callback, set_token_manager
@@ -160,14 +161,18 @@ async def _dispatch_tool(name: str, arguments: dict[str, Any]) -> dict[str, Any]
             return {"error": str(exc) or "Tool call failed"}
 
     if server_id and _is_token_expired(result):
-        await reconnect_gateway_mcp(
-            cl.context.session,
-            target,
-            name_to_id=_ui_name_to_id,
-            token_manager=token_manager,
-            gateway_client=gateway_client,
-            name_to_gateway_url=_ui_name_to_gateway_url,
-        )
+        try:
+            await reconnect_gateway_mcp(
+                cl.context.session,
+                target,
+                name_to_id=_ui_name_to_id,
+                token_manager=token_manager,
+                gateway_client=gateway_client,
+                name_to_gateway_url=_ui_name_to_gateway_url,
+            )
+        except HTTPException as exc:
+            # Re-login needed or Gateway refused: report it instead of killing the turn.
+            return {"error": str(exc.detail), "status_code": exc.status_code}
         entry = cl.context.session.mcp_sessions.get(target)
         if not entry:
             return result
