@@ -18,9 +18,6 @@
   ],
   "defaultOptionalClientScopes": [
     "offline_access",
-    "address",
-    "phone",
-    "microprofile-jwt",
     "mcp-tools",
     "web-search-mcp-tools"
   ],
@@ -46,7 +43,7 @@
       },
       {
         "name": "Full Scope Disabled",
-        "providerId": "full-scope-disabled",
+        "providerId": "scope",
         "subType": "anonymous",
         "subComponents": {},
         "config": {}

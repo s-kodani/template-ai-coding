@@ -189,6 +189,7 @@ def test_realm_enables_anonymous_dcr_for_localhost_mcp_clients() -> None:
     allowed_scopes = set(policies["allowed-client-templates"]["config"]["allowed-client-scopes"])
     assert {"openid", "mcp-tools", "web-search-mcp-tools"} <= allowed_scopes
     assert policies["allowed-client-templates"]["config"]["allow-default-scopes"] == ["true"]
+    assert policies["scope"]["name"] == "Full Scope Disabled"
 
     optional = set(realm.get("defaultOptionalClientScopes") or [])
     assert {"mcp-tools", "web-search-mcp-tools"} <= optional
