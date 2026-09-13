@@ -253,7 +253,7 @@ Human approval:
 
 Cursor Cloud Agent 環境は `.cursor/environment.json` で定義します。
 
-- `install`（`bash .cursor/install.sh`）: Docker 一式（`docker.io` / `docker-compose-v2` / `fuse-overlayfs` / `uidmap`）と `uv` を導入し、`uv sync --extra dev` を実行し、`.env` と `infra/langfuse/.env` を example から生成します（既存ファイルは上書きしません）。
+- `install`（`bash .cursor/install.sh`）: Docker 一式（`docker.io` / `docker-compose-v2` / `fuse-overlayfs` / `uidmap`）と `uv` を導入し、`uv sync --extra dev` と `apm-cli` を実行し、`.env` と `infra/langfuse/.env` を example から生成します（既存ファイルは上書きしません）。
 - `start`（`bash .cursor/start.sh`）: 毎回の起動で Docker daemon を `fuse-overlayfs` ドライバで起動します。ネスト VM では `overlay2` が使えず、`bridge-nf-call-iptables` を 0 にしないと同一 compose ネットワーク上のコンテナ間通信（`mcp-server` → `app-postgres`）がドロップされるため、これも `start.sh` が設定します。
 
 運用メモ:
@@ -263,4 +263,5 @@ Cursor Cloud Agent 環境は `.cursor/environment.json` で定義します。
 - `docker` / `docker compose` が使えない場合（`docker info` が失敗する場合）は `bash .cursor/start.sh` を実行してください。冪等で、起動済みなら何もしません。
 - ネスト Docker では `bridge-nf-call-iptables=0` のため、コンテナから `api.openai.com` へ直接出られません。`start.sh` はホストの CONNECT プロキシ（`:8888`）を起動します。mcp-server / chainlit の `.env` に `HTTPS_PROXY=http://172.18.0.1:8888`（observability ブリッジ）と `NO_PROXY=localhost,127.0.0.1,keycloak,app-postgres,mcp-server,mcp-gateway` を入れて再作成してください。
 - `uv run pytest` / `uv run ruff check src tests scripts` / `uv run python scripts/validate_okf.py` は Docker も secret も不要です。
+- 自前 Skill / Agent を `.apm/skills/` または `.apm/agents/` で編集したあとは **`apm install` で展開**する（`.agents/skills/`、`.claude/skills/` 等へ手動コピーしない）。Cloud Agent の git credential 用 `url.*.insteadOf` があると `apm install` が失敗するため、`GIT_CONFIG_GLOBAL=/tmp/apm-gitconfig GIT_CONFIG_SYSTEM=/dev/null apm install` のように credential 入り rewrite を避けて実行する。
 - `make -C infra up` と `make -C infra seed`、および Chainlit のチャット応答には有効な `OPENAI_API_KEY` が必要です。Cloud Agent の Secrets に `OPENAI_API_KEY`（必要なら `OPENAI_BASE_URL`）を追加してください。埋め込みは OpenAI 互換エンドポイントであれば差し替え可能です。

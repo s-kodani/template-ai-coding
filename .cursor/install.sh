@@ -22,6 +22,9 @@ sudo python3 -m pip install --quiet --upgrade uv
 # Python dependencies, including dev extras (pytest, ruff, pyyaml).
 uv sync --extra dev
 
+# APM CLI: deploy `.apm/skills/` and `.apm/agents/` via `apm install` (do not copy deploy paths manually).
+pip install --user --quiet apm-cli
+
 # Local env files consumed by docker compose and the seed/migrate scripts.
 # Never overwrite an existing file (may hold real secrets such as OPENAI_API_KEY).
 [ -f .env ] || cp .env.example .env
