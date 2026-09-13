@@ -41,7 +41,7 @@ Chainlit 2.12 は `mcp<2`、Gateway は公式 `mcp>=2` のため同一 Python �
 
 - Chainlit の既定ツール list/call は MCP プロトコルになる。カタログだけ REST
 - Gateway は引き続き Resource Server 境界。Chainlit JWT は knowledge-mcp に届かない
-- FastMCP 2.14 Client が必要とするメソッドは `initialize` / `notifications/*` / `ping` / `tools/list` / `tools/call`。セッション ID は持たない
+- FastMCP / 公式 `mcp>=2` Client が必要とするメソッドは `initialize` / `notifications/*` / `ping` / `tools/list` / `tools/call`。セッション ID は持たない
 - 現行シーケンスは [認証認可](/current/features/authentication.md)
 
 ## 改訂

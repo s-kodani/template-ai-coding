@@ -6,7 +6,8 @@ Python 依存の解決結果は `uv.lock` と `gateway/uv.lock` を Source of Tr
 |---|---|---|
 | Python | `>=3.12,<3.13` | 3.12 |
 | Chainlit | `>=2.12.0,<3` | 2.12.0 (`uv.lock`) |
-| FastMCP | `>=2.14.0` | 3.4.7 (`uv.lock`) |
+| FastMCP | `>=2.14.0` | 3.4.7 (`uv.lock`)。`knowledge_mcp` / `web_search_mcp` 共通 |
+| web-search-mcp | `src/web_search_mcp/`、`BRAVE_SEARCH_API_KEY` | Brave Search API（`api.search.brave.com`） |
 | MCP SDK（アプリ） | FastMCP の依存 | 1.29.1 (`uv.lock`) |
 | MCP SDK（Gateway） | `>=2.1,<3` | 2.1.1 (`gateway/uv.lock`) |
 | Langfuse Python SDK | `>=3.0.0` | 4.15.1 (`uv.lock`) |
