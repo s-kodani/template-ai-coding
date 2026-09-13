@@ -340,6 +340,15 @@ def test_mcp_dev_token_script_omits_keycloak_v2_audience() -> None:
     assert '"knowledge": "mcp-tools"' in text
 
 
+def test_readme_presents_inspector_oauth_as_primary() -> None:
+    section = (ROOT / "README.md").read_text(encoding="utf-8").split("## MCP Inspector", 1)[1]
+    oauth_at = section.find("OAuth")
+    fallback_at = section.find("mcp_dev_token.py")
+    assert oauth_at != -1
+    assert fallback_at != -1
+    assert oauth_at < fallback_at
+
+
 def test_realm_pins_sso_session_lifetimes() -> None:
     realm = _realm()
 
