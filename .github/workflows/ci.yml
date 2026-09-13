@@ -98,3 +98,14 @@ jobs:
           severity: CRITICAL,HIGH
           ignore-unfixed: true
           exit-code: 1
+
+      - name: Trivy scan web-search-mcp image
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: image
+          image-ref: knowledge-app-web-search-mcp
+          scanners: vuln
+          format: table
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: 1
