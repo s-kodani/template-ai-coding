@@ -5,7 +5,7 @@ description: FastMCP（knowledge-mcp / web-search-mcp）、MCP Gateway、Chainli
 tags: [architecture, mcp, tracing, langflow, keycloak, gateway]
 status: stable
 generated:
-  at: "2026-09-13T08:20:00Z"
+  at: "2026-09-13T09:12:00Z"
   by: process:cursor-agent
 ---
 
@@ -20,10 +20,10 @@ generated:
 | FastMCP サーバー（`src/knowledge_mcp/`） | Streamable HTTP MCP、Keycloak Resource Server、ベクトル検索ツール、子スパン |
 | FastMCP サーバー（`src/web_search_mcp/`） | Streamable HTTP MCP、Keycloak Resource Server、Brave Web 検索ツール、子スパン |
 | PostgreSQL + pgvector | アプリ用ベクトルストアと Chainlit refresh token（pgcrypto） |
-| Keycloak | ローカル IdP（realm import）。Chainlit ログインと Token Exchange |
+| Keycloak | ローカル IdP（realm import）。Chainlit ログイン、Token Exchange、直結 MCP の Authorization Server |
 | Langfuse（公式 compose） | トレース取り込みと UI |
 | Langflow（任意サイドカー） | ファイル Ingest。専用 DB へ書き、ホスト adapter が `documents` へ複製する |
-| MCP Inspector | FastMCP へのプロトコル検証（Bearer 必須） |
+| MCP Inspector | FastMCP へのプロトコル検証。直結は 3LO（OAuth）、非対話は Bearer |
 
 ## アーキテクチャ図
 
