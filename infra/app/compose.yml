@@ -141,7 +141,7 @@ services:
       - observability
 
   keycloak:
-    image: keycloak/keycloak:26.4.5
+    image: keycloak/keycloak:26.6.4
     command: start-dev --import-realm
     environment:
       KC_BOOTSTRAP_ADMIN_USERNAME: ${KC_BOOTSTRAP_ADMIN_USERNAME:-admin}

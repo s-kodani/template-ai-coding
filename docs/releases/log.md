@@ -2,6 +2,7 @@
 
 ## v?.?.? (未確定)
 
+- **Added**: 直結 MCP クライアント（Inspector / Cursor 等）が Keycloak の認可コード + PKCE（匿名 DCR）で knowledge-mcp / web-search-mcp に接続できるようにした。MCP は Resource Server のまま JWT を検証し、Chainlit → Gateway の Token Exchange は残す。Keycloak を 26.6.4 へ上げた。README の Inspector 手順も OAuth を正、`mcp_dev_token.py` をフォールバックにした（[認証認可](/current/features/authentication.md)、[ADR-0014](/decisions/ADR-0014-mcp-direct-three-legged-oauth.md)、[インフラ](/current/infrastructure.md)）
 - **Fixed**: Chainlit のログインが生きたままアイドルすると Gateway MCP が `Forbidden: Not authenticated for MCP tools` のまま復旧しなかった問題を直した。Keycloak が refresh token を拒否したら保存トークンを削除し、403 で再ログインを促す。5xx / 接続失敗は一時障害として保存トークンを残す。ツール実行中の再接続失敗でチャットターンが落ちない（[認証認可](/current/features/authentication.md)、[UI 機能](/current/features/ui.md)）
 - **Changed**: Keycloak realm に SSO セッション寿命（Idle 8 時間 / Max 10 時間）と `accessTokenLifespan` を明示し、Chainlit の `user_session_timeout` を SSO Max 以下（10 時間）に設定した。Idle は相対期限のため差は残るが、失効時は再ログインを促す（[認証認可](/current/features/authentication.md)、[インフラ](/current/infrastructure.md)）
 - **Added**: Brave Search API ベースの `web-search-mcp` を Gateway 経由で追加。realm role `web-search-reader` で `dev`（knowledge + web-search）、`dev2`（web-search のみ）、`readerless`（どちらも不可）をローカル検証できる（[API 契約](/current/features/api.md)、[認証認可](/current/features/authentication.md)、[インフラ](/current/infrastructure.md)）

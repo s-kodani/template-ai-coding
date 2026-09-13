@@ -5,8 +5,8 @@ description: アプリ、Keycloak、MCP Gateway、Langfuse、任意 Langflow の
 tags: [docker, langfuse, langflow, postgres, keycloak, gateway, ci, devsecops]
 status: stable
 generated:
-  at: "2026-09-06T11:23:04Z"
-  by: process:codex-agent
+  at: "2026-09-13T08:20:00Z"
+  by: process:cursor-agent
 ---
 
 # インフラ
@@ -79,22 +79,23 @@ Chainlit と FastMCP の両方で、FastMCP を import する **前に** Langfus
 
 ## 認証（Keycloak）
 
-Chainlit は Keycloak の `knowledge` realm で OAuth する（[ADR-0011](/decisions/ADR-0011-keycloak-chainlit-oauth.md)）。既定 knowledge-mcp 呼び出しは MCP Gateway が Token Exchange する（[ADR-0012](/decisions/ADR-0012-mcp-gateway-resource-server.md)）。シーケンスは [認証認可](/current/features/authentication.md)。
+Chainlit は Keycloak の `knowledge` realm で OAuth する（[ADR-0011](/decisions/ADR-0011-keycloak-chainlit-oauth.md)）。既定 knowledge-mcp 呼び出しは MCP Gateway が Token Exchange する（[ADR-0012](/decisions/ADR-0012-mcp-gateway-resource-server.md)）。直結 MCP クライアントは Keycloak の認可コード + PKCE（匿名 DCR）で同じ Resource Server を呼ぶ（[ADR-0014](/decisions/ADR-0014-mcp-direct-three-legged-oauth.md)）。シーケンスは [認証認可](/current/features/authentication.md)。
 
 - 管理 UI: http://localhost:8081 （`admin` / `admin`）
 - チャットログイン: Chainlit の Keycloak ボタンから。開発ユーザーは `dev` / `dev`（knowledge + web-search）、`dev2` / `dev2`（web-search のみ）、`readerless` / `readerless`（MCP reader role なし）
 - Chainlit コンテナはアプリ Postgres の `DATABASE_URL` を使わない（Chainlit 内蔵 data layer の `User` テーブルは持たない）。refresh token は `TOKEN_STORE_DATABASE_URL` で同じ Postgres の `chainlit_oauth_tokens` に保存する
 - MCP Gateway はホストポートを公開しない。Chainlit は Registry `gateways[].url`（既定 `http://mcp-gateway:8082`）へ到達する。カタログ `url` は各 Gateway の `PUBLIC_BASE_URL`
-- knowledge-mcp は `MCP_JWKS_URI` 設定時に Bearer 必須。Inspector は `uv run python scripts/mcp_dev_token.py` でトークンを取る
+- knowledge-mcp は `MCP_JWKS_URI` 設定時に Bearer 必須。直結クライアントは PRM（`/.well-known/oauth-protected-resource/mcp`）から Keycloak を発見し、認可コード + PKCE でトークンを取る。非対話フォールバックは `uv run python scripts/mcp_dev_token.py`
 - realm 定義は `infra/app/keycloak/knowledge-realm.json`。変更後は Keycloak コンテナを再作成する
 - セッション寿命は realm の `ssoSessionIdleTimeout` / `ssoSessionMaxLifespan` と `.chainlit/config.toml` の `user_session_timeout` の組で決まる。現行値と失効時の挙動は [認証認可](/current/features/authentication.md)
 - Token Exchange（Keycloak 26 V2）は `audience` を送らない。knowledge-mcp の `aud` は `mcp-tools` の custom audience mapper が付ける
 
 ## 手動検証
 
-1. **MCP Inspector**: `uv run python scripts/mcp_dev_token.py` の出力を Bearer にし、`http://127.0.0.1:8000/mcp` に接続
-2. **Chainlit**: Keycloak でログインし、`search_knowledge` が呼ばれる質問を送信
-3. **Langfuse**: チャット 1 ターンあたり 1 本のトレースに、クライアント/サーバーのツールスパンがネストされていることを確認（属性一覧は [Langfuse OTEL トレーシング](/current/features/tracing.md)）
+1. **MCP Inspector（3LO）**: `http://127.0.0.1:8000/mcp` を OAuth 付きで開く。401 の `resource_metadata` から Keycloak へ飛び、`dev` / `dev` でログインする。web-search は `:8001/mcp`
+2. **MCP Inspector（フォールバック）**: `uv run python scripts/mcp_dev_token.py` の出力を Bearer にし、同じ URL に接続
+3. **Chainlit**: Keycloak でログインし、`search_knowledge` が呼ばれる質問を送信
+4. **Langfuse**: チャット 1 ターンあたり 1 本のトレースに、クライアント/サーバーのツールスパンがネストされていることを確認（属性一覧は [Langfuse OTEL トレーシング](/current/features/tracing.md)）
 
 ### トレース検証チェックリスト（1 ターン = 1 trace）
 

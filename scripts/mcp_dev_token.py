@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Issue a downstream MCP Bearer token for MCP Inspector (password grant + token exchange)."""
+"""Issue a downstream MCP Bearer token (password grant + token exchange).
+
+Interactive MCP Inspector / Cursor 3LO (authorization code + PKCE + DCR) is the
+preferred path. This script remains a non-interactive fallback.
+"""
 
 from __future__ import annotations
 

@@ -26,7 +26,7 @@ Chainlit は認証なしでホストに公開されていた。ローカルで�
 
 ## 決定
 
-- ローカル IdP として **Keycloak**（`keycloak/keycloak:26.4.5`、`start-dev --import-realm`）をアプリ Compose に含める
+- ローカル IdP として **Keycloak**（`keycloak/keycloak:26.6.4`、`start-dev --import-realm`）をアプリ Compose に含める
 - Chainlit は組み込みの **generic OAuth provider** を使う（`OAUTH_GENERIC_NAME=keycloak`）。組み込み Keycloak provider は単一 `BASE_URL` のためブラウザ向けホストとコンテナ DNS を分けられないので、`OAUTH_KEYCLOAK_NAME=unused` で id 衝突を避ける
 - ブラウザの認可 URL は `http://localhost:8081`、Chainlit コンテナからの token / userinfo は Compose DNS の `http://keycloak:8080` を使う
 - 対象は Chainlit のみ。FastMCP、Langfuse、Langflow の SSO は導入しない
@@ -35,7 +35,9 @@ Chainlit は認証なしでホストに公開されていた。ローカルで�
 
 ## 改訂
 
-knowledge-mcp を Keycloak Resource Server とし、Chainlit トークンのパススルーを禁止する決定は [ADR-0012](/decisions/ADR-0012-mcp-gateway-resource-server.md)。Chainlit ログインの IdP としての Keycloak 採用は本 ADR のまま。
+knowledge-mcp を Keycloak Resource Server とし、Chainlit トークンのパススルーを禁止する決定は [ADR-0012](/decisions/ADR-0012-mcp-gateway-resource-server.md)。直結 MCP クライアントの 3LO（認可コード + PKCE + DCR）は [ADR-0014](/decisions/ADR-0014-mcp-direct-three-legged-oauth.md)。Chainlit ログインの IdP としての Keycloak 採用は本 ADR のまま。
+
+イメージを 26.4.5 から **26.6.4** へ上げた（DCR 互換）。
 
 ## 結果
 

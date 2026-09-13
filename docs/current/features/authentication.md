@@ -5,13 +5,13 @@ description: 未ログインの Chainlit アクセスから Gateway 経由の MC
 tags: [authentication, authorization, keycloak, gateway, mcp, chainlit]
 status: stable
 generated:
-  at: "2026-09-12T11:40:00Z"
-  by: process:claude-code
+  at: "2026-09-13T08:20:00Z"
+  by: process:cursor-agent
 ---
 
 # Chainlit × Gateway × MCP Resource Server の認証認可
 
-未ログインのブラウザが `http://localhost:8080` を開いてから、Gateway 経由で MCP ツール（knowledge-mcp / web-search-mcp）を実行するまでの **現行シーケンス** です。以下のシーケンス図は knowledge-mcp を例示します。web-search-mcp も同一 Gateway 経路で、Token Exchange の `scope`（`web-search-mcp-tools`）、下流 `aud`（`http://localhost:8001/mcp`）、realm role（`web-search-reader`）が異なります。なぜこの形かは [ADR-0011](/decisions/ADR-0011-keycloak-chainlit-oauth.md)、[ADR-0012](/decisions/ADR-0012-mcp-gateway-resource-server.md)、輸送は [ADR-0013](/decisions/ADR-0013-mcp-gateway-per-server-streamable-http.md)。UI の見え方は [Chainlit チャット UI](/current/features/ui.md)、HTTP 契約は [MCP ツール契約](/current/features/api.md)、ホストと Compose は [インフラ](/current/infrastructure.md)。
+未ログインのブラウザが `http://localhost:8080` を開いてから、Gateway 経由で MCP ツール（knowledge-mcp / web-search-mcp）を実行するまでの **現行シーケンス** です。以下のシーケンス図は knowledge-mcp を例示します。web-search-mcp も同一 Gateway 経路で、Token Exchange の `scope`（`web-search-mcp-tools`）、下流 `aud`（`http://localhost:8001/mcp`）、realm role（`web-search-reader`）が異なります。なぜこの形かは [ADR-0011](/decisions/ADR-0011-keycloak-chainlit-oauth.md)、[ADR-0012](/decisions/ADR-0012-mcp-gateway-resource-server.md)、輸送は [ADR-0013](/decisions/ADR-0013-mcp-gateway-per-server-streamable-http.md)。直結クライアントの 3LO は [ADR-0014](/decisions/ADR-0014-mcp-direct-three-legged-oauth.md)。UI の見え方は [Chainlit チャット UI](/current/features/ui.md)、HTTP 契約は [MCP ツール契約](/current/features/api.md)、ホストと Compose は [インフラ](/current/infrastructure.md)。
 
 Chainlit の Keycloak トークンは knowledge-mcp に渡さない。
 
@@ -244,8 +244,18 @@ Registry の enabled サーバーを `mcp-autoload.js` が一覧 seed する（`
 
 `.chainlit/config.toml` の `user_servers.allowed_urls`。Keycloak / Gateway / Token Exchange は使わない。origin allowlist はユーザーごとではない。
 
-**MCP Inspector**
+**MCP Inspector / Cursor 等の直結 3LO**
 
-`scripts/mcp_dev_token.py` が password grant + 同じ Token Exchange（`audience` なし）を行い、`http://127.0.0.1:8000/mcp` に Bearer を付ける。Chainlit は介さない。
+Chainlit を介さない。MCP は Resource Server、Keycloak は Authorization Server（[ADR-0014](/decisions/ADR-0014-mcp-direct-three-legged-oauth.md)）。
+
+1. クライアントが `http://127.0.0.1:8000/mcp`（または web-search の `:8001/mcp`）へ Bearer なしで POST する
+2. MCP は **401** と `WWW-Authenticate: Bearer resource_metadata="http://localhost:8000/.well-known/oauth-protected-resource/mcp"`（error 属性なし）
+3. クライアントが PRM を読む。`authorization_servers` は `http://localhost:8081/realms/knowledge`。`scopes_supported` は `mcp-tools`（web-search は `web-search-mcp-tools`）
+4. Keycloak の AS metadata を発見し、匿名 DCR で public クライアントを登録する（PKCE S256、redirect は localhost）。trusted hosts は `localhost` / `127.0.0.1`
+5. 認可コード + PKCE。scope に `mcp-tools`（または `web-search-mcp-tools`）を付ける。resource `aud` は既存の audience mapper が付与する
+6. ユーザーは Keycloak でログインし、consent で MCP scope を承認する（realm role は TE 経路と同じ。`dev` は knowledge + web-search）
+7. MCP は交換後 JWT と同じ検証（`aud`、scope、`knowledge-mcp-reader` / `web-search-reader`）。`azp` を `chainlit` に限定しない。DCR クライアントは PRM の scope しか持たないため、realm role は `mcp-tools` / `web-search-mcp-tools` の mapper で JWT に載る
+
+非対話フォールバックは `uv run python scripts/mcp_dev_token.py` の password grant + Token Exchange。
 
 ローカル HTTP は許容。TLS / mTLS / CIMD / ユーザー単位のサーバー allowlist はこのスライスの対象外。

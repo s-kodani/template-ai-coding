@@ -35,7 +35,7 @@ MCP の Authorization では、下流サーバーへ上流 Access Token をパ�
 
 ## 結果
 
-- knowledge-mcp は Compose 上で JWKS 検証を必須にする。MCP Inspector も Bearer が必要（`scripts/mcp_dev_token.py`）
+- knowledge-mcp は Compose 上で JWKS 検証を必須にする。MCP Inspector も Bearer が必要（直結 3LO は [ADR-0014](/decisions/ADR-0014-mcp-direct-three-legged-oauth.md)。非対話は `scripts/mcp_dev_token.py`）
 - 既定ツールの実行は Gateway を経由し、Chainlit トークンは knowledge-mcp に届かない。現行シーケンスは [認証認可](/current/features/authentication.md)
 - プラグ UI の Gateway MCP は Chainlit 標準 MCP セッションになる。`mcp_sessions` 経由で `tools/call` し、切断するとそのセッションではツールを使わない
 - 追加 MCP（allowlist 内）は従来どおり Chainlit 内蔵クライアントで接続できる
@@ -44,3 +44,5 @@ MCP の Authorization では、下流サーバーへ上流 Access Token をパ�
 ## 改訂
 
 Chainlit–Gateway の tool schema / 実行は REST からサーバー単位 Streamable HTTP へ移した（[ADR-0013](/decisions/ADR-0013-mcp-gateway-per-server-streamable-http.md)）。プラグ UI は Chainlit 標準 MCP セッション + サーバー側 JWT 注入（`gateway_mcp_connect.py`）へ統一した。`/gateway-mcp` は廃止。接続開始は `on_chat_start` の auto-connect ではなくプラグ UI の `POST /mcp` のみ。Token Exchange・パススルー禁止・role フィルタは変更しない。web-search-mcp 追加（Gateway registry `web-search`）も同一パターン。
+
+直結 MCP クライアント（Inspector / Cursor 等）の認可コード + PKCE は [ADR-0014](/decisions/ADR-0014-mcp-direct-three-legged-oauth.md)。本 ADR の Gateway Token Exchange と併存する。CIMD は引き続き対象外。

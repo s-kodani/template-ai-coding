@@ -92,19 +92,13 @@ uv run python scripts/validate_okf.py
 
 ## MCP Inspector
 
-knowledge-mcp（既定）:
+直結は Keycloak の認可コード + PKCE（OAuth）が正です。Inspector で `http://127.0.0.1:8000/mcp`（web-search は `:8001/mcp`）を Streamable HTTP として開き、OAuth 接続します。401 の `resource_metadata` から Keycloak へ飛び、`dev` / `dev` でログインしてください。シーケンスは [認証認可](docs/current/features/authentication.md) です。
+
+非対話フォールバック（password grant + Token Exchange）:
 
 ```bash
 uv run python scripts/mcp_dev_token.py
 npx @modelcontextprotocol/inspector
 ```
 
-1 行目の出力をコピーします。Inspector で `http://127.0.0.1:8000/mcp`（Streamable HTTP）に接続し、Authorization に `Bearer <コピーしたトークン>` を設定します。
-
-web-search-mcp:
-
-```bash
-uv run python scripts/mcp_dev_token.py --target web-search --username dev2
-```
-
-出力トークンで `http://127.0.0.1:8001/mcp` に接続します。いずれも Keycloak JWT（Token Exchange 後）が必要です。
+1 行目の出力を `Bearer` にして同じ URL に接続します。web-search は `uv run python scripts/mcp_dev_token.py --target web-search --username dev2` で `:8001/mcp` です。

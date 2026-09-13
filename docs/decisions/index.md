@@ -13,3 +13,4 @@
 - [ADR-0011: Keycloak を Chainlit のローカル IdP にする](/decisions/ADR-0011-keycloak-chainlit-oauth.md) — Chainlit OAuth / OIDC
 - [ADR-0012: MCP Gateway と knowledge-mcp Resource Server](/decisions/ADR-0012-mcp-gateway-resource-server.md) — Token Exchange、パススルー禁止、既定ツールは Gateway 経由。現行シーケンスは [認証認可](/current/features/authentication.md)
 - [ADR-0013: MCP Gateway をサーバー単位の Streamable HTTP にする](/decisions/ADR-0013-mcp-gateway-per-server-streamable-http.md) — 案 A。`/mcp/{server_id}`。カタログは `GET /v1/mcp`
+- [ADR-0014: 直結 MCP クライアントの 3LO は Keycloak AS + MCP RS](/decisions/ADR-0014-mcp-direct-three-legged-oauth.md) — 認可コード + PKCE + DCR。Gateway Token Exchange は残す

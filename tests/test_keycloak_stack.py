@@ -26,7 +26,7 @@ def test_app_compose_runs_keycloak_with_realm_import() -> None:
     compose = _compose()
     keycloak = compose["services"]["keycloak"]
 
-    assert keycloak["image"].startswith("keycloak/keycloak:26.")
+    assert keycloak["image"].startswith("keycloak/keycloak:26.6.")
     assert "--import-realm" in keycloak["command"]
     assert "8081:8080" in keycloak["ports"]
     volumes = keycloak["volumes"]
@@ -164,6 +164,60 @@ def test_realm_keeps_oidc_scopes_needed_for_sub_email_and_roles() -> None:
     assert roles_mappers["realm roles"]["config"]["access.token.claim"] == "true"
 
 
+def _anonymous_registration_policies(realm: dict) -> dict[str, dict]:
+    components = realm.get("components") or {}
+    policies = components.get(
+        "org.keycloak.services.clientregistration.policy.ClientRegistrationPolicy"
+    ) or []
+    return {
+        str(policy["providerId"]): policy
+        for policy in policies
+        if policy.get("subType") == "anonymous"
+    }
+
+
+def test_realm_enables_anonymous_dcr_for_localhost_mcp_clients() -> None:
+    realm = _realm()
+    policies = _anonymous_registration_policies(realm)
+
+    trusted = policies["trusted-hosts"]["config"]
+    assert trusted["host-sending-registration-request-must-match"] == ["false"]
+    assert trusted["client-uris-must-match"] == ["true"]
+    hosts = set(trusted["trusted-hosts"])
+    assert {"localhost", "127.0.0.1"} <= hosts
+
+    allowed_scopes = set(policies["allowed-client-templates"]["config"]["allowed-client-scopes"])
+    assert {"openid", "mcp-tools", "web-search-mcp-tools"} <= allowed_scopes
+    assert policies["allowed-client-templates"]["config"]["allow-default-scopes"] == ["true"]
+    # Full Scope Disabled (providerId=scope) would set fullScopeAllowed=false on DCR
+    # clients and omit realm_access.roles, which require_mcp_reader needs.
+    assert "scope" not in policies
+
+    optional = set(realm.get("defaultOptionalClientScopes") or [])
+    assert {"mcp-tools", "web-search-mcp-tools"} <= optional
+
+
+def test_mcp_tool_scopes_appear_on_consent_screen_for_three_legged_oauth() -> None:
+    realm = _realm()
+    for name in ("mcp-tools", "web-search-mcp-tools"):
+        attributes = _client_scope(realm, name).get("attributes") or {}
+        assert attributes["display.on.consent.screen"] == "true"
+
+
+def test_mcp_tool_scopes_embed_realm_roles_for_direct_clients() -> None:
+    """DCR clients only keep requested PRM scopes; roles must travel with mcp-tools."""
+    realm = _realm()
+    for name in ("mcp-tools", "web-search-mcp-tools"):
+        mappers = {
+            mapper["name"]: mapper
+            for mapper in _client_scope(realm, name).get("protocolMappers") or []
+        }
+        roles = mappers["realm roles"]
+        assert roles["protocolMapper"] == "oidc-usermodel-realm-role-mapper"
+        assert roles["config"]["claim.name"] == "realm_access.roles"
+        assert roles["config"]["access.token.claim"] == "true"
+
+
 def test_realm_audience_mappers_bind_gateway_and_mcp_resource() -> None:
     realm = _realm()
     chainlit = next(client for client in realm["clients"] if client["clientId"] == "chainlit")
@@ -284,6 +338,15 @@ def test_mcp_dev_token_script_omits_keycloak_v2_audience() -> None:
     assert "TARGET_SCOPES" in text
     assert '"web-search": "web-search-mcp-tools"' in text
     assert '"knowledge": "mcp-tools"' in text
+
+
+def test_readme_presents_inspector_oauth_as_primary() -> None:
+    section = (ROOT / "README.md").read_text(encoding="utf-8").split("## MCP Inspector", 1)[1]
+    oauth_at = section.find("OAuth")
+    fallback_at = section.find("mcp_dev_token.py")
+    assert oauth_at != -1
+    assert fallback_at != -1
+    assert oauth_at < fallback_at
 
 
 def test_realm_pins_sso_session_lifetimes() -> None:

@@ -12,7 +12,7 @@ Python 依存の解決結果は `uv.lock` と `gateway/uv.lock` を Source of Tr
 | MCP SDK（Gateway） | `>=2.1,<3` | 2.1.1 (`gateway/uv.lock`) |
 | Langfuse Python SDK | `>=3.0.0` | 4.15.1 (`uv.lock`) |
 | OpenAI Python SDK | `>=1.60.0` | 3.6.0 (`uv.lock`) |
-| Keycloak | Compose で固定 | `keycloak/keycloak:26.4.5` |
+| Keycloak | Compose で固定 | `keycloak/keycloak:26.6.4` |
 | Langflow | Compose で固定 | `langflowai/langflow:1.11.4` |
 | pgvector（アプリ / Langflow） | Compose で固定 | `pgvector/pgvector:pg17` / `pg16` |
 | Langfuse compose | upstream commit で固定 | `62751446149b702b419a9292ddfc2280cdf74b8c` |
