@@ -21,7 +21,7 @@ MCP Authorization は OAuth 2.1 の認可コード + PKCE を正規フローと�
 ## 決定
 
 - **MCP サーバーは Resource Server のまま**（FastMCP `JWTVerifier` + `RemoteAuthProvider`）。PRM の `authorization_servers` は Keycloak realm。`OIDCProxy` / `OAuthProxy` は使わない
-- **Keycloak を 26.6.x に上げ**、ローカル realm で **匿名 DCR**（RFC 7591）を有効にする。trusted hosts は `localhost` / `127.0.0.1`。動的クライアントは optional scope として `mcp-tools` / `web-search-mcp-tools` を要求できる
+- **Keycloak を 26.6.x に上げ**、ローカル realm で **匿名 DCR**（RFC 7591）を有効にする。trusted hosts は `localhost` / `127.0.0.1`。動的クライアントは optional scope として `mcp-tools` / `web-search-mcp-tools` を要求できる。DCR の Full Scope Disabled ポリシーは付けない（`fullScopeAllowed=false` だと `realm_access.roles` が落ち、`require_mcp_reader` が拒否する）
 - 直結 3LO で発行する JWT も、Gateway 交換後 JWT も **同じ検証**（`iss`、resource `aud`、必須 scope、realm role）。`azp=chainlit` を MCP 側で要求しない（要求すると Token Exchange 経路以外が壊れる）
 - Chainlit → Gateway の Token Exchange（`authentication.mode=keycloak_token_exchange`、`azp=chainlit`）は [ADR-0012](/decisions/ADR-0012-mcp-gateway-resource-server.md) のまま
 - CIMD は対象外のまま。MCP 仕様 2026-07-28 は DCR を非推奨とするが、ローカル HTTP と Inspector の localhost コールバックには DCR が合う。CIMD は HTTPS の `client_id` URL が前提

@@ -42,13 +42,6 @@
         "config": {}
       },
       {
-        "name": "Full Scope Disabled",
-        "providerId": "scope",
-        "subType": "anonymous",
-        "subComponents": {},
-        "config": {}
-      },
-      {
         "name": "Max Clients Limit",
         "providerId": "max-clients",
         "subType": "anonymous",
