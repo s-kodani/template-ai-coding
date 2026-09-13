@@ -8,7 +8,7 @@ status: stable
 
 # MCP ツール契約
 
-トランスポート: **Streamable HTTP**、stateless、パス `/mcp`。knowledge-mcp は Keycloak JWT（`aud=http://localhost:8000/mcp`、scope `mcp-tools`、role `knowledge-mcp-reader`）。web-search-mcp は `aud=http://localhost:8001/mcp`、scope `web-search-mcp-tools`、role `web-search-reader`（[ADR-0012](/decisions/ADR-0012-mcp-gateway-resource-server.md)）。ログインからツール実行までのシーケンスは [認証認可](/current/features/authentication.md)。Inspector 向け Bearer は `uv run python scripts/mcp_dev_token.py`（既定 `--target knowledge` → `:8000/mcp`）、web-search は `--target web-search --username dev2` → `:8001/mcp`。
+トランスポート: **Streamable HTTP**、stateless、パス `/mcp`。knowledge-mcp は Keycloak JWT（`aud=http://localhost:8000/mcp`、scope `mcp-tools`、role `knowledge-mcp-reader`）。web-search-mcp は `aud=http://localhost:8001/mcp`、scope `web-search-mcp-tools`、role `web-search-reader`（[ADR-0012](/decisions/ADR-0012-mcp-gateway-resource-server.md)）。ログインからツール実行までのシーケンスは [認証認可](/current/features/authentication.md)。直結クライアントは PRM 発見のあと Keycloak で認可コード + PKCE（[ADR-0014](/decisions/ADR-0014-mcp-direct-three-legged-oauth.md)）。非対話フォールバックの Bearer は `uv run python scripts/mcp_dev_token.py`（既定 `--target knowledge` → `:8000/mcp`）、web-search は `--target web-search --username dev2` → `:8001/mcp`。
 
 ## Gateway HTTP
 

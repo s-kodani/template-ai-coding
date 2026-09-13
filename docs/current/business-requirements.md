@@ -5,7 +5,7 @@ description: Keycloak 認証付きチャット UI による MCP ベクトル検�
 tags: [requirements, local, auth]
 status: stable
 generated:
-  at: "2026-08-30T05:55:00Z"
+  at: "2026-09-13T08:20:00Z"
   by: process:cursor-agent
 ---
 
@@ -22,7 +22,7 @@ generated:
 
 ## 利用者
 
-- MCP ツール契約、検索品質、トレース伝播、ローカル OAuth / Token Exchange を検証する開発者。認証の現行シーケンスは [認証認可](/current/features/authentication.md)
+- MCP ツール契約、検索品質、トレース伝播、ローカル OAuth / Token Exchange / 直結 3LO を検証する開発者。認証の現行シーケンスは [認証認可](/current/features/authentication.md)
 
 ## スコープ外
 
@@ -30,4 +30,4 @@ generated:
 - Langfuse / Langflow の SSO
 - Langfuse トレース以外の metrics / logs パイプライン
 - MCP Resource / Prompt、MCP 経由の ingest 変更
-- 3 つ目以降の Gateway MCP サーバー、CIMD、mTLS、Redis トークンキャッシュ
+- 3 つ目以降の Gateway MCP サーバー、CIMD、mTLS、Redis トークンキャッシュ。直結 MCP のクライアント登録はローカル匿名 DCR（[ADR-0014](/decisions/ADR-0014-mcp-direct-three-legged-oauth.md)）

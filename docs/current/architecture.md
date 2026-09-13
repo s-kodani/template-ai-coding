@@ -5,8 +5,8 @@ description: FastMCP（knowledge-mcp / web-search-mcp）、MCP Gateway、Chainli
 tags: [architecture, mcp, tracing, langflow, keycloak, gateway]
 status: stable
 generated:
-  at: "2026-09-06T09:55:10Z"
-  by: process:codex-agent
+  at: "2026-09-13T08:20:00Z"
+  by: process:cursor-agent
 ---
 
 # アーキテクチャ
@@ -70,7 +70,7 @@ flowchart TB
     Adapter -->|read Collection| LFPG
     Adapter -->|lifecycle sync| PG
     User -->|"MCP 接続 UI（HTTP/SSE）"| Chainlit
-    Inspector -->|"Bearer + Streamable HTTP :8000/mcp"| MCP
+    Inspector -->|"3LO または Bearer + Streamable HTTP :8000/mcp"| MCP
     Chainlit -->|"JWT aud=mcp-gateway"| Gateway
     Gateway -->|Token Exchange| Keycloak
     Gateway -->|"Bearer aud=http://localhost:8000/mcp"| MCP
@@ -97,7 +97,7 @@ Keycloak ログイン（client=chainlit）
   -> 各 MCP が JWT を検証（knowledge: aud=http://localhost:8000/mcp、role knowledge-mcp-reader。web-search: aud=http://localhost:8001/mcp、role web-search-reader）
 ```
 
-Chainlit トークンは knowledge-mcp に渡さない（[ADR-0012](/decisions/ADR-0012-mcp-gateway-resource-server.md)）。
+Chainlit トークンは knowledge-mcp に渡さない（[ADR-0012](/decisions/ADR-0012-mcp-gateway-resource-server.md)）。直結クライアントの 3LO は [ADR-0014](/decisions/ADR-0014-mcp-direct-three-legged-oauth.md)。
 
 ## レイヤ構成（MCP サーバー）
 
