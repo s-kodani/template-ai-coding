@@ -11,13 +11,13 @@ Issue と PR は **1:N**。Issue Close は、紐づく**作業 PR がすべて c
 - 変更内容が Acceptance Criteria と実装方針に照らして妥当か（コードレビュー）
 - この Skill の必須ステップを省略していないか（ワークフロー遵守）
 
-レビュー結果は Issue コメントへ残す。投稿手順は `references/github-issue-workflow.md` に従う。
+レビュー結果は open PR がある場合は PR コメント、PR がない場合は Issue コメントへ残す。投稿手順は `references/github-issue-workflow.md` に従う。
 
 ## 実施タイミング
 
 1. Phase 5〜7 まで完了したあと
 2. ユーザーへ「完了」と報告する前
-3. Issue を Close する前（**紐づく作業 PR がすべて closed であることも確認する**）
+3. Issue を Close する前（**Issue 本文 AC がすべて `[x]` であることを必ず確認する**。**紐づく作業 PR がすべて closed であることも確認する**）
 
 計画のみ・質問のみでコードも Skill も変えていない場合は Phase 8 不要。
 
@@ -43,17 +43,19 @@ Issue と PR は **1:N**。Issue Close は、紐づく**作業 PR がすべて c
 ```markdown
 - [ ] 最新 default branch を取り込んだ
 - [ ] 作業 Issue を確定し、各 PR に `Refs #<issue>` を付けた（該当時。`Closes` は使わない）
+- [ ] Plan 承認後に Issue へ Work Start コメントを残した（Coverage / Branch / Plan）
 - [ ] 紐づく作業 PR を Issue 本文または `gh pr list` で把握した（1:N の場合は一覧を Review コメントに残す）
 - [ ] Implementation Plan を `.plans/` へ書き出し、承認後に実装した
 - [ ] 変更強度に応じた grilling を行った、または省略理由が「軽微」である
 - [ ] Phase 3 Decision Check を行い、必要な ADR を扱った
-- [ ] 実装・修正の区切りごとに Issue 進捗コメントを残し、Acceptance Criteria タスクリストを再評価した（または書き込み不可を明示した）
-- [ ] Acceptance Criteria に未チェックが残っていない、または撤回理由をコメントした
+- [ ] 実装・修正の区切りごとに進捗コメントを残し（Pre-PR: Issue / Post-PR: PR）、Acceptance Criteria タスクリストを再評価した（または書き込み不可を明示した）
+- [ ] Issue 本文 Acceptance Criteria がすべて `[x]` であることを Close 前に確認した（または撤回理由をコメントした）
 - [ ] Phase 5 検証を実行し、未実施を成功と報告していない
 - [ ] Phase 6 で恒久ドキュメント / Release Log を最終実装へ合わせた
-- [ ] Phase 7 Completion Report を Issue へ残した
+- [ ] Phase 7 Completion Report を投稿した（Post-PR 時は PR、否则 Issue）
+- [ ] PR 作成・マージ時に Issue へ最小通知を残した（該当時）
 - [ ] 紐づく作業 PR がすべて closed（merged または closed）。open が残っている場合は Issue を Close しない
-- [ ] 本レビュー結果を Issue へ残した
+- [ ] 本レビュー結果を投稿した（Post-PR 時は PR、否则 Issue）
 ```
 
 `AGENTS.md` が追加で要求する項目（例: Skill 同期、Release-Note 宣言）があれば、同じコメントに足す。
@@ -62,9 +64,9 @@ Issue と PR は **1:N**。Issue Close は、紐づく**作業 PR がすべて c
 
 | 判定 | 意味 | 次の行動 |
 |---|---|---|
-| `pass` | must-fix なし。未チェックの Acceptance Criteria もなし（または明示的撤回済み）。紐づく作業 PR はすべて closed | Issue を**手動** Close してよい |
-| `pass-with-nits` | 任意改善のみ。PR はすべて closed | nits を残課題としてコメントし、Issue を**手動** Close してよい |
-| `must-fix` | 欠陥、ワークフロー欠落、または open の作業 PR が残っている | Phase 4 に戻る、または PR を merge/close してから Phase 8 をやり直す |
+| `pass` | must-fix なし。Issue 本文 AC がすべて `[x]`。紐づく作業 PR はすべて closed | Issue 本文 AC を再確認したうえで**手動** Close してよい |
+| `pass-with-nits` | 任意改善のみ。Issue 本文 AC がすべて `[x]`。PR はすべて closed | nits を残課題としてコメントし、Issue 本文 AC を再確認したうえで**手動** Close してよい |
+| `must-fix` | 欠陥、ワークフロー欠落、Issue 本文 AC に未チェック、または open の作業 PR が残っている | Phase 4 に戻る、AC を満たして本文を更新する、または PR を merge/close してから Phase 8 をやり直す |
 
 must-fix の無限ループを避ける。再レビューは修正範囲に限定する。任意改善は残課題に回し、**open PR が無い**場合は Close を止めない。
 
@@ -84,6 +86,7 @@ Issue Close の条件は `references/completion-report.md` も満たすこと。
 
 ### Workflow Compliance
 - Verdict: `compliant` | `gaps`
+- AC body verified: `all [x]` | `blocked: unchecked items remain`
 - Checklist:
   - [ ] ...
 

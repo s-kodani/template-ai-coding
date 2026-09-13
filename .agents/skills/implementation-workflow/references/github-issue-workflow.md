@@ -135,7 +135,7 @@ Goal、Scope、Acceptance Criteria の文言、Constraints など作業契約が
 
 作業履歴は原則 Append-only。過去の Checkpoint / 進捗 / Review コメントを後から書き換えてはいけない。誤りが判明した場合は新しいコメントで訂正する。
 
-会話や PR 説明への記載だけで、Issue コメントを省略してはいけない。
+会話や PR 説明への記載だけで、所定の投稿先へのコメントを省略してはいけない。投稿先は「Issue と PR のコメント分担」に従う。
 
 ---
 
@@ -163,10 +163,26 @@ Issue の Close は Phase 8 完了後に**手動**で行う。PR merge による
 Issue を Close する前に、次をすべて満たす。
 
 1. Phase 8（Review & Compliance）が `pass` または `pass-with-nits`
-2. Acceptance Criteria に未チェックが残っていない（または明示的撤回済み）
+2. **Issue 本文の Acceptance Criteria 節を読み直し、タスクリスト項目がすべて `[x]` であることを確認した**（必須ゲート。`[ ]` が 1 件でも残っていれば Close しない）
 3. **その Issue に紐づく作業 PR がすべて closed**（`merged` または `closed`。open が残っていない）
 
 1 Issue に複数 PR がある場合、**最後の PR が closed になるまで Issue を Close しない**。
+
+#### AC 全チェック確認（Close 直前・必須）
+
+Close 操作の直前に、Issue 本文の Acceptance Criteria 節を再読する。タスクリスト項目がすべて `[x]` であることを確認してから Close する。
+
+- `[ ]` が 1 件でも残っていれば Close しない。Phase 4 に戻るか、AC を満たす作業・検証を完了してから本文を更新する
+- 例外は **明示的撤回** のみ。Scope / Requirement Change コメントで理由を残し、該当 AC 行を本文から削除する。`[ ]` のまま残した AC がある状態では Close しない
+- Phase 8 Review コメント（PR 存在時は PR 側）に `AC body verified: all [x]` または `blocked: unchecked items remain` を記載する
+
+Close 判定手順の例:
+
+```bash
+gh issue view <issue-number> --json body --jq .body > /tmp/issue-body.md
+# Acceptance Criteria 節に `- [ ]` が残っていないことを目視または grep で確認
+grep -n '\- \[ \]' /tmp/issue-body.md  # AC 節内にヒットしたら Close 不可
+```
 
 作業 PR の確認例:
 
@@ -183,9 +199,139 @@ Issue 本文の `Related Issue / PR:` と進捗コメントの `Related PR` も�
 
 ---
 
+## Issue と PR のコメント分担
+
+Issue は作業契約と Pre-PR 履歴、PR は Post-PR の実装・レビュー履歴を担う。Acceptance Criteria の `[ ]` / `[x]` 更新は常に Issue 本文が正。
+
+| フェーズ | 投稿先 | 内容 |
+|---|---|---|
+| 着手（Plan 承認後・実装前） | Issue | スコープカバレッジ、作業ブランチ、Implementation Plan |
+| PR 作成まで | Issue | 進捗コメント、AC 再評価 |
+| PR 作成時 | Issue | PR 作成の旨のみ |
+| PR マージ時 | Issue | PR マージの旨のみ |
+| PR 作成後〜マージ前 | PR | 以降の対応・検証・レビュー結果・Completion Report |
+| 当初スコープ外 | Issue | コメント + Issue 本文更新 |
+| AC チェック | Issue 本文 | 対応の都度 `[x]` 更新 |
+
+### Pre-PR（Issue へ）
+
+- 着手コメント（Work Start）
+- Implementation Update（`agent-progress:v1`）
+- Scope / Requirement Change（当初スコープ外を含む）
+- Work Checkpoint（open PR がない場合。open PR がある場合は PR 側 — `references/session-handoff.md`）
+
+### PR 作成時（Issue へ・最小通知）
+
+PR 作成時は Issue へ詳細を書かず、事実通知のみ残す。
+
+```markdown
+<!-- agent-pr-opened:v1 -->
+PR を作成しました: <PR URL>
+Refs #<issue>
+```
+
+Issue 本文の `Related Issue / PR:` に PR URL を追記してよい。
+
+### PR マージ時（Issue へ・最小通知）
+
+PR マージ時も Issue へ詳細を書かず、事実通知のみ残す。Post-PR の詳細は PR 側に残したままとする。
+
+```markdown
+<!-- agent-pr-merged:v1 -->
+PR がマージされました: <PR URL>
+```
+
+1 Issue に複数 PR がある場合（1:N）、**各 PR のマージごと**に Issue へ 1 件ずつ残す。Issue 本文の `Related Issue / PR:` は merged 状態が分かるよう更新してよい。
+
+### Post-PR（該当 PR へ）
+
+open PR が存在する場合、次は **該当 PR のコメント**へ投稿する。
+
+- Implementation Update（`agent-progress:v1`）
+- review-fix、Phase 5 検証結果
+- Phase 7 Completion Report（`agent-completion:v1`）
+- Phase 8 Review（`agent-workflow-review:v1`）
+- Work Checkpoint（セッション中断時）
+
+フォーマットは Issue 版を流用する。`Related PR` は自 PR を指す。Acceptance Criteria 欄にチェック変更根拠を書くが、**本文の `[ ]` / `[x]` 更新は Issue 側**で行う。
+
+### 当初スコープ外の対応
+
+Issue 本文の Scope / Acceptance Criteria から外れる作業を行う場合:
+
+1. Issue へ Scope / Requirement Change コメントを残す
+2. Issue 本文（Goal / Scope / Acceptance Criteria 等）を更新する
+3. `.plans/` の Plan を更新し、再承認を得てから続行する
+
+### 例外（PR なし）
+
+Skill / docs のみ等で PR を作らない運用では、着手・進捗・Completion Report・Review を従来どおり Issue のみへ残す。
+
+### 書き込みできない場合
+
+`gh` が read-only 等で所定の投稿先へ書けない場合:
+
+1. 同じ本文を、書ける側（Issue または PR）のコメントへ投稿する
+2. ユーザー向け報告に、書けなかった理由と本文の要約を残す
+3. 投稿できたと偽らない
+
+---
+
+## 着手コメント（Work Start）
+
+Phase 2 で Implementation Plan を `.plans/` に書き出しユーザー承認を得た直後、Phase 3 / 4 に入る前に、紐づく作業 Issue へ着手コメントを残す。
+
+Resume 時は PR が未作成なら再投稿不要。作業ブランチ・Plan・カバレッジが変わった場合のみ追記する。
+
+### 必須冒頭行
+
+コメント先頭に、Issue のどの範囲をこの作業ブランチでカバーするかを明記する。
+
+- `**Coverage: full**` — Issue の Goal / Scope / Acceptance Criteria をこの作業ブランチですべてカバーする
+- `**Coverage: partial**` — 一部のみ。対象 AC 項目と In Scope を列挙する
+
+### 必須項目
+
+- 作業ブランチ名
+- Implementation Plan（`.plans/` の要約または全文。Plan は Issue 本文には載せない）
+
+### Format
+
+```markdown
+<!-- agent-work-start:v1 -->
+
+**Coverage: full** | **Coverage: partial**
+
+## Work Start
+
+### Branch
+`<branch>`
+
+### Implementation Plan
+（`.plans/` の内容）
+
+### Covered Acceptance Criteria（partial のとき）
+- 対象 AC 項目
+
+### In Scope（partial のとき）
+- このブランチで扱う範囲
+```
+
+### 完了ゲート
+
+着手コメントを Issue へ投稿し、URL またはコメント一覧で存在を確認するまで、Phase 3 / 4 に進まない。
+
+```bash
+gh issue comment <issue-number> --body-file <path-to-markdown>
+```
+
+---
+
 ## 実装・修正の進捗コメント（必須）
 
-エージェント側の実装または修正対応が一段落するたびに、紐づく作業 Issue へ進捗コメントを残し、本文の Acceptance Criteria タスクリストを再評価する。セッション終了時の Work Checkpoint（`references/session-handoff.md`）とは別物である。
+エージェント側の実装または修正対応が一段落するたびに、進捗コメントを残し、本文の Acceptance Criteria タスクリストを再評価する。セッション終了時の Work Checkpoint（`references/session-handoff.md`）とは別物である。
+
+**投稿先**: open PR がない間は Issue。open PR がある場合は該当 PR（「Issue と PR のコメント分担」参照）。
 
 ### 残すタイミング
 
@@ -217,21 +363,25 @@ Work Checkpoint は作業が未完のままセッションを終えるときに�
 
 シェル解釈を避けるため、本文はファイル経由で投稿する。
 
+Pre-PR（Issue）:
+
 ```bash
 gh issue comment <issue-number> --body-file <path-to-markdown>
 ```
+
+Post-PR（該当 PR）:
+
+```bash
+gh pr comment <pr-number> --body-file <path-to-markdown>
+```
+
+ManagePullRequest 等の PR コメント用ツールがある場合はそれを使ってよい。
 
 投稿が成功したら、返されたコメント URL を控える。失敗したら 1 回再試行する。
 
 ### 書き込みできない場合
 
-`gh` が read-only、認証不足、権限不足などで Issue へ書けない場合:
-
-1. 同じ本文を、存在する PR のコメントへ投稿する（PR コメント用ツールがあればそれを使う）
-2. ユーザー向け報告に、Issue へ書けなかった理由と本文の要約を残す
-3. Issue へ投稿できたと偽らない
-
-環境ポリシーが `gh` の書き込みを禁じている場合は、禁じられたコマンドを試さず、上記フォールバックへ進む。
+所定の投稿先（Issue または PR）へ書けない場合は、「Issue と PR のコメント分担」のフォールバックに従う。
 
 ### 進捗コメント Format
 
