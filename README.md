@@ -84,10 +84,18 @@ make -C infra langflow-down
 ```bash
 uv sync --frozen --extra dev
 uv sync --directory gateway --frozen --extra dev
-uv run ruff check src tests scripts gateway
+uv run ruff check src tests scripts gateway e2e
 uv run pytest
 uv run --directory gateway pytest
 uv run python scripts/validate_okf.py
+```
+
+Chainlit のログイン〜チャット 1 ターンは Playwright スモーク（`e2e/`。PR CI では走らない）。スタック起動と seed のあと:
+
+```bash
+uv sync --extra e2e
+uv run playwright install chromium
+make -C infra e2e
 ```
 
 ## MCP Inspector

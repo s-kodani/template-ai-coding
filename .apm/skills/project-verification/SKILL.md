@@ -38,7 +38,7 @@ description: >
 
 | 変更 | 必須 |
 |---|---|
-| `src/` / `tests/` / `scripts/`（Python） | `uv run ruff check src tests scripts`、`uv run pytest` |
+| `src/` / `tests/` / `scripts/` / `e2e/`（Python） | `uv run ruff check src tests scripts gateway e2e`、`uv run pytest` |
 | `docs/`（OKF） | `uv run python scripts/validate_okf.py` |
 | `.apm/skills/` / `.apm/agents/` | `uv run python scripts/check_skill_deploy.py --check`（正本編集後は `apm install`） |
 | `infra/` | 上記 Python 検証 + `docker compose -f infra/app/compose.yml build` |
@@ -57,7 +57,7 @@ description: >
 以下は Cloud Agent で Secrets または Docker 起動が必要。
 
 - `make -C infra up && make -C infra seed`
-- Chainlit 実チャット応答
+- Chainlit 実チャット応答、または `make -C infra e2e`（Playwright スモーク。PR quality では走らない）
 - Langfuse UI で 1 ターン = 1 trace の目視確認
 
 実行できない場合は理由と代替（自動テスト結果）を記録する。
@@ -70,7 +70,7 @@ description: >
 ## Verification
 
 ```text
-uv run ruff check src tests scripts  # pass
+uv run ruff check src tests scripts gateway e2e  # pass
 uv run pytest                       # N passed
 uv run python scripts/validate_okf.py  # pass
 uv run python scripts/check_skill_deploy.py --check  # pass（該当時）
