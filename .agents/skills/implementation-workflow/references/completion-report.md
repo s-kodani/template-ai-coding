@@ -4,7 +4,9 @@ Phase 7 と一時成果物ルール。
 
 ## Phase 7: Completion Report — 完了報告
 
-Changes、Verification、Documentation 更新を Issue 最終コメントとして残す。**この時点では Issue を Close しない。** Close は Phase 8（`references/review-and-compliance.md`）で must-fix が無いことを確認したあと。
+Changes、Verification、Documentation 更新を Completion Report として残す。**この時点では Issue を Close しない。** Close は Phase 8（`references/review-and-compliance.md`）で must-fix が無いことを確認し、Issue 本文 AC がすべて `[x]` であることを確認したあと。
+
+**投稿先**: open PR がある場合は該当 PR のコメント。PR がない場合は Issue コメント。
 
 ### Changes
 
@@ -20,7 +22,7 @@ Changes、Verification、Documentation 更新を Issue 最終コメントとし�
 
 ### GitHub Issue
 
-GitHub Issue を使用している場合は、最終コメントとして以下を残す。marker は `<!-- agent-completion:v1 -->`。
+GitHub Issue を使用している場合は、Completion Report として以下を残す。marker は `<!-- agent-completion:v1 -->`。
 
 - 実際に完了した Changes
 - Verification 結果
@@ -29,7 +31,7 @@ GitHub Issue を使用している場合は、最終コメントとして以下�
 - 残課題がある場合はその Issue への分離状況
 - 関連 PR / commit
 
-Phase 8 の Review で must-fix が無く、Acceptance Criteria タスクリストに未チェックが残っておらず（または項目を明示的に撤回し、コメントへ理由を残しており）、必要な恒久知識への昇格が完了し、**紐づく作業 PR がすべて closed**（merged または closed）であることを確認してから Issue を**手動** Close する。open の作業 PR が 1 件でも残っている場合は Close しない。Issue と PR は 1:N。詳細は `references/github-issue-workflow.md`。
+Phase 8 の Review で must-fix が無く、**Issue 本文 Acceptance Criteria タスクリストがすべて `[x]`** であることを Close 直前に必ず確認し、必要な恒久知識への昇格が完了し、**紐づく作業 PR がすべて closed**（merged または closed）であることを確認してから Issue を**手動** Close する。open の作業 PR が 1 件でも残っている場合、または本文 AC に `[ ]` が残っている場合は Close しない。Issue と PR は 1:N。詳細は `references/github-issue-workflow.md`。
 
 例:
 

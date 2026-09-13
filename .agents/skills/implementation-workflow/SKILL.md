@@ -13,7 +13,7 @@ description: コードの実装・変更・リファクタリング・機能追�
 - 重要な設計判断の追跡可能性
 - Current-state Documentation の正確性
 - セッションを跨いだ安全な作業再開
-- 実装・修正の区切りごとに残す Issue 進捗履歴
+- 実装・修正の区切りごとに残す進捗履歴（Pre-PR は Issue、Post-PR は PR）
 - 完了前の確実な検証
 - 完了後のコードレビューとワークフロー遵守確認
 
@@ -29,7 +29,7 @@ Implementation Plan は一時的な作業成果物。`.plans/` 配下の Markdow
 
 | 判断・作業 | 読む reference |
 |---|---|
-| Phase 0 — GitHub Issue 確認・起票、本文/コメント運用、進捗コメント | `references/github-issue-workflow.md` |
+| Phase 0 — GitHub Issue 確認・起票、着手コメント、Issue/PR コメント分担、進捗コメント | `references/github-issue-workflow.md` |
 | Phase 1–2 — Understand、Implementation Plan、変更強度、grilling、ユーザー承認 | `references/implementation-plan.md` |
 | Phase 3 — ADR 候補判定、Decision Level、実装中の判断検出 | `references/decision-check.md` |
 | Session Handoff / Resume — Checkpoint、再開時の Source of Truth | `references/session-handoff.md` |
@@ -53,10 +53,11 @@ Implementation Plan は一時的な作業成果物。`.plans/` 配下の Markdow
 6. **実態に合わせて計画を変更する** — Plan Drift を許容する。Plan は履歴文書ではない。スコープや Acceptance Criteria が変わる見直しは `.plans/` の md を更新し、再承認を得てから続行する。
 7. **実装後に恒久知識を再構成する** — 最終実装を基準にドキュメントを整合させる。
 8. **OKF では Concept 単位で知識を管理する** — 1 ファイル = 1 Concept を原則とし、過剰分割も避ける。
-9. **GitHub Issue を Coordination Ledger として使う** — 本文は作業契約、コメントは追記型履歴。Acceptance Criteria は本文のタスクリスト（`[ ]` / `[x]`）で充足状態を持つ。叙事的進捗はコメント。Issue を恒久ドキュメントの代替にしない。
-10. **実装・修正の区切りごとに Issue 進捗コメントを残し、AC タスクリストを再評価する** — 投稿成功を確認するまでその区切りを完了としない。詳細は `references/github-issue-workflow.md`。
-11. **セッション終了時に Checkpoint を残す** — 別セッションが Repository 状態と照合して再開できる事実を残す。
-12. **一連のワークフロー完了後にレビューする** — コードレビューとワークフロー遵守チェックを行い、must-fix が無いことを確認してから Issue を Close する。Issue と PR は 1:N。紐づく作業 PR がすべて closed（merged または closed）になる前に Issue を Close しない。詳細は `references/review-and-compliance.md` と `references/github-issue-workflow.md`。
+9. **GitHub Issue を Coordination Ledger として使う** — 本文は作業契約、Issue コメントは Pre-PR 履歴、PR コメントは Post-PR 実装・レビュー履歴。Acceptance Criteria は本文のタスクリスト（`[ ]` / `[x]`）で充足状態を持つ。Issue を恒久ドキュメントの代替にしない。
+10. **着手時に Issue へ Work Start コメントを残す** — 冒頭に Coverage（full / partial）、作業ブランチ、Implementation Plan を記載する。Plan 承認後・Phase 3 / 4 前。詳細は `references/github-issue-workflow.md`。
+11. **実装・修正の区切りごとに進捗コメントを残し、AC タスクリストを再評価する** — Pre-PR は Issue、Post-PR は PR。投稿成功を確認するまでその区切りを完了としない。詳細は `references/github-issue-workflow.md`。
+12. **セッション終了時に Checkpoint を残す** — open PR があれば PR、なければ Issue。別セッションが Repository 状態と照合して再開できる事実を残す。
+13. **一連のワークフロー完了後にレビューする** — コードレビューとワークフロー遵守チェックを行い、must-fix が無いことを確認する。Issue Close 前は本文 AC がすべて `[x]` であることを必ず確認する。Issue と PR は 1:N。紐づく作業 PR がすべて closed になる前に Issue を Close しない。詳細は `references/review-and-compliance.md` と `references/github-issue-workflow.md`。
 
 ---
 
@@ -71,24 +72,29 @@ Phase 1: Understand
         ↓
 Phase 2: Implementation Plan（`.plans/` + 必要に応じて grilling → ユーザー承認）
         ↓
+Issue: Work Start コメント（Coverage / Branch / Plan）
+        ↓
 Phase 3: Decision Check
         ↓
 Phase 4: Implement
-        │  実装/修正の区切りごとに Issue 進捗コメント（必須）
-        │  同じ区切りで AC タスクリストを再評価
+        │  Pre-PR: Issue へ進捗コメント + AC 再評価
+        │  PR 作成 → Issue へ最小通知 / Post-PR: PR へ進捗
+        │  PR マージ → Issue へ最小通知
         ├── セッション継続
-        └── セッション終了 → Work Checkpoint → Resume Protocol
+        └── セッション終了 → Work Checkpoint（open PR あれば PR）→ Resume Protocol
         ↓
 Phase 5: Verify
         ↓
 Phase 6: Documentation Reconciliation
         ↓
-Phase 7: Completion Report（Issue 最終コメント。この時点では Close しない）
+Phase 7: Completion Report（Post-PR 時は PR。Close しない）
         ↓
-Phase 8: Review & Compliance（コードレビュー + ワークフロー遵守）
+Phase 8: Review & Compliance（Post-PR 時は PR）
         │  must-fix があれば Phase 4 に戻る（進捗コメント必須）
         ↓
 紐づく作業 PR がすべて closed（merged または closed）
+        ↓
+Issue 本文 AC 全 [x] を確認
         ↓
 Issue Close（手動。PR 本文の `Closes` による自動 Close は使わない）
 ```
@@ -125,7 +131,7 @@ Implementation Plan 作成前に、リポジトリルール・関連コード・
 
 ## Phase 2: Implementation Plan
 
-コード変更前に必ず Plan を `.plans/` の md として作成する。変更強度（軽微 / 標準 / 設計）に応じて Plan の深さと grilling の要否を決める。「設計」では grilling 必須、「軽微」では省略可。grilling の有無にかかわらず、ユーザー承認なしに Phase 3 / 実装へ進まない。Cloud / background agent も例外ではない。詳細は `references/implementation-plan.md`。
+コード変更前に必ず Plan を `.plans/` の md として作成する。変更強度（軽微 / 標準 / 設計）に応じて Plan の深さと grilling の要否を決める。「設計」では grilling 必須、「軽微」では省略可。grilling の有無にかかわらず、ユーザー承認なしに Phase 3 / 実装へ進まない。Cloud / background agent も例外ではない。承認後は Issue へ Work Start コメントを残してから Phase 3 へ進む。詳細は `references/implementation-plan.md` と `references/github-issue-workflow.md`。
 
 ---
 
@@ -144,7 +150,7 @@ ADR 候補基準と Decision Level（1: Architecture / 2: Design / 3: Implementa
 - テスト設計は `test-strategy` Skill、自動化可能な振る舞い変更は `test-driven-development` Skill に従う
 - 新しい事実に応じて Plan から逸脱してよい（Plan の同期維持のためだけに更新しない）
 - スコープや Acceptance Criteria が変わる場合は `.plans/` の md を更新し、再承認を得てから続行する
-- **実装または修正対応が一段落したら、紐づく Issue へ進捗コメントを残し、本文の Acceptance Criteria タスクリストを再評価する。** 投稿を確認するまでその区切りを完了としない。詳細は `references/github-issue-workflow.md`
+- **実装または修正対応が一段落したら、進捗コメントを残し、本文の Acceptance Criteria タスクリストを再評価する。** Pre-PR は Issue、Post-PR は PR。投稿を確認するまでその区切りを完了としない。詳細は `references/github-issue-workflow.md`
 
 実装中に重要な設計判断が発生した場合は `references/decision-check.md` の Decision Detection に従う。
 
@@ -152,7 +158,7 @@ ADR 候補基準と Decision Level（1: Architecture / 2: Design / 3: Implementa
 
 ## Session Handoff / Resume
 
-セッション終了時は Issue へ Work Checkpoint を残す。別セッション再開時は最新 default branch を取り込んだうえで、Checkpoint と Repository 現在状態を照合し、`.plans/` の Plan を更新してユーザー承認を得てから再開する。詳細は `references/session-handoff.md`。
+セッション終了時は Work Checkpoint を残す。open PR があれば PR、なければ Issue。別セッション再開時は最新 default branch を取り込んだうえで、Checkpoint と Repository 現在状態を照合し、`.plans/` の Plan を更新してユーザー承認を得てから再開する。詳細は `references/session-handoff.md`。
 
 ---
 
@@ -170,13 +176,13 @@ ADR 候補基準と Decision Level（1: Architecture / 2: Design / 3: Implementa
 
 ## Phase 7: Completion Report
 
-Changes、Verification、Documentation 更新を Issue 最終コメントとして残す。この時点では Issue を Close しない。一時成果物ルールは `references/completion-report.md`。
+Changes、Verification、Documentation 更新を Completion Report として残す。open PR がある場合は PR コメント、PR がない場合は Issue コメント。この時点では Issue を Close しない。一時成果物ルールは `references/completion-report.md`。
 
 ---
 
 ## Phase 8: Review & Compliance
 
-一連のワークフロー完了後、最終差分のコードレビューとワークフロー遵守チェックを行う。結果を Issue コメントへ残す。must-fix があれば Phase 4 に戻り、再検証してからレビューをやり直す。must-fix が無く、未チェックの Acceptance Criteria が残っていない（または明示的に撤回した）こと、かつ紐づく作業 PR がすべて closed であることを確認してから Issue を手動 Close する。詳細は `references/review-and-compliance.md`。
+一連のワークフロー完了後、最終差分のコードレビューとワークフロー遵守チェックを行う。結果は open PR がある場合は PR コメント、PR がない場合は Issue コメントへ残す。must-fix があれば Phase 4 に戻り、再検証してからレビューをやり直す。Issue Close 前に **Issue 本文の Acceptance Criteria がすべて `[x]` であることを必ず確認**する。must-fix が無く、紐づく作業 PR がすべて closed であることを確認してから Issue を手動 Close する。詳細は `references/review-and-compliance.md`。
 
 ---
 
@@ -185,10 +191,10 @@ Changes、Verification、Documentation 更新を Issue 最終コメントとし�
 **作業開始前に最新 default branch を取り込む。  
 Issue で作業契約を明確にする。  
 コードを書く前に計画を `.plans/` の md として書く。  
-計画は変更強度に応じて grill-me / grilling で練り、ユーザー承認を得てから実装する。必要なら md を見直して再承認する。  
-セッションを跨ぐときは Checkpoint を残す。  
+計画は変更強度に応じて grill-me / grilling で練り、ユーザー承認を得てから Issue へ Work Start コメントを残す。必要なら md を見直して再承認する。  
+セッションを跨ぐときは Checkpoint を残す（open PR あれば PR）。  
 恒久的な意思決定を検出する。  
-実装して検証する。実装・修正の区切りごとに Issue へ進捗コメントを残し、Acceptance Criteria タスクリストを再評価する。  
+実装して検証する。Pre-PR は Issue、Post-PR は PR へ進捗コメントを残し、Acceptance Criteria タスクリストを再評価する。  
 最終状態を OKF で構造化された恒久知識へ整合させる。  
 Release Note は Phase 6 で `## v?.?.? (未確定)` へ追記し、タグ確定時に SemVer 見出しへ置き換える。  
-紐づく作業 PR がすべて closed になったあと、コードレビューとワークフロー遵守を確認してから Issue を手動 Close する。**
+紐づく作業 PR がすべて closed になったあと、コードレビューとワークフロー遵守を確認し、Issue 本文 AC がすべて `[x]` であることを確認してから Issue を手動 Close する。**

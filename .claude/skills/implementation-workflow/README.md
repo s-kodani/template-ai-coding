@@ -86,15 +86,24 @@ Issue本文を日報や進捗メモとして使うと、すぐに陳腐化しま
 - Constraints
 - Related Knowledge
 
-**Issueコメント**
+**Issueコメント（Pre-PR）**
 
 履歴として追記します。
 
+- Work Start（Coverage / Branch / Plan）
 - Scope / Requirement Change
-- Implementation Update（実装・修正の区切りごと。AC のチェック変更根拠を含む）
-- Work Checkpoint
-- Verification結果
-- Review結果（コードレビューとワークフロー遵守）
+- Implementation Update（PR 作成前。AC のチェック変更根拠を含む）
+- Work Checkpoint（open PR がない場合）
+- PR 作成・マージの最小通知
+
+**PRコメント（Post-PR）**
+
+open PR がある場合の履歴:
+
+- Implementation Update
+- Work Checkpoint（open PR がある場合）
+- Verification 結果
+- Review 結果（コードレビューとワークフロー遵守）
 - Completion Report
 
 ScopeやAcceptance Criteriaの**文言**が変わった場合は、Issue本文を現在状態へ更新し、変更理由をコメントへ残します。実装・修正の区切りでは本文の Acceptance Criteria タスクリストを再評価し、満たした項目だけ `[x]` にします。叙事的な進捗率は本文に書きません。
@@ -119,9 +128,9 @@ ScopeやAcceptance Criteriaの**文言**が変わった場合は、Issue本文�
 
 既存Issueの確認なしに重複Issueを作成しないことが重要です。
 
-実装または修正対応が一段落するたびに、紐づくIssueへ進捗コメント（`<!-- agent-progress:v1 -->`）を残し、本文の Acceptance Criteria タスクリストを再評価します。投稿できたことを確認するまで、その区切りを完了としません。Issueへ書けない環境では PR コメントへフォールバックし、Issueへ残したと偽ってはいけません。詳細は `references/github-issue-workflow.md` です。
+実装または修正対応が一段落するたびに、進捗コメント（`<!-- agent-progress:v1 -->`）を残し、本文の Acceptance Criteria タスクリストを再評価します。Pre-PR は Issue、Post-PR は PR へ投稿します。Plan 承認後は Issue へ Work Start コメントを残します。投稿できたことを確認するまで、その区切りを完了としません。詳細は `references/github-issue-workflow.md` です。
 
-一連のワークフロー完了後は、コードレビューとワークフロー遵守チェック（Phase 8）を行い、結果をIssueへ残します。紐づく作業 PR がすべて closed になったあと、Issue を手動 Close します。Issue と PR は 1:N。詳細は `references/review-and-compliance.md` と `references/github-issue-workflow.md` です。
+一連のワークフロー完了後は、コードレビューとワークフロー遵守チェック（Phase 8）を行い、Post-PR 時は PR へ結果を残します。Issue Close 前に本文 AC がすべて `[x]` であることを必ず確認し、紐づく作業 PR がすべて closed になったあと Issue を手動 Close します。Issue と PR は 1:N。詳細は `references/review-and-compliance.md` と `references/github-issue-workflow.md` です。
 
 ---
 
@@ -140,11 +149,14 @@ grill-me / grilling（変更強度に応じて。結果を md へ反映）
         ↓
 ユーザー承認（必須。修正があれば md を更新して再承認）
         ↓
+Issue: Work Start コメント
+        ↓
 Decision Check
         ↓
 Implement
-        │  実装/修正の区切りごとに Issue 進捗コメント（必須）
-        │  同じ区切りで AC タスクリストを再評価
+        │  Pre-PR: Issue へ進捗 + AC 再評価
+        │  PR 作成 / マージ → Issue へ最小通知
+        │  Post-PR: PR へ進捗
         │
         ├── セッション継続
         │
@@ -167,11 +179,13 @@ Documentation Reconciliation
         ├── ADR
         └── Release Log（`## v?.?.? (未確定)` へ追記）
         ↓
-Completion Report（この時点では Issue を Close しない）
+Completion Report（Post-PR 時は PR。Close しない）
         ↓
-Review & Compliance（コードレビュー + ワークフロー遵守。must-fix なら Implement に戻る）
+Review & Compliance（Post-PR 時は PR。must-fix なら Implement に戻る）
         ↓
 紐づく作業 PR がすべて closed（merged または closed）
+        ↓
+Issue 本文 AC 全 [x] を確認
         ↓
 Issue Close（手動。PR の `Closes` による自動 Close は使わない）
 
@@ -184,7 +198,7 @@ Issue Close（手動。PR の `Closes` による自動 Close は使わない）
 
 ## Session Handoff
 
-作業途中でセッションを終了するときは、IssueコメントへCheckpointを残します。
+作業途中でセッションを終了するときは、Work Checkpoint を残します。open PR があれば PR、なければ Issue へ投稿します。
 
 Checkpointには機械的に検索しやすいmarkerを付けます。
 

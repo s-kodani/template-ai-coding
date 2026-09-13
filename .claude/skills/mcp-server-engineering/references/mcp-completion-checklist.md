@@ -22,7 +22,7 @@ MCP サーバーの実装・変更作業で、**完了報告と検証記録に�
 - Security considerations（認可、token、SSRF 等）
 - Test plan（Inspector、実 Client 含む）
 
-進捗・Checkpoint・検証結果は Issue **コメント**へ追記します（本文を進捗メモで肥大化させない）。実装・修正の区切りごとの進捗コメントは [implementation-workflow の Issue コメント規則](/.agents/skills/implementation-workflow/references/github-issue-workflow.md) に従います。
+進捗・Checkpoint・検証結果は所定の投稿先へ追記します（Pre-PR: Issue / Post-PR: PR。本文を進捗メモで肥大化させない）。着手・進捗・PR 通知の規則は [implementation-workflow の GitHub Issue 運用](/.agents/skills/implementation-workflow/references/github-issue-workflow.md) に従います。
 
 ---
 

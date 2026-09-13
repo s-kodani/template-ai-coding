@@ -79,8 +79,8 @@ Implementation Plan の一時ファイルは `.plans/`（git 管理外）へ書�
 
 このリポジトリでは、コードの実装・変更・リファクタリング・機能追加は **原則 GitHub Issue に紐付け** ます。
 
-- **Issue**: 作業契約・作業履歴・Session Handoff
-- **Pull Request**: 実装差分・Review
+- **Issue**: 作業契約・Pre-PR 履歴（着手・進捗・PR 作成/マージ通知）
+- **Pull Request**: 実装差分・Post-PR 履歴（進捗・Review）
 - **OKF Knowledge Bundle**: 現在状態と恒久知識
 - **ADR**: 重要な設計判断の理由
 
@@ -94,8 +94,10 @@ Issue 本文・起票前確認・進捗コメント・Checkpoint・Resume・Clos
 - 新規 Issue 起票前に、ユーザーへ既存 Issue の有無を確認する（詳細は `references/github-issue-workflow.md`）
 - PR は **`Refs #<issue>`** を明示（`src/` 変更時 CI は `Refs` / `Closes` のいずれかを検証。運用上は `Refs` を使う）
 - Issue と PR は **1:N**。紐づく作業 PR がすべて closed（merged または closed）になる前に Issue を Close しない
-- 実装・修正の区切りごとに紐づく Issue へ進捗コメントを残し、本文の Acceptance Criteria タスクリストを再評価する。Cursor Cloud で `gh` が read-only のときは Issue へ書かず、同じ本文を PR コメントへ投稿し、Issue へ残せなかった理由を報告する
-- 一連のワークフロー完了後にコードレビューとワークフロー遵守チェックを行い、must-fix が無いことを確認し、作業 PR がすべて closed になったあと Issue を**手動** Close する
+- Plan 承認後、Issue へ **Work Start コメント**（冒頭に Coverage: full / partial、作業ブランチ、Implementation Plan）を残してから実装に入る
+- **Pre-PR**（PR 作成まで）の進捗は Issue コメント、**Post-PR**（PR 作成後）の進捗・Review・Completion Report は PR コメント。PR 作成・マージ時は Issue へ最小通知のみ。当初スコープ外の対応は Issue コメント + 本文更新
+- 実装・修正の区切りごとに進捗コメントを残し、本文の Acceptance Criteria タスクリストを対応の都度再評価する（`[x]` 更新は Issue 本文）。Cursor Cloud で `gh` が read-only のときは書ける側（Issue または PR）へ同内容を投稿し、偽報告しない
+- 一連のワークフロー完了後にコードレビューとワークフロー遵守チェックを行い、must-fix が無いことを確認する。Issue Close 前に **Issue 本文 AC がすべて `[x]` であることを必ず確認**し、作業 PR がすべて closed になったあと Issue を**手動** Close する
 
 ---
 
