@@ -29,7 +29,7 @@ make -C infra up
 make -C infra seed
 ```
 
-5. Chainlit は http://localhost:8080 を開き、Keycloak でログインします（開発ユーザー `dev` / `dev`）。Langfuse は http://localhost:3000 です。既定の knowledge-mcp ツールは MCP Gateway 経由です。追加の Streamable HTTP / SSE サーバは、`.chainlit/config.toml` の URL allowlist 内であれば MCP 接続 UI から接続できます（stdio は無効）。Keycloak 管理 UI は http://localhost:8081（`admin` / `admin`）です。
+5. Chainlit は http://localhost:8080 を開き、Keycloak でログインします。開発ユーザー: `dev` / `dev`（knowledge + web-search）、`dev2` / `dev2`（web-search のみ）、`readerless` / `readerless`（MCP reader role なし）。Langfuse は http://localhost:3000 です。既定の Gateway MCP（knowledge-mcp / web-search-mcp）は MCP Gateway 経由です。Web 検索を使う場合は `.env` に `BRAVE_SEARCH_API_KEY` を設定してください。追加の Streamable HTTP / SSE サーバは、`.chainlit/config.toml` の URL allowlist 内であれば MCP 接続 UI から接続できます（stdio は無効）。Keycloak 管理 UI は http://localhost:8081（`admin` / `admin`）です。
 
 6. Langfuse でサインアップ後、`LANGFUSE_PUBLIC_KEY` と `LANGFUSE_SECRET_KEY` を `.env` に追加し、アプリサービスを再起動します。
 
@@ -71,7 +71,8 @@ make -C infra langflow-down
 |---|---|
 | Chainlit | http://localhost:8080 |
 | Keycloak | http://localhost:8081 |
-| FastMCP | http://127.0.0.1:8000/mcp |
+| knowledge-mcp（FastMCP） | http://127.0.0.1:8000/mcp |
+| web-search-mcp（FastMCP） | http://127.0.0.1:8001/mcp |
 | MCP Gateway | compose 内部のみ（ホスト非公開） |
 | Langfuse | http://localhost:3000 |
 | アプリ Postgres | localhost:5433 |
@@ -83,15 +84,27 @@ make -C infra langflow-down
 ```bash
 uv sync --frozen --extra dev
 uv sync --directory gateway --frozen --extra dev
+uv run ruff check src tests scripts gateway
 uv run pytest
 uv run --directory gateway pytest
+uv run python scripts/validate_okf.py
 ```
 
 ## MCP Inspector
+
+knowledge-mcp（既定）:
 
 ```bash
 uv run python scripts/mcp_dev_token.py
 npx @modelcontextprotocol/inspector
 ```
 
-1 行目の出力をコピーします。Inspector で `http://127.0.0.1:8000/mcp`（Streamable HTTP）に接続し、Authorization に `Bearer <コピーしたトークン>` を設定します。knowledge-mcp は Keycloak JWT を要求します。
+1 行目の出力をコピーします。Inspector で `http://127.0.0.1:8000/mcp`（Streamable HTTP）に接続し、Authorization に `Bearer <コピーしたトークン>` を設定します。
+
+web-search-mcp:
+
+```bash
+uv run python scripts/mcp_dev_token.py --target web-search --username dev2
+```
+
+出力トークンで `http://127.0.0.1:8001/mcp` に接続します。いずれも Keycloak JWT（Token Exchange 後）が必要です。

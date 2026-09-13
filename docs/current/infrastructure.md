@@ -75,14 +75,14 @@ Chainlit と FastMCP の両方で、FastMCP を import する **前に** Langfus
 - Langfuse SDK 4 はデフォルトで LLM / Langfuse スパン以外を落とすため、`should_export_span` で `fastmcp` と `opentelemetry.instrumentation.asyncpg` を追加許可する
 - MCP `_meta` には `traceparent` / `tracestate` / `baggage`（`langfuse_trace_id` と `propagate_attributes` の属性）を載せる
 - プロセス共通の `langfuse.environment` / `langfuse.release` は `LANGFUSE_TRACING_ENVIRONMENT` / `LANGFUSE_RELEASE` で設定する
-- OTel Resource の `service.name` は Compose のサービス別 `OTEL_SERVICE_NAME` で設定する（Chainlit: `chainlit`、MCP サーバー: `knowledge-mcp`）。変更の反映にはコンテナ再作成が必要
+- OTel Resource の `service.name` は Compose のサービス別 `OTEL_SERVICE_NAME` で設定する（Chainlit: `chainlit`、MCP サーバー: `knowledge-mcp` / `web-search-mcp`）。変更の反映にはコンテナ再作成が必要
 
 ## 認証（Keycloak）
 
 Chainlit は Keycloak の `knowledge` realm で OAuth する（[ADR-0011](/decisions/ADR-0011-keycloak-chainlit-oauth.md)）。既定 knowledge-mcp 呼び出しは MCP Gateway が Token Exchange する（[ADR-0012](/decisions/ADR-0012-mcp-gateway-resource-server.md)）。シーケンスは [認証認可](/current/features/authentication.md)。
 
 - 管理 UI: http://localhost:8081 （`admin` / `admin`）
-- チャットログイン: Chainlit の Keycloak ボタンから。開発ユーザーは `dev` / `dev`（role `knowledge-mcp-reader`）
+- チャットログイン: Chainlit の Keycloak ボタンから。開発ユーザーは `dev` / `dev`（knowledge + web-search）、`dev2` / `dev2`（web-search のみ）、`readerless` / `readerless`（MCP reader role なし）
 - Chainlit コンテナはアプリ Postgres の `DATABASE_URL` を使わない（Chainlit 内蔵 data layer の `User` テーブルは持たない）。refresh token は `TOKEN_STORE_DATABASE_URL` で同じ Postgres の `chainlit_oauth_tokens` に保存する
 - MCP Gateway はホストポートを公開しない。Chainlit は Registry `gateways[].url`（既定 `http://mcp-gateway:8082`）へ到達する。カタログ `url` は各 Gateway の `PUBLIC_BASE_URL`
 - knowledge-mcp は `MCP_JWKS_URI` 設定時に Bearer 必須。Inspector は `uv run python scripts/mcp_dev_token.py` でトークンを取る
@@ -104,13 +104,13 @@ Chainlit は Keycloak の `knowledge` realm で OAuth する（[ADR-0011](/decis
 |---|---|
 | Langfuse トレース一覧 | `chat.turn` が **1 行** のみ（同一 `traceId` の FastMCP / ツールスパンはルートに出ない） |
 | トレース属性 | `user.id`（Keycloak sub 等）、`session.id`（Chainlit セッション）、`langfuse.environment` / `langfuse.release`（設定時） |
-| OTel Resource | `service.name` が Chainlit span では `chainlit`、MCP サーバー span では `knowledge-mcp`（`unknown_service` ではない） |
+| OTel Resource | `service.name` が Chainlit span では `chainlit`、MCP サーバー span では `knowledge-mcp` または `web-search-mcp`（`unknown_service` ではない） |
 | トレース詳細 | `llm.generate` が `chat.turn` の子（type=generation、model / usage 付き） |
 | Embedding | `search.embed` が embedding observation（model / usage 付き） |
 | ツール呼び出し | `search_knowledge` / `get_document` の input / output が tool observation に記録。metadata に `tool.route` / `tool.server_id` 等 |
 | MCP サーバー | `tools/call …` SERVER span 配下に `search.query` / `get_document.fetch` |
 | Postgres | `search.query` 近傍に asyncpg クライアントスパン（CONNECT / SELECT 等） |
-| 自動テスト | `uv run pytest tests/test_trace_propagation.py tests/test_langfuse_span_export.py tests/test_tracing_metadata.py` |
+| 自動テスト | `uv run pytest tests/test_trace_propagation.py tests/test_langfuse_span_export.py tests/test_tracing_metadata.py tests/test_tool_trace_output.py` |
 
 ## CI/CD と DevSecOps
 
@@ -123,6 +123,7 @@ Chainlit は Keycloak の `knowledge` realm で OAuth する（[ADR-0011](/decis
 | `.github/workflows/ci.yml` | quality | `ruff check`, `pytest`（ルートと `gateway/`）、各環境の `uv sync --frozen --extra dev`、自前 Skill / Agent の展開一致（`scripts/check_skill_deploy.py`） |
 | | security | Bandit, `uv audit`, gitleaks |
 | | build-and-scan | `docker compose build`, Trivy（mcp-server / chainlit / mcp-gateway イメージ、`scanners: vuln`） |
+| `.github/workflows/pr-workflow.yml` | workflow | PR 本文の Issue 紐付け（`src/` 変更時）、Release Log 更新要否（`src/` / `infra/` 変更時） |
 | `.github/workflows/okf.yml` | okf | OKF bundle 検証 |
 
 ### ローカル検証

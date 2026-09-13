@@ -1,7 +1,7 @@
 ---
 type: Authentication Flow
-title: Chainlit × Gateway × knowledge-mcp の認証認可
-description: 未ログインの Chainlit アクセスから knowledge-mcp ツール実行までの認証・認可シーケンス（現行実装）。
+title: Chainlit × Gateway × MCP Resource Server の認証認可
+description: 未ログインの Chainlit アクセスから Gateway 経由の MCP ツール実行までの認証・認可シーケンス（knowledge-mcp / web-search-mcp、現行実装）。
 tags: [authentication, authorization, keycloak, gateway, mcp, chainlit]
 status: stable
 generated:
@@ -9,9 +9,9 @@ generated:
   by: process:claude-code
 ---
 
-# Chainlit × Gateway × knowledge-mcp の認証認可
+# Chainlit × Gateway × MCP Resource Server の認証認可
 
-未ログインのブラウザが `http://localhost:8080` を開いてから、Gateway 経由で knowledge-mcp のツールを実行するまでの **現行シーケンス** です。なぜこの形かは [ADR-0011](/decisions/ADR-0011-keycloak-chainlit-oauth.md)、[ADR-0012](/decisions/ADR-0012-mcp-gateway-resource-server.md)、輸送は [ADR-0013](/decisions/ADR-0013-mcp-gateway-per-server-streamable-http.md)。UI の見え方は [Chainlit チャット UI](/current/features/ui.md)、HTTP 契約は [MCP ツール契約](/current/features/api.md)、ホストと Compose は [インフラ](/current/infrastructure.md)。
+未ログインのブラウザが `http://localhost:8080` を開いてから、Gateway 経由で MCP ツール（knowledge-mcp / web-search-mcp）を実行するまでの **現行シーケンス** です。以下のシーケンス図は knowledge-mcp を例示します。web-search-mcp も同一 Gateway 経路で、Token Exchange の `scope`（`web-search-mcp-tools`）、下流 `aud`（`http://localhost:8001/mcp`）、realm role（`web-search-reader`）が異なります。なぜこの形かは [ADR-0011](/decisions/ADR-0011-keycloak-chainlit-oauth.md)、[ADR-0012](/decisions/ADR-0012-mcp-gateway-resource-server.md)、輸送は [ADR-0013](/decisions/ADR-0013-mcp-gateway-per-server-streamable-http.md)。UI の見え方は [Chainlit チャット UI](/current/features/ui.md)、HTTP 契約は [MCP ツール契約](/current/features/api.md)、ホストと Compose は [インフラ](/current/infrastructure.md)。
 
 Chainlit の Keycloak トークンは knowledge-mcp に渡さない。
 
@@ -24,7 +24,8 @@ Chainlit の Keycloak トークンは knowledge-mcp に渡さない。
 | Keycloak | IdP と Token Exchange | `infra/app/keycloak/knowledge-realm.json` |
 | アプリ Postgres | refresh / access の暗号化保存 | `chainlit_oauth_tokens`（pgcrypto） |
 | MCP Gateway | Chainlit JWT 検証、role 検査、Token Exchange、下流 MCP 呼び出し | `gateway/`、`infra/app/gateway-registry.yml` |
-| knowledge-mcp | Resource Server。交換後 JWT を検証してツールを実行 | `src/knowledge_mcp/auth.py` |
+| knowledge-mcp | Resource Server。交換後 JWT を検証してベクトル検索ツールを実行 | `src/knowledge_mcp/auth.py` |
+| web-search-mcp | Resource Server。交換後 JWT を検証して Web 検索ツールを実行 | `src/web_search_mcp/auth.py` |
 
 ローカル開発ユーザー:
 
@@ -36,14 +37,14 @@ Chainlit の Keycloak トークンは knowledge-mcp に渡さない。
 
 サーバーごとの実行条件は Registry の `authorization.required_roles` と Keycloak の `users[].realmRoles` を揃える。ユーザー → サーバーの個別 allowlist は持たない。
 
-## トークンは2種類
+## トークンは3種類（上流1 + 下流2）
 
-| | Chainlit 用（上流） | knowledge-mcp 用（下流） |
-|---|---|---|
-| 発行 | Keycloak authorization code（client `chainlit`） | Gateway が Token Exchange（client `mcp-gateway`） |
-| 主な claim | `aud=mcp-gateway`、`azp=chainlit`、`sub`、`realm_access.roles` | `aud=http://localhost:8000/mcp`、`azp=mcp-gateway`、`scope=mcp-tools`、同じ `sub` と roles |
-| 使える先 | Gateway の `GET /v1/mcp` と `POST /mcp/{server_id}` だけ | knowledge-mcp の `/mcp` だけ |
-| ブラウザ | 直接持たない（Cookie / Chainlit セッション） | 持たない |
+| | Chainlit 用（上流） | knowledge-mcp 用（下流） | web-search-mcp 用（下流） |
+|---|---|---|---|
+| 発行 | Keycloak authorization code（client `chainlit`） | Gateway が Token Exchange（client `mcp-gateway`） | 同上 |
+| 主な claim | `aud=mcp-gateway`、`azp=chainlit`、`sub`、`realm_access.roles` | `aud=http://localhost:8000/mcp`、`scope=mcp-tools`、`knowledge-mcp-reader` | `aud=http://localhost:8001/mcp`、`scope=web-search-mcp-tools`、`web-search-reader` |
+| 使える先 | Gateway の `GET /v1/mcp` と `POST /mcp/{server_id}` | knowledge-mcp の `/mcp` | web-search-mcp の `/mcp` |
+| ブラウザ | 直接持たない（Cookie / Chainlit セッション） | 持たない | 持たない |
 
 Chainlit 用 JWT に `sub` と roles を載せるため、realm import は `basic` / `profile` / `email` / `roles` / `chainlit-mcp-gateway` を client scope として残す。
 
