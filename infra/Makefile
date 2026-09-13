@@ -49,3 +49,4 @@ test:
 
 e2e:
 	cd $(ROOT) && uv run pytest e2e --browser chromium
+# Requires: uv sync --extra e2e; stack up+seed; OPENAI_API_KEY. Optional: uv run playwright install chromium

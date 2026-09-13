@@ -34,7 +34,6 @@ def test_keycloak_login_then_one_chat_turn(
     chat_input.fill(PROMPT)
     page.locator("#chat-submit").click()
 
-    reply = page.locator('[data-step-type="assistant_message"]')
+    reply = page.locator('[data-step-type="assistant_message"]').last
     expect(reply).to_be_visible(timeout=CHAT_TIMEOUT_MS)
-    expect(reply).not_to_have_text("")
     assert reply.inner_text().strip()
