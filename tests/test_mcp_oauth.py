@@ -99,3 +99,24 @@ async def test_jwt_verifier_accepts_resource_audience() -> None:
     access = await verifier.verify_token(token)
     assert access is not None
     assert access.client_id == "user-a" or access.claims.get("sub") == "user-a"
+
+
+@pytest.mark.asyncio
+async def test_jwt_verifier_accepts_three_legged_token_without_chainlit_azp() -> None:
+    keys = RSAKeyPair.generate()
+    verifier = JWTVerifier(
+        public_key=keys.public_key,
+        issuer=ISSUER,
+        audience=RESOURCE,
+        required_scopes=["mcp-tools"],
+    )
+    token = keys.create_token(
+        subject="user-a",
+        issuer=ISSUER,
+        audience=RESOURCE,
+        scopes=["mcp-tools"],
+        additional_claims={"azp": "inspector-dcr-client", "iat": int(time.time())},
+    )
+    access = await verifier.verify_token(token)
+    assert access is not None
+    assert access.claims.get("azp") == "inspector-dcr-client"
