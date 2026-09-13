@@ -45,7 +45,7 @@ Issue と PR は **1:N**。Issue Close は、紐づく**作業 PR がすべて c
 - [ ] 作業 Issue を確定し、各 PR に `Refs #<issue>` を付けた（該当時。`Closes` は使わない）
 - [ ] Plan 承認後に Issue へ Work Start コメントを残した（Coverage / Branch / Plan）
 - [ ] 紐づく作業 PR を Issue 本文または `gh pr list` で把握した（1:N の場合は一覧を Review コメントに残す）
-- [ ] Implementation Plan を `.plans/` へ書き出し、承認後に実装した
+- [ ] Implementation Plan を `.plans/` へ書き出し、Phase 2 / 4 で `ponytail` Skill を読み、承認後に実装した
 - [ ] 変更強度に応じた grilling を行った、または省略理由が「軽微」である
 - [ ] Phase 3 Decision Check を行い、必要な ADR を扱った
 - [ ] 実装・修正の区切りごとに進捗コメントを残し（Pre-PR: Issue / Post-PR: PR）、Acceptance Criteria タスクリストを再評価した（または書き込み不可を明示した）

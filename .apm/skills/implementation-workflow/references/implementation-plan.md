@@ -74,6 +74,25 @@ Phase 5 では `project-verification` Skill を読み、変更種別に応じた
 
 Level 1 Architecture Decision および重大な Level 2 Design Decision では、ユーザー確認を必須とする。Plan 承認とは別に、該当判断の確認を取る。
 
+### Minimal Implementation — ponytail
+
+**アプリケーションコード・インフラ・テストの変更**では、Plan 作成時（Phase 2）と実装時（Phase 4）の両方で `ponytail` Skill を読む。変更強度にかかわらず省略しない（質問のみ・docs の Current-state / ADR のみ更新など、コード変更がない場合は対象外）。
+
+Plan 作成時:
+
+1. `ponytail` Skill を読む
+2. **Scope** を Acceptance Criteria に直接必要な範囲へ絞る（YAGNI）。今回やらないことを明示する
+3. **Implementation Approach** では、既存コード・stdlib・既存依存を優先し、新規抽象・新規依存・将来用フックを Plan 段階で抑える
+4.  heavier な代替案を採用しない理由を 1 行ずつ残す（過剰設計の排除根拠）
+5. **Verification** 項目は削らない。`test-strategy` と Phase 5 の要件はそのまま Plan に書く
+
+実装時（Phase 4）:
+
+- Plan で合意した Scope 外のリファクタ・拡張・新規依存を追加しない
+- 意図的な簡略化で既知の上限がある場合は、コードに `ponytail:` コメントで上限とアップグレード経路を残す（Skill 参照）
+
+ユーザーが `stop ponytail` / `normal mode` と明示した場合のみ、本節の最小化要求を外してよい。
+
 ### Plan Refinement — grill-me / grilling
 
 **変更強度が「設計」**、または **「標準」で未解決の設計判断がある** 場合のみ `grill-me` → `grilling` を実施する。「軽微」では省略してよい。
