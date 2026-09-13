@@ -1,6 +1,6 @@
 ---
 name: implementation-workflow
-description: コードの実装・変更・リファクタリング・機能追加を行う際に、GitHub Issueによる作業トラッキングと実装・修正区切りごとの進捗コメント、Session Checkpoint、Implementation Planの作成（`.plans/` への md 書き出し、変更強度に応じた grill-me / grilling、ユーザー承認を含む）、ADR候補の検出、実装・検証、OKFベースのCurrent-state Documentation・Decision Record・Release Noteへの整合、完了後のコードレビューとワークフロー遵守チェックまでを一貫して進めるためのワークフロー。実装スピードを維持しながら、セッションを跨いだ再開可能性、設計上の意思決定の追跡可能性、AIが利用しやすい知識構造、恒久ドキュメントの正確性を確保したい場合に使用する。
+description: コードの実装・変更・リファクタリング・機能追加を行う際に、GitHub Issueによる作業トラッキングと実装・修正区切りごとの進捗コメント、Session Checkpoint、Implementation Planの作成（`.plans/` への md 書き出し、ponytail による最小スコープ化、変更強度に応じた grill-me / grilling、ユーザー承認を含む）、ADR候補の検出、ponytail に従った実装・検証、OKFベースのCurrent-state Documentation・Decision Record・Release Noteへの整合、完了後のコードレビューとワークフロー遵守チェックまでを一貫して進めるためのワークフロー。実装スピードを維持しながら、セッションを跨いだ再開可能性、設計上の意思決定の追跡可能性、AIが利用しやすい知識構造、恒久ドキュメントの正確性を確保したい場合に使用する。
 ---
 
 # 実装ワークフロー Skill
@@ -30,7 +30,7 @@ Implementation Plan は一時的な作業成果物。`.plans/` 配下の Markdow
 | 判断・作業 | 読む reference |
 |---|---|
 | Phase 0 — GitHub Issue 確認・起票、着手コメント、Issue/PR コメント分担、進捗コメント | `references/github-issue-workflow.md` |
-| Phase 1–2 — Understand、Implementation Plan、変更強度、grilling、ユーザー承認 | `references/implementation-plan.md` |
+| Phase 1–2 — Understand、Implementation Plan、ponytail、変更強度、grilling、ユーザー承認 | `references/implementation-plan.md` |
 | Phase 3 — ADR 候補判定、Decision Level、実装中の判断検出 | `references/decision-check.md` |
 | Session Handoff / Resume — Checkpoint、再開時の Source of Truth | `references/session-handoff.md` |
 | Phase 5 — 検証、OKF Documentation Validation | `references/verification.md` |
@@ -70,13 +70,13 @@ Phase 0: Work Item Setup（GitHub Issue）
         ↓
 Phase 1: Understand
         ↓
-Phase 2: Implementation Plan（`.plans/` + 必要に応じて grilling → ユーザー承認）
+Phase 2: Implementation Plan（`.plans/` + ponytail + 必要に応じて grilling → ユーザー承認）
         ↓
 Issue: Work Start コメント（Coverage / Branch / Plan）
         ↓
 Phase 3: Decision Check
         ↓
-Phase 4: Implement
+Phase 4: Implement（ponytail + test-strategy / TDD）
         │  Pre-PR: Issue へ進捗コメント + AC 再評価
         │  PR 作成 → Issue へ最小通知 / Post-PR: PR へ進捗
         │  PR マージ → Issue へ最小通知
@@ -131,7 +131,7 @@ Implementation Plan 作成前に、リポジトリルール・関連コード・
 
 ## Phase 2: Implementation Plan
 
-コード変更前に必ず Plan を `.plans/` の md として作成する。変更強度（軽微 / 標準 / 設計）に応じて Plan の深さと grilling の要否を決める。「設計」では grilling 必須、「軽微」では省略可。grilling の有無にかかわらず、ユーザー承認なしに Phase 3 / 実装へ進まない。Cloud / background agent も例外ではない。承認後は Issue へ Work Start コメントを残してから Phase 3 へ進む。詳細は `references/implementation-plan.md` と `references/github-issue-workflow.md`。
+コード変更前に必ず Plan を `.plans/` の md として作成する。`ponytail` Skill を読み、Scope と Implementation Approach を最小実装の観点で絞る（テスト・検証は削らない）。変更強度（軽微 / 標準 / 設計）に応じて Plan の深さと grilling の要否を決める。「設計」では grilling 必須、「軽微」では省略可。grilling の有無にかかわらず、ユーザー承認なしに Phase 3 / 実装へ進まない。Cloud / background agent も例外ではない。承認後は Issue へ Work Start コメントを残してから Phase 3 へ進む。詳細は `references/implementation-plan.md` と `references/github-issue-workflow.md`。
 
 ---
 
@@ -143,11 +143,11 @@ ADR 候補基準と Decision Level（1: Architecture / 2: Design / 3: Implementa
 
 ## Phase 4: Implement
 
-合意された方針、`AGENTS.md`、Current-state Documentation、適用 ADR に従って実装する。
+合意された方針、`AGENTS.md`、Current-state Documentation、適用 ADR に従って実装する。`ponytail` Skill を読み、Plan で合意した Scope 内の最小 diff で実装する。
 
 - 無関係なリファクタリング・スコープ拡大を避ける
 - 実装と同時にテストを更新する
-- テスト設計は `test-strategy` Skill、自動化可能な振る舞い変更は `test-driven-development` Skill に従う
+- テスト設計は `test-strategy` Skill、自動化可能な振る舞い変更は `test-driven-development` Skill に従う（`ponytail` によりテスト・検証を省略してはいけない）
 - 新しい事実に応じて Plan から逸脱してよい（Plan の同期維持のためだけに更新しない）
 - スコープや Acceptance Criteria が変わる場合は `.plans/` の md を更新し、再承認を得てから続行する
 - **実装または修正対応が一段落したら、進捗コメントを残し、本文の Acceptance Criteria タスクリストを再評価する。** Pre-PR は Issue、Post-PR は PR。投稿を確認するまでその区切りを完了としない。詳細は `references/github-issue-workflow.md`
@@ -191,10 +191,10 @@ Changes、Verification、Documentation 更新を Completion Report として残�
 **作業開始前に最新 default branch を取り込む。  
 Issue で作業契約を明確にする。  
 コードを書く前に計画を `.plans/` の md として書く。  
-計画は変更強度に応じて grill-me / grilling で練り、ユーザー承認を得てから Issue へ Work Start コメントを残す。必要なら md を見直して再承認する。  
+Plan 作成時は `ponytail` で Scope を最小化し、変更強度に応じて grill-me / grilling で練り、ユーザー承認を得てから Issue へ Work Start コメントを残す。必要なら md を見直して再承認する。  
 セッションを跨ぐときは Checkpoint を残す（open PR あれば PR）。  
 恒久的な意思決定を検出する。  
-実装して検証する。Pre-PR は Issue、Post-PR は PR へ進捗コメントを残し、Acceptance Criteria タスクリストを再評価する。  
+`ponytail` に従って実装し、検証する。Pre-PR は Issue、Post-PR は PR へ進捗コメントを残し、Acceptance Criteria タスクリストを再評価する。  
 最終状態を OKF で構造化された恒久知識へ整合させる。  
 Release Note は Phase 6 で `## v?.?.? (未確定)` へ追記し、タグ確定時に SemVer 見出しへ置き換える。  
 紐づく作業 PR がすべて closed になったあと、コードレビューとワークフロー遵守を確認し、Issue 本文 AC がすべて `[x]` であることを確認してから Issue を手動 Close する。**

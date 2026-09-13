@@ -39,7 +39,7 @@ Skill とこのファイルが競合する場合は、**このリポジトリ固
 | `test-driven-development` | 自動化可能な振る舞い変更時の Red-Green-Refactor |
 | `project-verification` | 本リポジトリ固有の CI / Docker / トレース検証コマンド |
 | `mcp-server-engineering` | MCP サーバー設計・変更（併用） |
-| `ponytail` | 最小実装（必要なテスト・検証は省略しない） |
+| `ponytail` | `implementation-workflow` Phase 2 / 4 で併用する最小実装（必要なテスト・検証は省略しない） |
 | `grill-me` / `grilling` | 設計強度の Plan refinement |
 | `commit-only` / `commit-push` / `commit-push-pr` | Git 操作（`delivery-reference.md` 参照） |
 | `gh` | GitHub CLI 参照専用 |
@@ -60,7 +60,7 @@ Skill とこのファイルが競合する場合は、**このリポジトリ固
 
 | Skill | ソース（`apm.lock.yaml` 参照） | リポジトリ固有ルールの置き場 |
 |-------|------|------|
-| `ponytail` | DietrichGebert/ponytail | `AGENTS.md` Coding conventions |
+| `ponytail` | DietrichGebert/ponytail | `implementation-workflow` Phase 2 / 4、`AGENTS.md` Coding conventions |
 | `test-driven-development` | obra/superpowers | `test-strategy`（適用判断）、`AGENTS.md`（必須ケース） |
 | `grill-me` / `grilling` | mattpocock/skills | `implementation-workflow` references |
 | `gh` | cli/cli | 特になし（汎用 CLI 参照） |
@@ -71,7 +71,7 @@ Pull Request は対応 Issue を **`Refs #<issue>`** で明示します（`src/`
 
 作業開始前に `git fetch origin main` し、新規ブランチは `origin/main` から切ります。既存の作業ブランチでは `git merge origin/main` します（rebase は明示時のみ）。Cloud Agent の「fetch を先行しない」指示より本ルールを優先します。
 
-Implementation Plan の一時ファイルは `.plans/`（git 管理外）へ書き出します。grilling の要否は変更強度に従いますが、ユーザー承認なしに Phase 3 / 実装へ進んではいけません。Cloud / background agent も例外ではありません。手順の詳細は `implementation-workflow` Skill に従います。
+Implementation Plan の一時ファイルは `.plans/`（git 管理外）へ書き出します。Phase 2 では `ponytail` で Scope を最小化し、grilling の要否は変更強度に従います。Phase 4 でも `ponytail` を併用します。ユーザー承認なしに Phase 3 / 実装へ進んではいけません。Cloud / background agent も例外ではありません。手順の詳細は `implementation-workflow` Skill に従います。
 
 ---
 
@@ -235,7 +235,7 @@ Coding conventions:
   - **バグ修正**: 再現テストまたは回帰テストを先行
   - **リファクタ**: 既存テストで保護、不足時は characterization test
   - **docs / 設定 / Skill のみ**: TDD 不要。該当 validator を実行
-- **`ponytail` 使用時**: 最小実装はコード行数の削減であり、`test-strategy` / 本節で要求するテスト・検証の省略理由にはならない
+- **`implementation-workflow` Phase 2 / 4 では `ponytail` を併用する**: 最小実装はコード行数の削減であり、`test-strategy` / 本節で要求するテスト・検証の省略理由にはならない
 - Phase 5 検証は `project-verification` Skill と併用する
 - Langfuse SDK initializes before FastMCP import in both Chainlit and MCP server processes
 - Do not log API keys, embeddings, or full document bodies in spans
