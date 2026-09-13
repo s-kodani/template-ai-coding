@@ -42,6 +42,7 @@ generated:
 - Gateway MCP は `mcp-autoload.js` が Registry から一覧へ載せる（表示 seed のみ。`url` は `via {host:port}` で Gateway を識別し、接続用 URL は載せない。Chainlit 2.12 の persist が `status` を必須とするため seed に `connecting` を含める）。プラグ UI の `POST|DELETE /mcp` は Chainlit 標準のまま。Gateway 名は `gateway_mcp_connect` ミドルウェアが JWT 注入 connect として処理する。Cookie JWT は `request.cookies` から読む。`POST /mcp` は既存セッションがあればそれを返し（`status: connected`、`list_tools` は短タイムアウト）、未バインドなら `keycloak_sub` で token store を結び直す
 - 接続数バッジ（クリップアイコン右上）は Chainlit が MCP セッション状態を管理する。Gateway MCP の JWT は DevTools の `/mcp` body に含まれない
 - knowledge-mcp へ UI からヘッダーなしで直接接続しようとすると JWT 必須のため失敗する（allowlist 内でも Gateway 名はミドルウェア経由）
+- ログイン継続中でも Keycloak セッションが失効していると `POST /mcp` は 403 `Keycloak セッションが無効です。再ログインしてください` を返す。ツール実行中に失効した場合も同じ文言がツール結果として返り、チャットターンは落ちない。復旧は再ログイン（寿命の正本は [認証認可](/current/features/authentication.md)）
 
 ## 設定
 

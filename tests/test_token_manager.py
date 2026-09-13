@@ -7,9 +7,11 @@ from unittest.mock import AsyncMock
 import pytest
 
 from chat_ui.token_manager import (
+    REAUTH_REQUIRED_DETAIL,
     KeycloakTokenManager,
     MemoryTokenStore,
     PostgresTokenStore,
+    ReauthRequired,
     StoredTokens,
 )
 
@@ -99,3 +101,118 @@ async def test_postgres_store_upserts_when_refresh_token_is_missing() -> None:
     assert loaded.access_token == token
     assert loaded.refresh_token is None
     await store.delete_by_session("sess-null-rt")
+
+
+class _Response:
+    def __init__(self, status_code: int, payload: dict | None = None) -> None:
+        self.status_code = status_code
+        self._payload = payload or {}
+
+    def json(self) -> dict:
+        return self._payload
+
+
+def _patch_post(monkeypatch: pytest.MonkeyPatch, post: AsyncMock) -> None:
+    fake_client = AsyncMock()
+    fake_client.__aenter__.return_value.post = post
+    fake_client.__aexit__.return_value = None
+    monkeypatch.setattr("chat_ui.token_manager.httpx.AsyncClient", lambda **_: fake_client)
+
+
+async def _expired_manager(store: MemoryTokenStore) -> KeycloakTokenManager:
+    mgr = KeycloakTokenManager(
+        store,
+        token_url="http://idp/token",
+        client_id="chainlit",
+        client_secret="secret",
+    )
+    await mgr.save_response(
+        {
+            "access_token": _unsigned({"sub": "s1", "exp": 1_000_000_000}),
+            "refresh_token": "rt-secret-value",
+        }
+    )
+    await mgr.bind_session("s1", "sess")
+    return mgr
+
+
+@pytest.mark.asyncio
+async def test_rejected_refresh_requires_reauth_and_drops_stored_tokens(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    store = MemoryTokenStore()
+    mgr = await _expired_manager(store)
+    _patch_post(monkeypatch, AsyncMock(return_value=_Response(400, {"error": "invalid_grant"})))
+
+    with pytest.raises(ReauthRequired):
+        await mgr.get_access_token("sess")
+
+    assert await store.get_by_session("sess") is None
+
+
+@pytest.mark.asyncio
+async def test_upstream_refresh_failure_keeps_stored_tokens(
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    store = MemoryTokenStore()
+    mgr = await _expired_manager(store)
+    _patch_post(monkeypatch, AsyncMock(return_value=_Response(503)))
+
+    with caplog.at_level("WARNING"):
+        assert await mgr.get_access_token("sess") is None
+    assert await store.get_by_session("sess") is not None
+    assert "503" in caplog.text
+    assert "rt-secret-value" not in caplog.text
+
+
+@pytest.mark.asyncio
+async def test_misconfigured_client_does_not_force_reauth(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """invalid_client means a broken client secret, not a dead SSO session."""
+    store = MemoryTokenStore()
+    mgr = await _expired_manager(store)
+    _patch_post(monkeypatch, AsyncMock(return_value=_Response(401, {"error": "invalid_client"})))
+
+    assert await mgr.get_access_token("sess") is None
+    assert await store.get_by_session("sess") is not None
+
+
+@pytest.mark.asyncio
+async def test_transport_refresh_failure_keeps_stored_tokens(
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    import httpx
+
+    store = MemoryTokenStore()
+    mgr = await _expired_manager(store)
+    _patch_post(monkeypatch, AsyncMock(side_effect=httpx.ConnectError("boom")))
+
+    with caplog.at_level("WARNING"):
+        assert await mgr.get_access_token("sess") is None
+    assert await store.get_by_session("sess") is not None
+    assert "ConnectError" in caplog.text
+    assert "rt-secret-value" not in caplog.text
+
+
+def test_reauth_detail_tells_the_user_what_to_do() -> None:
+    assert "再ログイン" in REAUTH_REQUIRED_DETAIL
+
+
+@pytest.mark.asyncio
+async def test_rejected_refresh_does_not_log_token_values(
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    store = MemoryTokenStore()
+    mgr = await _expired_manager(store)
+    _patch_post(monkeypatch, AsyncMock(return_value=_Response(400, {"error": "invalid_grant"})))
+
+    with caplog.at_level("WARNING"), pytest.raises(ReauthRequired):
+        await mgr.get_access_token("sess")
+
+    logged = caplog.text
+    assert "invalid_grant" in logged
+    assert "rt-secret-value" not in logged

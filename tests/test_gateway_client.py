@@ -8,6 +8,7 @@ import httpx
 import pytest
 
 from chat_ui.gateway_client import MCPGatewayClient, call_gateway_tool, load_gateway_catalog
+from chat_ui.token_manager import REAUTH_REQUIRED_DETAIL, ReauthRequired
 
 
 class _FakeManager:
@@ -116,7 +117,7 @@ async def test_call_gateway_tool_requires_server_id() -> None:
 
 
 @pytest.mark.asyncio
-async def test_call_gateway_tool_unauthenticated_is_generic() -> None:
+async def test_call_gateway_tool_unauthenticated_asks_for_relogin() -> None:
     result = await call_gateway_tool(
         MCPGatewayClient("http://gateway:8082"),
         _FakeManager([None]),
@@ -125,7 +126,55 @@ async def test_call_gateway_tool_unauthenticated_is_generic() -> None:
         {"query": "docs"},
         server_id="other",
     )
-    assert result == {"error": "Not authenticated for MCP tools"}
+    assert result == {"error": "REAUTH_REQUIRED", "message": REAUTH_REQUIRED_DETAIL}
+
+
+@pytest.mark.asyncio
+async def test_call_gateway_tool_reports_reauth_from_first_lookup() -> None:
+    class _ExpiredManager:
+        async def get_access_token(self, session_id: str, *, force_refresh: bool = False) -> str:
+            del session_id, force_refresh
+            raise ReauthRequired("Keycloak session expired")
+
+    result = await call_gateway_tool(
+        MCPGatewayClient("http://gateway:8082"),
+        _ExpiredManager(),
+        "sess",
+        "search_knowledge",
+        {"query": "docs"},
+        server_id="other",
+    )
+    assert result == {"error": "REAUTH_REQUIRED", "message": REAUTH_REQUIRED_DETAIL}
+
+
+@pytest.mark.asyncio
+async def test_call_gateway_tool_reports_reauth_from_401_retry() -> None:
+    class _ExpiresOnRetry:
+        async def get_access_token(self, session_id: str, *, force_refresh: bool = False) -> str:
+            del session_id
+            if force_refresh:
+                raise ReauthRequired("Keycloak session expired")
+            return "stale-token"
+
+    class _Unauthorized(_FakeMcp):
+        async def __aenter__(self) -> Self:
+            return self
+
+        async def call_tool(self, name: str, arguments: dict, meta: object = None) -> Any:
+            del name, arguments, meta
+            raise _http_error(401)
+
+    unauthorized = _Unauthorized()
+
+    result = await call_gateway_tool(
+        MCPGatewayClient("http://gateway:8082", mcp_client_factory=lambda url, token: unauthorized),
+        _ExpiresOnRetry(),
+        "sess",
+        "search_knowledge",
+        {"query": "docs"},
+        server_id="other",
+    )
+    assert result == {"error": "REAUTH_REQUIRED", "message": REAUTH_REQUIRED_DETAIL}
 
 
 @pytest.mark.asyncio

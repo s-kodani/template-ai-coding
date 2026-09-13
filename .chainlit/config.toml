@@ -1,6 +1,8 @@
 [project]
 # Chainlit project config
 enable_telemetry = false
+# Keep the login cookie within the Keycloak SSO session (ssoSessionMaxLifespan).
+user_session_timeout = 36000
 
 [UI]
 name = "ナレッジ検索チャット"

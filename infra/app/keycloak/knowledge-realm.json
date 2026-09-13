@@ -5,6 +5,9 @@
   "registrationAllowed": false,
   "loginWithEmailAllowed": true,
   "resetPasswordAllowed": false,
+  "ssoSessionIdleTimeout": 28800,
+  "ssoSessionMaxLifespan": 36000,
+  "accessTokenLifespan": 300,
   "roles": {
     "realm": [
       {
