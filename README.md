@@ -94,7 +94,7 @@ Chainlit のログイン〜チャット 1 ターンは Playwright スモーク�
 
 ```bash
 uv sync --extra e2e
-uv run playwright install chromium
+uv run playwright install chromium   # システムに Google Chrome がある場合は不要
 make -C infra e2e
 ```
 

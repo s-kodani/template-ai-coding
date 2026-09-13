@@ -105,11 +105,11 @@ Chainlit は Keycloak の `knowledge` realm で OAuth する（[ADR-0011](/decis
 
 ```bash
 uv sync --extra e2e
-uv run playwright install chromium
+uv run playwright install chromium   # システムに Google Chrome がある場合は不要
 make -C infra e2e
 ```
 
-ベース URL は `E2E_BASE_URL`（既定 `http://localhost:8080`）。断言はアシスタント応答が非空であることまで。ツール呼び出し有無や応答本文の完全一致は見ない。
+ベース URL は `E2E_BASE_URL`（既定 `http://localhost:8080`）。ブラウザは `E2E_BROWSER_CHANNEL`（未設定時は `google-chrome` があれば `chrome`、なければ Playwright 同梱 Chromium）。断言はアシスタント応答が非空であることまで。ツール呼び出し有無や応答本文の完全一致は見ない。
 
 ### トレース検証チェックリスト（1 ターン = 1 trace）
 

@@ -1,5 +1,5 @@
 lockfile_version: '1'
-generated_at: '2026-09-13T12:00:49.643390+00:00'
+generated_at: '2026-09-13T12:05:45.740665+00:00'
 apm_version: 0.30.0
 dependencies:
 - repo_url: cli/cli
@@ -577,7 +577,7 @@ deployments:
   owners:
   - .
   active_owner: .
-  content_hash: sha256:7fd3900eaae711c1eba9b6fb7088ce7ff6a948b7e3bc448c9ca51f2d8e69cf51
+  content_hash: sha256:b41c91067d8b4980b4b0ff77d6b370ef41d01e9c7a2c9abe817ffbeb90f2e0f8
 - kind: project-relative
   target: codex
   value: .agents/skills/gh
@@ -1063,7 +1063,7 @@ deployments:
   owners:
   - .
   active_owner: .
-  content_hash: sha256:7fd3900eaae711c1eba9b6fb7088ce7ff6a948b7e3bc448c9ca51f2d8e69cf51
+  content_hash: sha256:b41c91067d8b4980b4b0ff77d6b370ef41d01e9c7a2c9abe817ffbeb90f2e0f8
 - kind: uri
   target: mcp
   value: awslabs.aws-documentation-mcp-server
@@ -1268,7 +1268,7 @@ local_deployed_file_hashes:
   .agents/skills/project-verification/references/ingest-validation.md: sha256:0973be051ac1250594e998320024703b510c6f8d34d1b52815f14a60e71e7903
   .agents/skills/project-verification/references/local-stack.md: sha256:d2d2f65c3741d2cfacf4448ec1cd931eb93575cf9600abc000c7021ea88321a2
   .agents/skills/project-verification/references/trace-validation.md: sha256:d1c64a208fd1d4093a1439a029c9bcfeb031812feab5dfd5c2ec9498094a4852
-  .agents/skills/test-strategy/SKILL.md: sha256:7fd3900eaae711c1eba9b6fb7088ce7ff6a948b7e3bc448c9ca51f2d8e69cf51
+  .agents/skills/test-strategy/SKILL.md: sha256:b41c91067d8b4980b4b0ff77d6b370ef41d01e9c7a2c9abe817ffbeb90f2e0f8
   .claude/agents/review.md: sha256:9cd583be36d2ca03f89b8aa856b3e0c116f8b8ea82af5dee41ed3d3c511f9cb4
   .claude/skills/commit-only/SKILL.md: sha256:29c7ec0777dd6d7fbe56649df961935168a07f4f131746337f01f127a60d1d1b
   .claude/skills/commit-only/reference.md: sha256:8500b1098b337bb80e2751c37c2bc723f2c5af7ccbade2d5639dc7b10d14e039
@@ -1301,6 +1301,6 @@ local_deployed_file_hashes:
   .claude/skills/project-verification/references/ingest-validation.md: sha256:0973be051ac1250594e998320024703b510c6f8d34d1b52815f14a60e71e7903
   .claude/skills/project-verification/references/local-stack.md: sha256:d2d2f65c3741d2cfacf4448ec1cd931eb93575cf9600abc000c7021ea88321a2
   .claude/skills/project-verification/references/trace-validation.md: sha256:d1c64a208fd1d4093a1439a029c9bcfeb031812feab5dfd5c2ec9498094a4852
-  .claude/skills/test-strategy/SKILL.md: sha256:7fd3900eaae711c1eba9b6fb7088ce7ff6a948b7e3bc448c9ca51f2d8e69cf51
+  .claude/skills/test-strategy/SKILL.md: sha256:b41c91067d8b4980b4b0ff77d6b370ef41d01e9c7a2c9abe817ffbeb90f2e0f8
   .codex/agents/review.toml: sha256:587b7455c0e4684ec198e6a2a4fc2093a8b154dde0fa7645f29f4e766e3fdd33
   .cursor/agents/review.md: sha256:9cd583be36d2ca03f89b8aa856b3e0c116f8b8ea82af5dee41ed3d3c511f9cb4

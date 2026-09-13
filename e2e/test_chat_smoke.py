@@ -16,14 +16,14 @@ _PROVIDER_BUTTON = re.compile(r"keycloak", re.IGNORECASE)
 
 def test_keycloak_login_then_one_chat_turn(
     page: Page,
-    base_url: str,
+    chainlit_url: str,
     e2e_username: str,
     e2e_password: str,
     openai_api_key: str,
 ) -> None:
     del openai_api_key
 
-    page.goto(f"{base_url}/login", wait_until="domcontentloaded")
+    page.goto(f"{chainlit_url}/login", wait_until="domcontentloaded")
     page.get_by_role("button", name=_PROVIDER_BUTTON).click()
     page.locator("#username").fill(e2e_username)
     page.locator("#password").fill(e2e_password)

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import shutil
 from pathlib import Path
 
 import pytest
@@ -29,9 +30,36 @@ def _load_repo_env() -> None:
 _load_repo_env()
 
 
+def _browser_channel() -> str | None:
+    override = os.environ.get("E2E_BROWSER_CHANNEL")
+    if override is not None:
+        return override or None
+    if shutil.which("google-chrome") or shutil.which("google-chrome-stable"):
+        return "chrome"
+    return None
+
+
+def pytest_configure(config: pytest.Config) -> None:
+    current = getattr(config.option, "base_url", None)
+    if not current:
+        config.option.base_url = os.environ.get("E2E_BASE_URL") or DEFAULT_BASE_URL
+
+
 @pytest.fixture(scope="session")
-def base_url() -> str:
-    return os.environ.get("E2E_BASE_URL", DEFAULT_BASE_URL).rstrip("/")
+def chainlit_url() -> str:
+    return (os.environ.get("E2E_BASE_URL") or DEFAULT_BASE_URL).rstrip("/")
+
+
+@pytest.fixture(scope="session")
+def browser_type_launch_args(browser_type_launch_args: dict) -> dict:
+    args = dict(browser_type_launch_args)
+    extra = list(args.get("args") or [])
+    extra.extend(["--no-sandbox", "--disable-dev-shm-usage"])
+    args["args"] = extra
+    channel = _browser_channel()
+    if channel:
+        args["channel"] = channel
+    return args
 
 
 @pytest.fixture(scope="session")

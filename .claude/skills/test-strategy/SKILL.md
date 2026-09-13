@@ -41,7 +41,7 @@ description: >-
 uv run pytest path/to/test_file.py
 ```
 
-E2E（Playwright）は `e2e/` に置き、`testpaths` 外のため既定の `uv run pytest` では収集しない。ローカル実行は `uv sync --extra e2e`、`uv run playwright install chromium`、`make -C infra e2e`。前提は起動済み compose と `OPENAI_API_KEY`。PR の quality ジョブでは走らない。
+E2E（Playwright）は `e2e/` に置き、`testpaths` 外のため既定の `uv run pytest` では収集しない。ローカル実行は `uv sync --extra e2e`、必要なら `uv run playwright install chromium`、`make -C infra e2e`。前提は起動済み compose と `OPENAI_API_KEY`。システムに Google Chrome があればそれを使う。PR の quality ジョブでは走らない。
 
 ## 目的
 
