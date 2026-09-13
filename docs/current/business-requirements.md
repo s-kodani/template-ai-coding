@@ -16,7 +16,7 @@ generated:
 以下を検証する **ローカル専用** の開発者向けスタックを提供する。
 
 1. PostgreSQL + pgvector 上の FastMCP ベクトル検索
-2. Keycloak OAuth でログインしたうえで、MCP Gateway 経由で knowledge-mcp ツールを呼び出し、Langfuse ルートトレースを持つ Chainlit チャット UI（追加 MCP サーバを UI から接続可能）
+2. Keycloak OAuth でログインしたうえで、MCP Gateway 経由で knowledge-mcp（ベクトル検索）および web-search-mcp（Web 検索）ツールを呼び出し、Langfuse ルートトレースを持つ Chainlit チャット UI（追加 MCP サーバを UI から接続可能）
 3. Chainlit、MCP Gateway、MCP クライアント/サーバー、embedding、Postgres クライアントスパンにわたる end-to-end 親子トレース
 4. 任意の Langflow サイドカーによるファイル Ingest。ホスト原本を Files / Flow API で投入し、専用 Collection から `documents` へ adapter で複製して Chainlit / FastMCP から検索する
 
@@ -30,4 +30,4 @@ generated:
 - Langfuse / Langflow の SSO
 - Langfuse トレース以外の metrics / logs パイプライン
 - MCP Resource / Prompt、MCP 経由の ingest 変更
-- 第 2 MCP サーバー、CIMD、mTLS、Redis トークンキャッシュ
+- 3 つ目以降の Gateway MCP サーバー、CIMD、mTLS、Redis トークンキャッシュ

@@ -20,8 +20,10 @@ generated:
 | コンポーネント | 初期化 | 主な観測 |
 |---|---|---|
 | Chainlit | `src/chat_ui/app.py`（FastMCP import 前） | `chat.turn`, `llm.generate`, tool observation |
-| MCP サーバー | `src/knowledge_mcp/server.py`（FastMCP import 前） | FastMCP server span, `search.embed` / `search.query` |
-| 共通 | `src/knowledge_mcp/tracing.py` | SDK 初期化、`_meta` 注入、ヘルパー |
+| knowledge-mcp | `src/knowledge_mcp/server.py`（FastMCP import 前） | FastMCP server span, `search.embed` / `search.query` / `get_document.fetch` |
+| web-search-mcp | `src/web_search_mcp/server.py`（FastMCP import 前） | FastMCP server span, `search_web` ツール I/O |
+| 共通（knowledge） | `src/knowledge_mcp/tracing.py` | SDK 初期化、`_meta` 注入、ヘルパー |
+| 共通（web-search） | `src/web_search_mcp/tracing.py` | SDK 初期化、ツール I/O 記録 |
 
 Langfuse キー未設定時は **no-op**（サービスは起動可能）。
 
@@ -65,7 +67,7 @@ flowchart TD
 | `LANGFUSE_TRACING_ENVIRONMENT` | 任意 | プロセス共通の `langfuse.environment`（例: `local`） |
 | `LANGFUSE_RELEASE` | 任意 | プロセス共通の `langfuse.release`（例: git SHA） |
 | `FASTMCP_TELEMETRY_MODE` | 推奨 | 既定 `native`（MCP `_meta` 伝播） |
-| `OTEL_SERVICE_NAME` | Compose 設定済み | OTel Resource の `service.name`。Chainlit は `chainlit`、MCP サーバーは `knowledge-mcp` |
+| `OTEL_SERVICE_NAME` | Compose 設定済み | OTel Resource の `service.name`。Chainlit は `chainlit`、MCP サーバーは `knowledge-mcp` / `web-search-mcp` |
 
 初回は Langfuse UI でサインアップし API キーを `.env` にコピーする（[インフラ](/current/infrastructure.md)）。
 
@@ -82,7 +84,7 @@ Chainlit の `on_message` 内で `chat_trace_attributes` → Langfuse `propagate
 | `langfuse.trace.metadata.chat_model` | 設定 | `CHAT_MODEL` |
 | `langfuse.environment` | env / SDK | `LANGFUSE_TRACING_ENVIRONMENT` |
 | `langfuse.release` | env / SDK | `LANGFUSE_RELEASE` |
-| `service.name` | Compose / OTel Resource | `chainlit` / `knowledge-mcp` |
+| `service.name` | Compose / OTel Resource | `chainlit` / `knowledge-mcp` / `web-search-mcp` |
 
 ### `chat.turn` の入出力
 
@@ -150,7 +152,7 @@ FastMCP native telemetry（`FASTMCP_TELEMETRY_MODE=native`）に加え、`inject
 | `tracestate` | W3C（存在時） |
 | `baggage` | W3C Baggage（`langfuse_trace_id` および `propagate_attributes(..., as_baggage=True)` の属性） |
 
-Gateway は受信 `_meta` を下流 knowledge-mcp へマージ転送する。MCP サーバーは `extract_langfuse_propagated_context` で親 span に接続する。
+Gateway は受信 `_meta` を下流 MCP（knowledge-mcp / web-search-mcp）へマージ転送する。MCP サーバーは `extract_langfuse_propagated_context` で親 span に接続する（knowledge-mcp のみ OTel 子 span を追加 export）。
 
 ## Export フィルタ
 
@@ -172,7 +174,7 @@ Langfuse SDK 4 既定に加え、`should_export_langfuse_span` で以下のみ�
 | 項目 | 理由 |
 |---|---|
 | OTel metrics / logs パイプライン | [ADR-0004](/decisions/ADR-0004-langfuse-mcp-meta-tracing.md) でトレースのみ |
-| Gateway からの Langfuse export | 伝播のみ。export は Chainlit / mcp-server |
+| Gateway からの Langfuse export | 伝播のみ。export は Chainlit / MCP サーバー（knowledge-mcp / web-search-mcp） |
 | `langfuse.openai` ラッパー | 素の `AsyncOpenAI` + `@observe` + `record_generation_result` で usage を付与 |
 | `sample_rate`, `mask_otel_spans` | 将来の運用要件に応じて検討 |
 | `langfuse.trace.public` | 共有トレース要件が出たら追加 |
