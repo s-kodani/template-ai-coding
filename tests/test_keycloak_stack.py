@@ -204,6 +204,20 @@ def test_mcp_tool_scopes_appear_on_consent_screen_for_three_legged_oauth() -> No
         assert attributes["display.on.consent.screen"] == "true"
 
 
+def test_mcp_tool_scopes_embed_realm_roles_for_direct_clients() -> None:
+    """DCR clients only keep requested PRM scopes; roles must travel with mcp-tools."""
+    realm = _realm()
+    for name in ("mcp-tools", "web-search-mcp-tools"):
+        mappers = {
+            mapper["name"]: mapper
+            for mapper in _client_scope(realm, name).get("protocolMappers") or []
+        }
+        roles = mappers["realm roles"]
+        assert roles["protocolMapper"] == "oidc-usermodel-realm-role-mapper"
+        assert roles["config"]["claim.name"] == "realm_access.roles"
+        assert roles["config"]["access.token.claim"] == "true"
+
+
 def test_realm_audience_mappers_bind_gateway_and_mcp_resource() -> None:
     realm = _realm()
     chainlit = next(client for client in realm["clients"] if client["clientId"] == "chainlit")

@@ -254,7 +254,7 @@ Chainlit を介さない。MCP は Resource Server、Keycloak は Authorization 
 4. Keycloak の AS metadata を発見し、匿名 DCR で public クライアントを登録する（PKCE S256、redirect は localhost）。trusted hosts は `localhost` / `127.0.0.1`
 5. 認可コード + PKCE。scope に `mcp-tools`（または `web-search-mcp-tools`）を付ける。resource `aud` は既存の audience mapper が付与する
 6. ユーザーは Keycloak でログインし、consent で MCP scope を承認する（realm role は TE 経路と同じ。`dev` は knowledge + web-search）
-7. MCP は交換後 JWT と同じ検証（`aud`、scope、`knowledge-mcp-reader` / `web-search-reader`）。`azp` を `chainlit` に限定しない。DCR クライアントは `fullScopeAllowed` のままなので、ユーザーの realm role が JWT に載る
+7. MCP は交換後 JWT と同じ検証（`aud`、scope、`knowledge-mcp-reader` / `web-search-reader`）。`azp` を `chainlit` に限定しない。DCR クライアントは PRM の scope しか持たないため、realm role は `mcp-tools` / `web-search-mcp-tools` の mapper で JWT に載る
 
 非対話フォールバックは `uv run python scripts/mcp_dev_token.py` の password grant + Token Exchange。
 
