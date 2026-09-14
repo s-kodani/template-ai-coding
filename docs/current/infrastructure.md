@@ -104,11 +104,15 @@ Chainlit は Keycloak の `knowledge` realm で OAuth する（[ADR-0011](/decis
 | ファイル | 内容 |
 |---|---|
 | `test_chat_smoke.py` | `dev` ログイン + チャット 1 ターン（非空応答） |
-| `test_auth_flow.py` | 未ログインでは `#chat-input` が使えない |
+| `test_auth_flow.py` | 未ログイン gate、ログアウト → 再ログイン |
 | `test_chat_knowledge.py` | Gateway MCP 接続、`search_knowledge` / `get_document` と seed 固定文言 |
 | `test_chat_rbac.py` | `dev2` / `readerless` が seed ナレッジを取得できない |
+| `test_chat_web_search.py` | `dev2` + `search_web`（URL 断言）。Brave key 未設定エラー経路 |
+| `test_mcp_gateway_lifecycle.py` | 両 MCP POST、disconnect → 失敗 → reconnect → 成功 |
+| `test_chat_session.py` | マルチターン会話（ツール不要） |
+| `test_mcp_catalog_ui.py` | `dev2` の knowledge 接続 403、reload 再接続 |
 
-前提: `make -C infra up && make -C infra seed`、`.env` の `OPENAI_API_KEY`。スタック未起動は失敗。API key 未設定は skip。
+前提: `make -C infra up && make -C infra seed`、`.env` の `OPENAI_API_KEY`。`search_web` 正系は `BRAVE_SEARCH_API_KEY` も必要（未設定時 skip）。Brave key 未設定エラー経路はホスト env に key が**ない**ときのみ実行（ある場合 skip）。スタック未起動は失敗。
 
 ```bash
 uv sync --extra e2e

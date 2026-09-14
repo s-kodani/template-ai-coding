@@ -2,17 +2,19 @@
 
 from __future__ import annotations
 
+import json
 import os
 import re
 import shutil
 from pathlib import Path
 
 import pytest
-from playwright.sync_api import Locator, Page, Response, expect
+from playwright.sync_api import APIResponse, Locator, Page, Response, expect
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_BASE_URL = "http://localhost:8080"
 CHAT_TIMEOUT_MS = 120_000
+MCP_STORAGE_KEY = "mcp_storage_key"
 _KEYCLOAK_PROVIDER = re.compile(r"keycloak", re.IGNORECASE)
 
 
@@ -45,9 +47,11 @@ def _browser_channel() -> str | None:
 def login_keycloak(page: Page, chainlit_url: str, username: str, password: str) -> None:
     page.goto(f"{chainlit_url}/login", wait_until="domcontentloaded")
     page.get_by_role("button", name=_KEYCLOAK_PROVIDER).click()
-    page.locator("#username").fill(username)
-    page.locator("#password").fill(password)
-    page.locator("#kc-login").click()
+    username_field = page.locator("#username")
+    if username_field.is_visible(timeout=5_000):
+        username_field.fill(username)
+        page.locator("#password").fill(password)
+        page.locator("#kc-login").click()
     expect(page.locator("#chat-input")).to_be_visible(timeout=60_000)
 
 
@@ -81,6 +85,74 @@ def reply_contains_any(reply: Locator, *needles: str) -> bool:
 
 def reply_contains_seed_knowledge(reply: Locator) -> bool:
     return reply_contains_any(reply, "FastMCP", "pgvector", "Chainlit", "Langfuse")
+
+
+def reply_contains_url(reply: Locator) -> bool:
+    text = reply.inner_text()
+    return "http://" in text or "https://" in text
+
+
+def parse_session_id(post_data: str | None) -> str:
+    payload = json.loads(post_data or "{}")
+    session_id = payload.get("sessionId")
+    if not session_id:
+        msg = "sessionId was not found in POST /mcp body"
+        raise AssertionError(msg)
+    return str(session_id)
+
+
+def capture_session_id_from_response(response: Response) -> str:
+    return parse_session_id(response.request.post_data)
+
+
+def mcp_api_request(
+    page: Page,
+    chainlit_url: str,
+    method: str,
+    session_id: str,
+    server_name: str,
+) -> APIResponse:
+    url = f"{chainlit_url.rstrip('/')}/mcp"
+    body = json.dumps({"sessionId": session_id, "name": server_name})
+    headers = {"Content-Type": "application/json"}
+    if method == "POST":
+        return page.request.post(url, data=body, headers=headers)
+    return page.request.delete(url, data=body, headers=headers)
+
+
+def mcp_connect(
+    page: Page,
+    chainlit_url: str,
+    session_id: str,
+    server_name: str,
+) -> APIResponse:
+    response = mcp_api_request(page, chainlit_url, "POST", session_id, server_name)
+    assert response.ok, response.text()
+    return response
+
+
+def mcp_disconnect(
+    page: Page,
+    chainlit_url: str,
+    session_id: str,
+    server_name: str,
+) -> APIResponse:
+    response = mcp_api_request(page, chainlit_url, "DELETE", session_id, server_name)
+    assert response.ok, response.text()
+    return response
+
+
+def logout_chainlit(page: Page, chainlit_url: str) -> None:
+    response = page.request.post(f"{chainlit_url.rstrip('/')}/logout")
+    assert response.ok, response.text()
+
+
+def read_mcp_storage_names(page: Page) -> list[str]:
+    raw = page.evaluate(
+        f"() => localStorage.getItem({json.dumps(MCP_STORAGE_KEY)}) || '[]'"
+    )
+    entries = json.loads(raw)
+    return [str(item.get("name")) for item in entries if item.get("name")]
 
 
 def pytest_configure(config: pytest.Config) -> None:
@@ -144,6 +216,20 @@ def openai_api_key() -> str:
     return key
 
 
+@pytest.fixture(scope="session")
+def brave_search_api_key() -> str:
+    key = os.environ.get("BRAVE_SEARCH_API_KEY", "").strip()
+    if not key:
+        pytest.skip("BRAVE_SEARCH_API_KEY is not set")
+    return key
+
+
+@pytest.fixture(scope="session")
+def require_empty_brave_search_api_key() -> None:
+    if os.environ.get("BRAVE_SEARCH_API_KEY", "").strip():
+        pytest.skip("BRAVE_SEARCH_API_KEY is set; run without it to verify the error path")
+
+
 @pytest.fixture
 def page(page: Page) -> Page:
     page.set_default_timeout(60_000)
@@ -162,3 +248,42 @@ def logged_in_dev(
         login_keycloak(page, chainlit_url, e2e_username, e2e_password)
     assert response_info.value.status == 200
     return page
+
+
+@pytest.fixture
+def logged_in_dev2(
+    page: Page,
+    chainlit_url: str,
+    e2e_dev2_username: str,
+    e2e_dev2_password: str,
+) -> Page:
+    with expect_mcp_post(page, server_name="web-search-mcp") as response_info:
+        login_keycloak(page, chainlit_url, e2e_dev2_username, e2e_dev2_password)
+    assert response_info.value.status == 200
+    return page
+
+
+@pytest.fixture
+def chainlit_session_id(
+    page: Page,
+    chainlit_url: str,
+    e2e_username: str,
+    e2e_password: str,
+) -> str:
+    with expect_mcp_post(page, server_name="knowledge-mcp") as response_info:
+        login_keycloak(page, chainlit_url, e2e_username, e2e_password)
+    assert response_info.value.status == 200
+    return capture_session_id_from_response(response_info.value)
+
+
+@pytest.fixture
+def chainlit_session_id_dev2(
+    page: Page,
+    chainlit_url: str,
+    e2e_dev2_username: str,
+    e2e_dev2_password: str,
+) -> str:
+    with expect_mcp_post(page, server_name="web-search-mcp") as response_info:
+        login_keycloak(page, chainlit_url, e2e_dev2_username, e2e_dev2_password)
+    assert response_info.value.status == 200
+    return capture_session_id_from_response(response_info.value)
