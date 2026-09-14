@@ -174,7 +174,7 @@ Close 操作の直前に、Issue 本文の Acceptance Criteria 節を再読す�
 
 - `[ ]` が 1 件でも残っていれば Close しない。Phase 4 に戻るか、AC を満たす作業・検証を完了してから本文を更新する
 - 例外は **明示的撤回** のみ。Scope / Requirement Change コメントで理由を残し、該当 AC 行を本文から削除する。`[ ]` のまま残した AC がある状態では Close しない
-- Phase 8 Review コメント（PR 存在時は PR 側）に `AC body verified: all [x]` または `blocked: unchecked items remain` を記載する
+- Phase 8 Review コメント（PR 存在時は PR 側）に `AC body verified: all [x]` または `blocked: unchecked items remain` を記載する。PR コメントの遵守チェックリストに「紐づく作業 PR がすべて closed」は載せない（Issue Close ゲート。`references/review-and-compliance.md`）
 
 Close 判定手順の例:
 

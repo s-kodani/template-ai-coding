@@ -5,7 +5,7 @@ description: アプリ、Keycloak、MCP Gateway、Langfuse、任意 Langflow の
 tags: [docker, langfuse, langflow, postgres, keycloak, gateway, ci, devsecops]
 status: stable
 generated:
-  at: "2026-09-13T08:20:00Z"
+  at: "2026-09-13T12:00:00Z"
   by: process:cursor-agent
 ---
 
@@ -94,8 +94,22 @@ Chainlit は Keycloak の `knowledge` realm で OAuth する（[ADR-0011](/decis
 
 1. **MCP Inspector（3LO）**: `http://127.0.0.1:8000/mcp` を OAuth 付きで開く。401 の `resource_metadata` から Keycloak へ飛び、`dev` / `dev` でログインする。web-search は `:8001/mcp`
 2. **MCP Inspector（フォールバック）**: `uv run python scripts/mcp_dev_token.py` の出力を Bearer にし、同じ URL に接続
-3. **Chainlit**: Keycloak でログインし、`search_knowledge` が呼ばれる質問を送信
+3. **Chainlit**: Keycloak でログインし、`search_knowledge` が呼ばれる質問を送信。同じスモークは Playwright e2e（下記）でも実行できる
 4. **Langfuse**: チャット 1 ターンあたり 1 本のトレースに、クライアント/サーバーのツールスパンがネストされていることを確認（属性一覧は [Langfuse OTEL トレーシング](/current/features/tracing.md)）
+
+### Playwright e2e スモーク
+
+ブラウザで Keycloak ログイン（`dev` / `dev`）からチャット 1 ターンまでを確認する。PR の `quality` ジョブでは実行しない。テストは `e2e/` に置き、既定の `uv run pytest`（`testpaths = ["tests"]`）では収集しない。
+
+前提: `make -C infra up && make -C infra seed`、`.env` の `OPENAI_API_KEY`。スタック未起動は失敗。API key 未設定は skip。
+
+```bash
+uv sync --extra e2e
+uv run playwright install chromium   # システムに Google Chrome がある場合は不要
+make -C infra e2e
+```
+
+ベース URL は `E2E_BASE_URL`（既定 `http://localhost:8080`）。ブラウザは `E2E_BROWSER_CHANNEL`（未設定時は `google-chrome` があれば `chrome`、なければ Playwright 同梱 Chromium）。断言はアシスタント応答が非空であることまで。ツール呼び出し有無や応答本文の完全一致は見ない。
 
 ### トレース検証チェックリスト（1 ターン = 1 trace）
 
@@ -121,7 +135,7 @@ Chainlit は Keycloak の `knowledge` realm で OAuth する（[ADR-0011](/decis
 
 | ワークフロー | ジョブ | 内容 |
 |---|---|---|
-| `.github/workflows/ci.yml` | quality | `ruff check`, `pytest`（ルートと `gateway/`）、各環境の `uv sync --frozen --extra dev`、自前 Skill / Agent の展開一致（`scripts/check_skill_deploy.py`） |
+| `.github/workflows/ci.yml` | quality | `ruff check`（`e2e/` 含む）、`pytest`（ルート `tests/` と `gateway/`。Playwright e2e は実行しない）、各環境の `uv sync --frozen --extra dev`、自前 Skill / Agent の展開一致（`scripts/check_skill_deploy.py`） |
 | | security | Bandit, `uv audit`, gitleaks |
 | | build-and-scan | `docker compose build`, Trivy（mcp-server / chainlit / mcp-gateway / web-search-mcp イメージ、`scanners: vuln`） |
 | `.github/workflows/pr-workflow.yml` | workflow | PR 本文の Issue 紐付け（`src/` 変更時）、Release Log 更新要否（`src/` / `infra/` 変更時） |
@@ -132,7 +146,7 @@ Chainlit は Keycloak の `knowledge` realm で OAuth する（[ADR-0011](/decis
 ```bash
 uv sync --frozen --extra dev
 uv sync --directory gateway --frozen --extra dev
-uv run ruff check src tests scripts gateway
+uv run ruff check src tests scripts gateway e2e
 uv run pytest
 uv run --directory gateway pytest
 uv run bandit -r src scripts gateway/src -c pyproject.toml

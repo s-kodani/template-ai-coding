@@ -1,4 +1,4 @@
-.PHONY: network langfuse-up langfuse-down app-up app-down langflow-up langflow-down up down migrate import-langflow ingest-langflow seed delete-document test
+.PHONY: network langfuse-up langfuse-down app-up app-down langflow-up langflow-down up down migrate import-langflow ingest-langflow seed delete-document test e2e
 
 # make -C infra から呼ばれる前提。パスは Makefile 基準で解決する。
 INFRA_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
@@ -46,3 +46,7 @@ delete-document: migrate
 
 test:
 	cd $(ROOT) && uv run pytest
+
+e2e:
+	cd $(ROOT) && uv run pytest e2e --browser chromium
+# Requires: uv sync --extra e2e; stack up+seed; OPENAI_API_KEY. Optional: uv run playwright install chromium

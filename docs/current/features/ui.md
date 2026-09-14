@@ -5,7 +5,7 @@ description: Keycloak OAuth 付きの Chainlit チャット UI。既定 knowledg
 tags: [chainlit, ui, mcp, oauth, keycloak, gateway]
 status: stable
 generated:
-  at: "2026-09-06T06:25:00Z"
+  at: "2026-09-13T12:00:00Z"
   by: process:cursor-agent
 ---
 
@@ -46,4 +46,4 @@ generated:
 
 ## 設定
 
-`CHAT_MODEL`、`OPENAI_API_KEY`、`MCP_GATEWAY_REGISTRY_PATH`、`TOKEN_STORE_*`、`CHAINLIT_AUTH_SECRET`、`OAUTH_GENERIC_*`、Langfuse キーはルートの `.env.example` を参照。Gateway 到達 URL は Registry の `gateways[].url`。トレースメタデータの一覧は [Langfuse OTEL トレーシング](/current/features/tracing.md)。
+`CHAT_MODEL`、`OPENAI_API_KEY`、`MCP_GATEWAY_REGISTRY_PATH`、`TOKEN_STORE_*`、`CHAINLIT_AUTH_SECRET`、`OAUTH_GENERIC_*`、Langfuse キーはルートの `.env.example` を参照。Gateway 到達 URL は Registry の `gateways[].url`。トレースメタデータの一覧は [Langfuse OTEL トレーシング](/current/features/tracing.md)。ログインからチャット 1 ターンまでのブラウザ確認は [インフラ](/current/infrastructure.md) の Playwright e2e スモーク。

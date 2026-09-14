@@ -16,6 +16,9 @@ build/
 .pytest_cache/
 .ruff_cache/
 .mypy_cache/
+test-results/
+playwright-report/
+blob-report/
 
 # Environment
 .env

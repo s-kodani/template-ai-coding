@@ -41,6 +41,8 @@ description: >-
 uv run pytest path/to/test_file.py
 ```
 
+E2E（Playwright）は `e2e/` に置き、`testpaths` 外のため既定の `uv run pytest` では収集しない。ローカル実行は `uv sync --extra e2e`、必要なら `uv run playwright install chromium`、`make -C infra e2e`。前提は起動済み compose と `OPENAI_API_KEY`。システムに Google Chrome があればそれを使う。PR の quality ジョブでは走らない。
+
 ## 目的
 
 変更によって壊れ得る振る舞いを明確にし、テスト観点の漏れを防ぎながら、保守性の高い自動テストを実装する。
@@ -230,6 +232,8 @@ uv run pytest path/to/test_file.py
 
 同じ振る舞いを複数レベルで過剰に重複検証しない。
 E2Eは主要フローを中心とし、詳細な組み合わせはUnit / Integration Testへ寄せる。
+
+本リポジトリの現行 e2e は Chainlit スモーク 1 本（Keycloak ログイン → チャット 1 ターン → アシスタント応答が非空）。ツール呼び出し有無やロール行列は Unit / Integration と手動確認へ寄せる。
 
 ---
 

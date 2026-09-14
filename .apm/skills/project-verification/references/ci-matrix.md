@@ -6,7 +6,7 @@
 
 | Job | 内容 | ローカル相当 |
 |---|---|---|
-| quality | ruff, pytest | `uv run ruff check src tests scripts` / `uv run pytest` |
+| quality | ruff, pytest（`e2e/` は ruff のみ。Playwright は実行しない） | `uv run ruff check src tests scripts gateway e2e` / `uv run pytest` |
 | security | bandit, uv audit, gitleaks | `uv run bandit -r src scripts -c pyproject.toml` |
 | build-and-scan | docker compose build, Trivy CRITICAL/HIGH | `docker compose -f infra/app/compose.yml build` |
 
