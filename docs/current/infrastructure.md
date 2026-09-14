@@ -99,7 +99,14 @@ Chainlit は Keycloak の `knowledge` realm で OAuth する（[ADR-0011](/decis
 
 ### Playwright e2e スモーク
 
-ブラウザで Keycloak ログイン（`dev` / `dev`）からチャット 1 ターンまでを確認する。PR の `quality` ジョブでは実行しない。テストは `e2e/` に置き、既定の `uv run pytest`（`testpaths = ["tests"]`）では収集しない。
+ブラウザで Keycloak ログインからチャット応答までを確認する。PR の `quality` ジョブでは実行しない。テストは `e2e/` に置き、既定の `uv run pytest`（`testpaths = ["tests"]`）では収集しない。
+
+| ファイル | 内容 |
+|---|---|
+| `test_chat_smoke.py` | `dev` ログイン + チャット 1 ターン（非空応答） |
+| `test_auth_flow.py` | 未ログインでは `#chat-input` が使えない |
+| `test_chat_knowledge.py` | Gateway MCP 接続、`search_knowledge` / `get_document` と seed 固定文言 |
+| `test_chat_rbac.py` | `dev2` / `readerless` が seed ナレッジを取得できない |
 
 前提: `make -C infra up && make -C infra seed`、`.env` の `OPENAI_API_KEY`。スタック未起動は失敗。API key 未設定は skip。
 
@@ -109,7 +116,9 @@ uv run playwright install chromium   # システムに Google Chrome がある�
 make -C infra e2e
 ```
 
-ベース URL は `E2E_BASE_URL`（既定 `http://localhost:8080`）。ブラウザは `E2E_BROWSER_CHANNEL`（未設定時は `google-chrome` があれば `chrome`、なければ Playwright 同梱 Chromium）。断言はアシスタント応答が非空であることまで。ツール呼び出し有無や応答本文の完全一致は見ない。
+ベース URL は `E2E_BASE_URL`（既定 `http://localhost:8080`）。ログインユーザーは `E2E_USERNAME` / `E2E_PASSWORD`（既定 `dev` / `dev`）。RBAC 用に `E2E_DEV2_*`（既定 `dev2` / `dev2`）、`E2E_READERLESS_*`（既定 `readerless` / `readerless`）を上書き可能。ブラウザは `E2E_BROWSER_CHANNEL`（未設定時は `google-chrome` があれば `chrome`、なければ Playwright 同梱 Chromium）。
+
+ナレッジ系テストは LLM 全文一致ではなく `scripts/seed.py` の固定文言（例: `FastMCP`, `pgvector`, `semantic search`）または否定断言（RBAC）で安定化する。スモークのみ非空応答まで。
 
 ### トレース検証チェックリスト（1 ターン = 1 trace）
 
