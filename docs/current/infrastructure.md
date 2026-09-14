@@ -111,14 +111,35 @@ Chainlit は Keycloak の `knowledge` realm で OAuth する（[ADR-0011](/decis
 | `test_mcp_gateway_lifecycle.py` | 両 MCP POST、disconnect → 失敗 → reconnect → 成功 |
 | `test_chat_session.py` | マルチターン会話（ツール不要） |
 | `test_mcp_catalog_ui.py` | `dev2` の knowledge 接続 403、reload 再接続 |
+| `test_auth_reauth.py` | token 削除 → POST /mcp 403 → 再ログイン復旧 |
 
 前提: `make -C infra up && make -C infra seed`、`.env` の `OPENAI_API_KEY`。`search_web` 正系は `BRAVE_SEARCH_API_KEY` も必要（未設定時 skip）。Brave key 未設定エラー経路はホスト env に key が**ない**ときのみ実行（ある場合 skip）。スタック未起動は失敗。
 
 ```bash
-uv sync --extra e2e
+uv sync --extra dev --extra e2e
 uv run playwright install chromium   # システムに Google Chrome がある場合は不要
-make -C infra e2e
+make -C infra e2e                    # 全 17 ケース
+make -C infra e2e-smoke              # -m e2e_smoke（最小 subset）
 ```
+
+### pytest マーカー
+
+| マーカー | 用途 |
+|---|---|
+| `e2e_smoke` | 未ログイン gate、MCP 接続 smoke、最小チャット |
+| `e2e_brave` | `search_web` 正系 / Brave key 未設定エラー |
+| `e2e_reauth` | OAuth token store 操作（Postgres 到達が必要） |
+
+### CI（nightly）
+
+`.github/workflows/e2e-nightly.yml` が schedule（UTC 03:00）と `workflow_dispatch` で Playwright e2e を実行する。PR の `quality` ジョブでは引き続き実行しない。
+
+| ジョブ | 内容 | Secrets |
+|---|---|---|
+| `e2e-full` | 全 e2e | `OPENAI_API_KEY`、任意 `BRAVE_SEARCH_API_KEY` |
+| `e2e-brave-empty` | Brave key 空のエラー経路 1 ケース | `OPENAI_API_KEY` |
+
+ローカルで CI 用 `.env` を生成する場合: `OPENAI_API_KEY=... python3 scripts/prepare_e2e_env.py`（Brave 空は `--brave-empty`）。
 
 ベース URL は `E2E_BASE_URL`（既定 `http://localhost:8080`）。ログインユーザーは `E2E_USERNAME` / `E2E_PASSWORD`（既定 `dev` / `dev`）。RBAC 用に `E2E_DEV2_*`（既定 `dev2` / `dev2`）、`E2E_READERLESS_*`（既定 `readerless` / `readerless`）を上書き可能。ブラウザは `E2E_BROWSER_CHANNEL`（未設定時は `google-chrome` があれば `chrome`、なければ Playwright 同梱 Chromium）。
 
@@ -149,6 +170,7 @@ make -C infra e2e
 | ワークフロー | ジョブ | 内容 |
 |---|---|---|
 | `.github/workflows/ci.yml` | quality | `ruff check`（`e2e/` 含む）、`pytest`（ルート `tests/` と `gateway/`。Playwright e2e は実行しない）、各環境の `uv sync --frozen --extra dev`、自前 Skill / Agent の展開一致（`scripts/check_skill_deploy.py`） |
+| `.github/workflows/e2e-nightly.yml` | e2e-full / e2e-brave-empty | Playwright e2e（schedule + `workflow_dispatch`。Secrets 必須） |
 | | security | Bandit, `uv audit`, gitleaks |
 | | build-and-scan | `docker compose build`, Trivy（mcp-server / chainlit / mcp-gateway / web-search-mcp イメージ、`scanners: vuln`） |
 | `.github/workflows/pr-workflow.yml` | workflow | PR 本文の Issue 紐付け（`src/` 変更時）、Release Log 更新要否（`src/` / `infra/` 変更時） |

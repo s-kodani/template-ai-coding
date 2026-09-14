@@ -1,0 +1,87 @@
+name: E2E Nightly
+
+on:
+  schedule:
+    - cron: "0 3 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: e2e-nightly-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e-full:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: |
+          uv sync --frozen --extra dev --extra e2e
+          uv run playwright install chromium --with-deps
+
+      - name: Prepare env files
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          BRAVE_SEARCH_API_KEY: ${{ secrets.BRAVE_SEARCH_API_KEY }}
+        run: |
+          cp .env.example .env
+          cp infra/langfuse/env.example infra/langfuse/.env
+          python3 scripts/prepare_e2e_env.py
+
+      - name: Start stack
+        run: make -C infra up
+
+      - name: Seed
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: make -C infra seed
+
+      - name: Run e2e
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          BRAVE_SEARCH_API_KEY: ${{ secrets.BRAVE_SEARCH_API_KEY }}
+        run: uv run pytest e2e --browser chromium -v
+
+  e2e-brave-empty:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: |
+          uv sync --frozen --extra dev --extra e2e
+          uv run playwright install chromium --with-deps
+
+      - name: Prepare env files without Brave key
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          cp .env.example .env
+          cp infra/langfuse/env.example infra/langfuse/.env
+          python3 scripts/prepare_e2e_env.py --brave-empty
+
+      - name: Start stack
+        run: make -C infra up
+
+      - name: Seed
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: make -C infra seed
+
+      - name: Run Brave empty-path e2e
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: >
+          uv run pytest e2e/test_chat_web_search.py::test_search_web_without_api_key_reports_error
+          --browser chromium -v
