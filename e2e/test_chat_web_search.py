@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+import pytest
 from conftest import reply_contains_any, reply_contains_url, send_chat
 from playwright.sync_api import Page
+
+pytestmark = pytest.mark.e2e_brave
 
 SEARCH_WEB_PROMPT = (
     "search_web ツールで「pytest documentation」を検索し、"

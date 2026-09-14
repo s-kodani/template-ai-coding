@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+import pytest
 from conftest import login_keycloak, send_chat
 from playwright.sync_api import Page
+
+pytestmark = pytest.mark.e2e_smoke
 
 PROMPT = (
     "search_knowledge を使って Architecture Overview と MCP Tools を調べ、"

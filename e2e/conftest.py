@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 import os
 import re
 import shutil
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
+import asyncpg
 import pytest
 from playwright.sync_api import APIResponse, Locator, Page, Response, expect
 
@@ -15,6 +18,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_BASE_URL = "http://localhost:8080"
 CHAT_TIMEOUT_MS = 120_000
 MCP_STORAGE_KEY = "mcp_storage_key"
+REAUTH_REQUIRED_DETAIL = "Keycloak セッションが無効です。再ログインしてください"
 _KEYCLOAK_PROVIDER = re.compile(r"keycloak", re.IGNORECASE)
 
 
@@ -155,10 +159,34 @@ def read_mcp_storage_names(page: Page) -> list[str]:
     return [str(item.get("name")) for item in entries if item.get("name")]
 
 
+async def _clear_oauth_tokens_async(session_id: str) -> None:
+    url = os.environ.get(
+        "TOKEN_STORE_DATABASE_URL",
+        "postgresql://knowledge:change-me@localhost:5433/knowledge",
+    )
+    conn = await asyncpg.connect(url)
+    try:
+        await conn.execute(
+            "DELETE FROM chainlit_oauth_tokens WHERE session_id = $1",
+            session_id,
+        )
+    finally:
+        await conn.close()
+
+
+def clear_oauth_tokens(session_id: str) -> None:
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        future = executor.submit(asyncio.run, _clear_oauth_tokens_async(session_id))
+        future.result()
+
+
 def pytest_configure(config: pytest.Config) -> None:
     current = getattr(config.option, "base_url", None)
     if not current:
         config.option.base_url = os.environ.get("E2E_BASE_URL") or DEFAULT_BASE_URL
+    config.addinivalue_line("markers", "e2e_smoke: minimal Playwright smoke subset")
+    config.addinivalue_line("markers", "e2e_brave: requires or validates BRAVE_SEARCH_API_KEY")
+    config.addinivalue_line("markers", "e2e_reauth: manipulates OAuth token store")
 
 
 @pytest.fixture(scope="session")

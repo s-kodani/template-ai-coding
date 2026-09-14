@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import pytest
 from conftest import (
     expect_mcp_post,
     login_keycloak,
@@ -22,6 +23,7 @@ GET_DOCUMENT_PROMPT = (
 )
 
 
+@pytest.mark.e2e_smoke
 def test_knowledge_mcp_connects_after_login(
     page: Page,
     chainlit_url: str,
