@@ -40,6 +40,8 @@ Issue と PR は **1:N**。Issue Close は、紐づく**作業 PR がすべて c
 
 実施した事実だけを `[x]` にする。やっていない項目を完了扱いにしない。
 
+Phase 8 レビューコメント（投稿先が PR でも Issue でも）に載せる項目:
+
 ```markdown
 - [ ] 最新 default branch を取り込んだ
 - [ ] 作業 Issue を確定し、各 PR に `Refs #<issue>` を付けた（該当時。`Closes` は使わない）
@@ -49,14 +51,21 @@ Issue と PR は **1:N**。Issue Close は、紐づく**作業 PR がすべて c
 - [ ] 変更強度に応じた grilling を行った、または省略理由が「軽微」である
 - [ ] Phase 3 Decision Check を行い、必要な ADR を扱った
 - [ ] 実装・修正の区切りごとに進捗コメントを残し（Pre-PR: Issue / Post-PR: PR）、Acceptance Criteria タスクリストを再評価した（または書き込み不可を明示した）
-- [ ] Issue 本文 Acceptance Criteria がすべて `[x]` であることを Close 前に確認した（または撤回理由をコメントした）
+- [ ] Issue 本文 Acceptance Criteria がすべて `[x]` であることを確認した（または撤回理由をコメントした）
 - [ ] Phase 5 検証を実行し、未実施を成功と報告していない
 - [ ] Phase 6 で恒久ドキュメント / Release Log を最終実装へ合わせた
 - [ ] Phase 7 Completion Report を投稿した（Post-PR 時は PR、否则 Issue）
 - [ ] PR 作成・マージ時に Issue へ最小通知を残した（該当時）
-- [ ] 紐づく作業 PR がすべて closed（merged または closed）。open が残っている場合は Issue を Close しない
 - [ ] 本レビュー結果を投稿した（Post-PR 時は PR、否则 Issue）
 ```
+
+**投稿先が PR のとき、次は載せない。** Issue Close ゲートであり、当該 PR が open なのは正常。
+
+```markdown
+- [ ] 紐づく作業 PR がすべて closed（merged または closed）。open が残っている場合は Issue を Close しない
+```
+
+この項目は Issue Close 直前にだけ確認する。PR なしで Phase 8 を Issue へ投稿する場合も、Close する時点まで `[x]` にしない。
 
 `AGENTS.md` が追加で要求する項目（例: Skill 同期、Release-Note 宣言）があれば、同じコメントに足す。
 
@@ -64,9 +73,11 @@ Issue と PR は **1:N**。Issue Close は、紐づく**作業 PR がすべて c
 
 | 判定 | 意味 | 次の行動 |
 |---|---|---|
-| `pass` | must-fix なし。Issue 本文 AC がすべて `[x]`。紐づく作業 PR はすべて closed | Issue 本文 AC を再確認したうえで**手動** Close してよい |
-| `pass-with-nits` | 任意改善のみ。Issue 本文 AC がすべて `[x]`。PR はすべて closed | nits を残課題としてコメントし、Issue 本文 AC を再確認したうえで**手動** Close してよい |
-| `must-fix` | 欠陥、ワークフロー欠落、Issue 本文 AC に未チェック、または open の作業 PR が残っている | Phase 4 に戻る、AC を満たして本文を更新する、または PR を merge/close してから Phase 8 をやり直す |
+| `pass` | must-fix なし。Issue 本文 AC がすべて `[x]` | レビュー完了。Issue Close は作業 PR がすべて closed になってから |
+| `pass-with-nits` | 任意改善のみ。Issue 本文 AC がすべて `[x]` | nits を残課題としてコメント。Issue Close は作業 PR がすべて closed になってから |
+| `must-fix` | 欠陥、ワークフロー欠落、Issue 本文 AC に未チェック | Phase 4 に戻る、AC を満たして本文を更新してから Phase 8 をやり直す |
+
+open の作業 PR は Phase 8 の must-fix にしない。Issue Close を止める条件である。
 
 must-fix の無限ループを避ける。再レビューは修正範囲に限定する。任意改善は残課題に回し、**open PR が無い**場合は Close を止めない。
 
