@@ -1,6 +1,6 @@
 ---
 name: implementation-workflow
-description: コードの実装・変更・リファクタリング・機能追加を行う際に、GitHub Issueによる作業トラッキングと実装・修正区切りごとの進捗コメント、Session Checkpoint、Implementation Planの作成（`.plans/` への md 書き出し、ponytail による最小スコープ化、変更強度に応じた grill-me / grilling、ユーザー承認を含む）、ADR候補の検出、ponytail に従った実装・検証、OKFベースのCurrent-state Documentation・Decision Record・Release Noteへの整合、完了後のコードレビューとワークフロー遵守チェックまでを一貫して進めるためのワークフロー。実装スピードを維持しながら、セッションを跨いだ再開可能性、設計上の意思決定の追跡可能性、AIが利用しやすい知識構造、恒久ドキュメントの正確性を確保したい場合に使用する。
+description: コードの実装・変更・リファクタリング・機能追加を行う際に、GitHub Issueによる作業トラッキングと主要イベントでの進捗コメント、Session Checkpoint、Implementation Planの作成（`.plans/` への md 書き出し、ponytail による最小スコープ化、変更強度に応じた grill-me / grilling、ユーザー承認を含む）、ADR候補の検出、ponytail に従った実装・検証、OKFベースのCurrent-state Documentation・Decision Record・Release Noteへの整合、完了後のコードレビューとワークフロー遵守チェックまでを一貫して進めるためのワークフロー。実装スピードを維持しながら、セッションを跨いだ再開可能性、設計上の意思決定の追跡可能性、AIが利用しやすい知識構造、恒久ドキュメントの正確性を確保したい場合に使用する。
 ---
 
 # 実装ワークフロー Skill
@@ -13,7 +13,7 @@ description: コードの実装・変更・リファクタリング・機能追�
 - 重要な設計判断の追跡可能性
 - Current-state Documentation の正確性
 - セッションを跨いだ安全な作業再開
-- 実装・修正の区切りごとに残す進捗履歴（Pre-PR は Issue、Post-PR は PR）
+- 主要イベントで残す進捗履歴（Pre-PR は Issue、Post-PR は PR）
 - 完了前の確実な検証
 - 完了後のコードレビューとワークフロー遵守確認
 
@@ -55,7 +55,7 @@ Implementation Plan は一時的な作業成果物。`.plans/` 配下の Markdow
 8. **OKF では Concept 単位で知識を管理する** — 1 ファイル = 1 Concept を原則とし、過剰分割も避ける。
 9. **GitHub Issue を Coordination Ledger として使う** — 本文は作業契約、Issue コメントは Pre-PR 履歴、PR コメントは Post-PR 実装・レビュー履歴。Acceptance Criteria は本文のタスクリスト（`[ ]` / `[x]`）で充足状態を持つ。Issue を恒久ドキュメントの代替にしない。
 10. **着手時に Issue へ Work Start コメントを残す** — 冒頭に Coverage（full / partial）、作業ブランチ、Implementation Plan を記載する。Plan 承認後・Phase 3 / 4 前。詳細は `references/github-issue-workflow.md`。
-11. **実装・修正の区切りごとに進捗コメントを残し、AC タスクリストを再評価する** — Pre-PR は Issue、Post-PR は PR。投稿成功を確認するまでその区切りを完了としない。詳細は `references/github-issue-workflow.md`。
+11. **主要イベントで進捗コメントを残し、AC タスクリストを再評価する** — PR 作成前の一区切り、Phase 5 検証完了、レビュー修正完了。Pre-PR は Issue、Post-PR は PR。投稿成功を確認するまでその区切りを完了としない。詳細は `references/github-issue-workflow.md`。
 12. **セッション終了時に Checkpoint を残す** — open PR があれば PR、なければ Issue。別セッションが Repository 状態と照合して再開できる事実を残す。
 13. **一連のワークフロー完了後にレビューする** — コードレビューとワークフロー遵守チェックを行い、must-fix が無いことを確認する。Issue Close 前は本文 AC がすべて `[x]` であることを必ず確認する。Issue と PR は 1:N。紐づく作業 PR がすべて closed になる前に Issue を Close しない。詳細は `references/review-and-compliance.md` と `references/github-issue-workflow.md`。
 
@@ -77,7 +77,7 @@ Issue: Work Start コメント（Coverage / Branch / Plan）
 Phase 3: Decision Check
         ↓
 Phase 4: Implement（ponytail + test-strategy / TDD）
-        │  Pre-PR: Issue へ進捗コメント + AC 再評価
+        │  Pre-PR: 主要イベントで Issue へ進捗 + AC 再評価
         │  PR 作成 → Issue へ最小通知 / Post-PR: PR へ進捗
         │  PR マージ → Issue へ最小通知
         ├── セッション継続
@@ -150,7 +150,7 @@ ADR 候補基準と Decision Level（1: Architecture / 2: Design / 3: Implementa
 - テスト設計は `test-strategy` Skill、自動化可能な振る舞い変更は `test-driven-development` Skill に従う（`ponytail` によりテスト・検証を省略してはいけない）
 - 新しい事実に応じて Plan から逸脱してよい（Plan の同期維持のためだけに更新しない）
 - スコープや Acceptance Criteria が変わる場合は `.plans/` の md を更新し、再承認を得てから続行する
-- **実装または修正対応が一段落したら、進捗コメントを残し、本文の Acceptance Criteria タスクリストを再評価する。** Pre-PR は Issue、Post-PR は PR。投稿を確認するまでその区切りを完了としない。詳細は `references/github-issue-workflow.md`
+- **主要イベントで進捗コメントを残し、本文の Acceptance Criteria タスクリストを再評価する。** PR 作成前の一区切り、Phase 5 検証完了、レビュー修正完了。Pre-PR は Issue、Post-PR は PR。投稿を確認するまでその区切りを完了としない。詳細は `references/github-issue-workflow.md`
 
 実装中に重要な設計判断が発生した場合は `references/decision-check.md` の Decision Detection に従う。
 
@@ -194,7 +194,7 @@ Issue で作業契約を明確にする。
 Plan 作成時は `ponytail` で Scope を最小化し、変更強度に応じて grill-me / grilling で練り、ユーザー承認を得てから Issue へ Work Start コメントを残す。必要なら md を見直して再承認する。  
 セッションを跨ぐときは Checkpoint を残す（open PR あれば PR）。  
 恒久的な意思決定を検出する。  
-`ponytail` に従って実装し、検証する。Pre-PR は Issue、Post-PR は PR へ進捗コメントを残し、Acceptance Criteria タスクリストを再評価する。  
+`ponytail` に従って実装し、検証する。主要イベントで Pre-PR は Issue、Post-PR は PR へ進捗コメントを残し、Acceptance Criteria タスクリストを再評価する。  
 最終状態を OKF で構造化された恒久知識へ整合させる。  
 Release Note は Phase 6 で `## v?.?.? (未確定)` へ追記し、タグ確定時に SemVer 見出しへ置き換える。  
 紐づく作業 PR がすべて closed になったあと、コードレビューとワークフロー遵守を確認し、Issue 本文 AC がすべて `[x]` であることを確認してから Issue を手動 Close する。**

@@ -42,7 +42,7 @@ description: >
 | `docs/`（OKF） | `uv run python scripts/validate_okf.py` |
 | `.apm/skills/` / `.apm/agents/` | `uv run python scripts/check_skill_deploy.py --check`（正本編集後は `apm install`） |
 | `infra/` | 上記 Python 検証 + `docker compose -f infra/app/compose.yml build` |
-| PR（`src/` 変更） | Issue 参照 + Release Note 要否宣言（`validate_pr_workflow.py`） |
+| PR（`src/` `tests/` `scripts/` `infra/` `e2e/` `gateway/` `.apm/` 変更） | `Refs #<issue>` + Issue 存在確認。`Closes` 禁止。`src/` / `infra/` は Release Note 要否宣言（`validate_pr_workflow.py`） |
 | トレース関連 | `uv run pytest tests/test_trace_propagation.py tests/test_langfuse_span_export.py` |
 | Ingest / schema | `uv run pytest tests/test_ingest_lifecycle.py tests/test_documents_schema.py` |
 

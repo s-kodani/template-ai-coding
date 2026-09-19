@@ -50,7 +50,7 @@ Phase 8 レビューコメント（投稿先が PR でも Issue でも）に載�
 - [ ] Implementation Plan を `.plans/` へ書き出し、Phase 2 / 4 で `ponytail` Skill を読み、承認後に実装した
 - [ ] 変更強度に応じた grilling を行った、または省略理由が「軽微」である
 - [ ] Phase 3 Decision Check を行い、必要な ADR を扱った
-- [ ] 実装・修正の区切りごとに進捗コメントを残し（Pre-PR: Issue / Post-PR: PR）、Acceptance Criteria タスクリストを再評価した（または書き込み不可を明示した）
+- [ ] 主要イベントで進捗コメントを残し（PR 作成前の一区切り / Phase 5 / レビュー修正。Pre-PR: Issue / Post-PR: PR）、Acceptance Criteria タスクリストを再評価した（または書き込み不可を明示した）
 - [ ] Issue 本文 Acceptance Criteria がすべて `[x]` であることを確認した（または撤回理由をコメントした）
 - [ ] Phase 5 検証を実行し、未実施を成功と報告していない
 - [ ] Phase 6 で恒久ドキュメント / Release Log を最終実装へ合わせた
