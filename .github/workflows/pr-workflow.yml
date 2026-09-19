@@ -3,6 +3,11 @@ name: PR Workflow
 on:
   pull_request:
 
+permissions:
+  contents: read
+  issues: read
+  pull-requests: read
+
 jobs:
   workflow:
     runs-on: ubuntu-latest
@@ -21,7 +26,11 @@ jobs:
       - name: Validate PR workflow
         env:
           PR_BODY: ${{ github.event.pull_request.body }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
         run: |
           git diff --name-only \
             "${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}" \
-            | uv run python scripts/validate_pr_workflow.py --pr-body "$PR_BODY"
+            | uv run python scripts/validate_pr_workflow.py \
+              --pr-body "$PR_BODY" \
+              --verify-issue-exists

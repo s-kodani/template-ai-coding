@@ -4,15 +4,30 @@
 from __future__ import annotations
 
 import argparse
+import json
+import os
 import re
 import sys
+import urllib.error
+import urllib.request
+from collections.abc import Callable
 from dataclasses import dataclass, field
+from typing import Any
 
-ISSUE_REF_PREFIXES = ("src/",)
+ISSUE_REF_PREFIXES = (
+    "src/",
+    "tests/",
+    "scripts/",
+    "infra/",
+    "e2e/",
+    "gateway/",
+    ".apm/",
+)
 RELEASE_LOG_TRIGGER_PREFIXES = ("src/", "infra/")
 RELEASE_LOG_PATH = "docs/releases/log.md"
-ISSUE_REF_RE = re.compile(
-    r"(?:^|\b)(?:refs?|close[sd]?|fix(?:e[sd])?|resolve[sd]?)\s*#\d+",
+REFS_ISSUE_RE = re.compile(r"(?:^|\b)refs?\s*#(\d+)", re.IGNORECASE)
+AUTO_CLOSE_ISSUE_RE = re.compile(
+    r"(?:^|\b)(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)\s*#\d+",
     re.IGNORECASE,
 )
 RELEASE_NOTE_DECL_RE = re.compile(
@@ -23,6 +38,8 @@ RELEASE_NOTE_REASON_RE = re.compile(
     r"^Reason:\s*(.+)\s*$",
     re.IGNORECASE | re.MULTILINE,
 )
+
+IssueFetcher = Callable[[str, str, int], dict[str, Any] | None]
 
 
 @dataclass
@@ -45,10 +62,16 @@ def has_prefix(changed_files: list[str], prefixes: tuple[str, ...]) -> bool:
     return any(path.startswith(prefixes) for path in changed_files)
 
 
-def has_issue_reference(pr_body: str | None) -> bool:
+def extract_refs_issue_numbers(pr_body: str | None) -> list[int]:
+    if not pr_body:
+        return []
+    return [int(match) for match in REFS_ISSUE_RE.findall(pr_body)]
+
+
+def has_auto_close_keyword(pr_body: str | None) -> bool:
     if not pr_body:
         return False
-    return ISSUE_REF_RE.search(pr_body) is not None
+    return AUTO_CLOSE_ISSUE_RE.search(pr_body) is not None
 
 
 def parse_release_note_declaration(pr_body: str | None) -> tuple[str | None, str | None]:
@@ -66,16 +89,56 @@ def parse_release_note_declaration(pr_body: str | None) -> tuple[str | None, str
     return status, reason
 
 
+def fetch_github_issue(owner: str, repo: str, number: int) -> dict[str, Any] | None:
+    token = os.environ.get("GITHUB_TOKEN", "")
+    request = urllib.request.Request(
+        f"https://api.github.com/repos/{owner}/{repo}/issues/{number}",
+        headers={
+            "Accept": "application/vnd.github+json",
+            "User-Agent": "template-ai-coding-pr-workflow",
+            **({"Authorization": f"Bearer {token}"} if token else {}),
+        },
+    )
+    try:
+        with urllib.request.urlopen(request) as response:
+            return json.load(response)
+    except urllib.error.HTTPError as exc:
+        if exc.code == 404:
+            return None
+        raise
+
+
+def _repository_owner_name() -> tuple[str, str]:
+    repository = os.environ.get("GITHUB_REPOSITORY", "")
+    owner, sep, name = repository.partition("/")
+    if not sep or not owner or not name:
+        raise ValueError(
+            "GITHUB_REPOSITORY must be set to 'owner/repo' when --verify-issue-exists is used."
+        )
+    return owner, name
+
+
 def validate_pr_workflow(
     changed_files: list[str],
     pr_body: str | None,
+    *,
+    verify_issue_exists: bool = False,
+    issue_fetcher: IssueFetcher | None = None,
 ) -> ValidationResult:
     result = ValidationResult()
 
-    if has_prefix(changed_files, ISSUE_REF_PREFIXES) and not has_issue_reference(pr_body):
+    if has_auto_close_keyword(pr_body):
+        result.add(
+            "PR body must not use Closes/Close/Fixes/Resolves #<issue>; "
+            "use 'Refs #<issue>' so merge does not auto-close the issue."
+        )
+
+    refs_numbers = extract_refs_issue_numbers(pr_body)
+    if has_prefix(changed_files, ISSUE_REF_PREFIXES) and not refs_numbers:
         result.add(
             "PR body must include an issue reference such as "
-            "'Refs #123' or 'Closes #123' when src/ files change."
+            "'Refs #123' when src/, tests/, scripts/, infra/, e2e/, gateway/, "
+            "or .apm/ files change."
         )
 
     if has_prefix(changed_files, RELEASE_LOG_TRIGGER_PREFIXES):
@@ -95,6 +158,18 @@ def validate_pr_workflow(
                 "Release-Note: not-required requires a non-empty 'Reason:' line in the PR body."
             )
 
+    if verify_issue_exists and refs_numbers:
+        if issue_fetcher is None:
+            owner, repo = _repository_owner_name()
+            fetcher = fetch_github_issue
+        else:
+            owner, repo = "owner", "repo"
+            fetcher = issue_fetcher
+        for number in refs_numbers:
+            issue = fetcher(owner, repo, number)
+            if issue is None:
+                result.add(f"Referenced issue #{number} does not exist in {owner}/{repo}.")
+
     return result
 
 
@@ -112,13 +187,24 @@ def main(argv: list[str] | None = None) -> int:
         default="",
         help="Pull request body text (or set PR_BODY environment variable)",
     )
+    parser.add_argument(
+        "--verify-issue-exists",
+        action="store_true",
+        help="Confirm each Refs #<issue> exists via the GitHub Issues API.",
+    )
     args = parser.parse_args(argv)
-
-    import os
 
     pr_body = args.pr_body or os.environ.get("PR_BODY", "")
     changed_files = args.changed_files or read_changed_files_from_stdin()
-    result = validate_pr_workflow(changed_files, pr_body)
+    try:
+        result = validate_pr_workflow(
+            changed_files,
+            pr_body,
+            verify_issue_exists=args.verify_issue_exists,
+        )
+    except ValueError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
 
     if result.ok:
         return 0
