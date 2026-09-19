@@ -4,15 +4,14 @@
 from __future__ import annotations
 
 import argparse
-import json
 import os
 import re
 import sys
-import urllib.error
-import urllib.request
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
+
+import httpx
 
 ISSUE_REF_PREFIXES = (
     "src/",
@@ -91,21 +90,19 @@ def parse_release_note_declaration(pr_body: str | None) -> tuple[str | None, str
 
 def fetch_github_issue(owner: str, repo: str, number: int) -> dict[str, Any] | None:
     token = os.environ.get("GITHUB_TOKEN", "")
-    request = urllib.request.Request(
-        f"https://api.github.com/repos/{owner}/{repo}/issues/{number}",
-        headers={
-            "Accept": "application/vnd.github+json",
-            "User-Agent": "template-ai-coding-pr-workflow",
-            **({"Authorization": f"Bearer {token}"} if token else {}),
-        },
-    )
-    try:
-        with urllib.request.urlopen(request) as response:
-            return json.load(response)
-    except urllib.error.HTTPError as exc:
-        if exc.code == 404:
+    headers = {
+        "Accept": "application/vnd.github+json",
+        "User-Agent": "template-ai-coding-pr-workflow",
+    }
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    url = f"https://api.github.com/repos/{owner}/{repo}/issues/{number}"
+    with httpx.Client(timeout=10.0) as client:
+        response = client.get(url, headers=headers)
+        if response.status_code == 404:
             return None
-        raise
+        response.raise_for_status()
+        return response.json()
 
 
 def _repository_owner_name() -> tuple[str, str]:

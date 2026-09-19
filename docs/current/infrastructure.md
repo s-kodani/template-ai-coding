@@ -215,7 +215,7 @@ Repository rulesets で以下を要求する。
 
 加えて `pull_request` ルール: 承認 1、CODEOWNERS レビュー、stale review の破棄、`strict`（最新 `main` との同期必須）。
 
-`.github/CODEOWNERS` は `src/` `infra/` `gateway/` `scripts/` `.apm/` `docs/current/` `docs/decisions/` `.github/` を `@s-kodani` に割り当てる。CODEOWNERS レビューは上記 ruleset 適用後に実効化する。
+`.github/CODEOWNERS` は `src/` `infra/` `gateway/` `scripts/` `.apm/` `docs/current/` `docs/decisions/` `.github/` `.pre-commit-config.yaml` `uv.lock` を `@s-kodani` に割り当てる。CODEOWNERS レビューは上記 ruleset 適用後に実効化する。
 
 パブリックリポジトリでは GitHub Free でも ruleset を強制できる。プライベートでは GitHub Pro / Team / Enterprise が必要で、Free のままでは ruleset は enforce されない。
 
