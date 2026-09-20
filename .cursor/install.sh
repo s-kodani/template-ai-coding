@@ -16,6 +16,11 @@ sudo apt-get install -y -qq \
   -o Dpkg::Options::=--force-confold \
   docker.io docker-compose-v2 fuse-overlayfs uidmap make curl
 
+# Let the agent user talk to the daemon socket (root:docker) so the documented
+# `make -C infra up` works without sudo. Durable in the snapshot; takes effect in
+# new login shells (start.sh's dockerd creates the socket with group `docker`).
+sudo usermod -aG docker "$USER"
+
 # uv: install from PyPI (astral.sh is not in the Cloud Agent egress allowlist).
 sudo python3 -m pip install --quiet --upgrade uv
 
