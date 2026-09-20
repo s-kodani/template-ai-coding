@@ -20,11 +20,11 @@
 
 | Job | 内容 |
 |---|---|
-| workflow | `scripts/validate_pr_workflow.py`（Issue 参照、Release Note 要否） |
+| workflow | `scripts/validate_pr_workflow.py`（`Refs #<issue>`、Closes 禁止、Issue 存在確認、Release Note 要否） |
 
 ## Branch protection（main）
 
-必須チェック: `quality`, `security`, `build-and-scan`, `okf`（リポジトリ設定による）
+必須チェック: `quality`, `security`, `build-and-scan`, `okf`, `workflow`。加えて承認 1 と CODEOWNERS レビュー。適用は管理者が `./scripts/configure_main_branch_protection.sh` を実行する（未実行なら未適用）。
 
 ## Skill / Agent deploy
 

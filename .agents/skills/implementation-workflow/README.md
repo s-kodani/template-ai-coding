@@ -128,7 +128,7 @@ ScopeやAcceptance Criteriaの**文言**が変わった場合は、Issue本文�
 
 既存Issueの確認なしに重複Issueを作成しないことが重要です。
 
-実装または修正対応が一段落するたびに、進捗コメント（`<!-- agent-progress:v1 -->`）を残し、本文の Acceptance Criteria タスクリストを再評価します。Pre-PR は Issue、Post-PR は PR へ投稿します。Plan 承認後は Issue へ Work Start コメントを残します。投稿できたことを確認するまで、その区切りを完了としません。詳細は `references/github-issue-workflow.md` です。
+実装の主要イベント（PR 作成前の一区切り、Phase 5 検証完了、レビュー修正完了）で、進捗コメント（`<!-- agent-progress:v1 -->`）を残し、本文の Acceptance Criteria タスクリストを再評価します。Pre-PR は Issue、Post-PR は PR へ投稿します。Plan 承認後は Issue へ Work Start コメントを残します。同一 Issue の 2 本目以降は `Coverage: partial` 必須で、Covered AC の重複は禁止です。投稿できたことを確認するまで、その区切りを完了としません。詳細は `references/github-issue-workflow.md` です。
 
 一連のワークフロー完了後は、コードレビューとワークフロー遵守チェック（Phase 8）を行い、Post-PR 時は PR へ結果を残します。Issue Close 前に本文 AC がすべて `[x]` であることを必ず確認し、紐づく作業 PR がすべて closed になったあと Issue を手動 Close します。Issue と PR は 1:N。詳細は `references/review-and-compliance.md` と `references/github-issue-workflow.md` です。
 
@@ -154,7 +154,7 @@ Issue: Work Start コメント
 Decision Check
         ↓
 Implement
-        │  Pre-PR: Issue へ進捗 + AC 再評価
+        │  Pre-PR: 主要イベントで Issue へ進捗 + AC 再評価
         │  PR 作成 / マージ → Issue へ最小通知
         │  Post-PR: PR へ進捗
         │
@@ -452,7 +452,7 @@ Phase 6 では Current-state Documentation、ADR、Release Log を最終実装�
 - ユーザー承認ゲート（Cloud / background agent も例外なし）
 - Decision Check
 - Session Handoff / Resume
-- 実装・修正区切りごとの Issue 進捗コメントと Acceptance Criteria タスクリスト再評価
+- 主要イベントでの Issue / PR 進捗コメントと Acceptance Criteria タスクリスト再評価
 - Verification
 - Documentation Reconciliation
 - OKF運用

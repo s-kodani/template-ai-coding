@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Configure required CI status checks on main via GitHub repository rulesets.
+# Configure required CI status checks and pull-request reviews on main via
+# GitHub repository rulesets.
 # Requires a token with admin access to the repository (classic: repo scope;
 # fine-grained: Administration read/write).
 set -euo pipefail
@@ -13,6 +14,7 @@ REQUIRED_CHECKS=(
   security
   build-and-scan
   okf
+  workflow
 )
 
 if ! command -v gh >/dev/null 2>&1; then
@@ -49,6 +51,17 @@ payload="$(jq -n \
           do_not_enforce_on_create: false,
           required_status_checks: $checks
         }
+      },
+      {
+        type: "pull_request",
+        parameters: {
+          required_approving_review_count: 1,
+          dismiss_stale_reviews_on_push: true,
+          require_code_owner_review: true,
+          require_last_push_approval: false,
+          required_review_thread_resolution: false,
+          allowed_merge_methods: ["merge", "squash", "rebase"]
+        }
       }
     ]
   }')"
@@ -75,3 +88,4 @@ fi
 
 echo "Branch protection ruleset applied. Required checks:"
 printf '  - %s\n' "${REQUIRED_CHECKS[@]}"
+echo "Pull request reviews: 1 approving review, CODEOWNERS required, stale reviews dismissed."

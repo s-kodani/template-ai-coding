@@ -5,7 +5,7 @@ description: アプリ、Keycloak、MCP Gateway、Langfuse、任意 Langflow の
 tags: [docker, langfuse, langflow, postgres, keycloak, gateway, ci, devsecops]
 status: stable
 generated:
-  at: "2026-09-13T12:00:00Z"
+  at: "2026-09-19T00:00:00Z"
   by: process:cursor-agent
 ---
 
@@ -173,7 +173,7 @@ make -C infra e2e-smoke              # -m e2e_smoke（最小 subset）
 | `.github/workflows/e2e-nightly.yml` | e2e-full / e2e-brave-empty | Playwright e2e（schedule + `workflow_dispatch`。Secrets 必須） |
 | | security | Bandit, `uv audit`, gitleaks |
 | | build-and-scan | `docker compose build`, Trivy（mcp-server / chainlit / mcp-gateway / web-search-mcp イメージ、`scanners: vuln`） |
-| `.github/workflows/pr-workflow.yml` | workflow | PR 本文の Issue 紐付け（`src/` 変更時）、Release Log 更新要否（`src/` / `infra/` 変更時） |
+| `.github/workflows/pr-workflow.yml` | workflow | PR 本文の `Refs #<issue>`（`src/` `tests/` `scripts/` `infra/` `e2e/` `gateway/` `.apm/` 変更時。`Closes` / `Fixes` / `Resolves` は禁止。Issue 存在確認あり）、Release Log 更新要否（`src/` / `infra/` 変更時） |
 | `.github/workflows/okf.yml` | okf | OKF bundle 検証 |
 
 ### ローカル検証
@@ -201,7 +201,9 @@ pre-commit はコミット前の Shift Left 用。初回は `uv run pre-commit i
 
 ### Branch protection（`main`）
 
-`main` へのマージ前に CI 成功を必須とする。Repository rulesets で以下の status check を要求する。
+`main` へのマージ前に CI 成功と人間レビュー 1 件を必須とする。適用は管理者が `./scripts/configure_main_branch_protection.sh` を実行する（Cloud Agent は適用しない）。未実行の間、ruleset はリポジトリに存在しない。
+
+Repository rulesets で以下を要求する。
 
 | チェック名 | ワークフロー / ジョブ |
 |---|---|
@@ -209,8 +211,13 @@ pre-commit はコミット前の Shift Left 用。初回は `uv run pre-commit i
 | `security` | CI / security |
 | `build-and-scan` | CI / build-and-scan |
 | `okf` | OKF Validation / okf |
+| `workflow` | PR Workflow / workflow |
 
-`strict`（最新 `main` との同期必須）を有効にする。
+加えて `pull_request` ルール: 承認 1、CODEOWNERS レビュー、stale review の破棄、`strict`（最新 `main` との同期必須）。
+
+`.github/CODEOWNERS` は `src/` `infra/` `gateway/` `scripts/` `.apm/` `docs/current/` `docs/decisions/` `.github/` `.pre-commit-config.yaml` `uv.lock` を `@s-kodani` に割り当てる。CODEOWNERS レビューは上記 ruleset 適用後に実効化する。
+
+パブリックリポジトリでは GitHub Free でも ruleset を強制できる。プライベートでは GitHub Pro / Team / Enterprise が必要で、Free のままでは ruleset は enforce されない。
 
 リポジトリ管理者権限を持つトークンで以下を実行する（冪等）。
 
@@ -218,4 +225,4 @@ pre-commit はコミット前の Shift Left 用。初回は `uv run pre-commit i
 ./scripts/configure_main_branch_protection.sh
 ```
 
-GitHub UI から設定する場合: **Settings → Rules → Rulesets → New branch ruleset** で `refs/heads/main` を対象に、上記 4 チェックを必須化する。
+GitHub UI から設定する場合: **Settings → Rules → Rulesets → New branch ruleset** で `refs/heads/main` を対象に、上記 5 チェックと pull request レビューを必須化する。

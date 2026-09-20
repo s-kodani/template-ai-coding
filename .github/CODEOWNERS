@@ -1,4 +1,13 @@
-# DevSecOps / CI — changes require review from repository owner.
+# Changes to listed paths require review from the repository owner.
+# CODEOWNERS reviews take effect after the main ruleset is applied
+# (`./scripts/configure_main_branch_protection.sh`).
 /.github/ @s-kodani
 /.pre-commit-config.yaml @s-kodani
 /uv.lock @s-kodani
+/src/ @s-kodani
+/infra/ @s-kodani
+/gateway/ @s-kodani
+/scripts/ @s-kodani
+/.apm/ @s-kodani
+/docs/current/ @s-kodani
+/docs/decisions/ @s-kodani
