@@ -87,9 +87,9 @@ Phase 0 または Resume で本文を読んだとき、Acceptance Criteria が�
 
 進捗コメントと同じ区切りで、**全項目**を再評価する。
 
-- Phase 4 の実装が一区切りついた
+- PR 作成前の実装が一区切りついた
+- Phase 5 検証完了
 - 修正対応が終わった
-- その区切りの検証直後
 - Phase 7 / Phase 8 の Close 判定前
 
 ファイル保存や個別の編集操作ごと、同一区切り内の連続コミットごとには更新しない。
@@ -145,7 +145,7 @@ Goal、Scope、Acceptance Criteria の文言、Constraints など作業契約が
 
 ### 紐付けルール
 
-- 各 PR 本文には **`Refs #<issue>`** を付ける（`src/` 変更時は CI 必須）
+- 各 PR 本文には **`Refs #<issue>`** を付ける（`src/` `tests/` `scripts/` `infra/` `e2e/` `gateway/` `.apm/` 変更時は CI 必須。`Closes` 等は CI 失敗）
 - Issue 本文の `Related Issue / PR:` に、紐づく PR の URL または番号を追記・更新する
 - 進捗コメントの `Related PR` に、その区切りで扱った PR を書く
 
@@ -154,7 +154,7 @@ Goal、Scope、Acceptance Criteria の文言、Constraints など作業契約が
 | キーワード | 用途 | Issue Close |
 |---|---|---|
 | `Refs #<issue>` | **デフォルト**。作業中・後続 PR あり・1:N のいずれでも使う | 自動 Close しない |
-| `Closes #<issue>` | **本ワークフローでは PR 本文に使わない** | PR **merge** 時に GitHub が自動 Close し、Phase 8 前に Issue が閉じる恐れがある |
+| `Closes #<issue>` | **本ワークフローでは PR 本文に使わない。CI は失敗させる** | PR **merge** 時に GitHub が自動 Close し、Phase 8 前に Issue が閉じる恐れがある |
 
 Issue の Close は Phase 8 完了後に**手動**で行う。PR merge による自動 Close に頼らない。
 
@@ -283,6 +283,14 @@ Phase 2 で Implementation Plan を `.plans/` に書き出しユーザー承認�
 
 Resume 時は PR が未作成なら再投稿不要。作業ブランチ・Plan・カバレッジが変わった場合のみ追記する。
 
+### 1:N 並行（Coverage 重複禁止）
+
+同一 Issue で 2 本目以降の作業ブランチを始める場合:
+
+- Work Start は **`Coverage: partial` 必須**（full は先着 1 本だけ）
+- Covered Acceptance Criteria が既存の open Work Start と重複してはいけない。重複したら後続は止まってユーザーへ確認する
+- Issue 本文の AC `[ ]` / `[x]` 更新にロックは設けない。進捗コメントを監査証跡とする
+
 ### 必須冒頭行
 
 コメント先頭に、Issue のどの範囲をこの作業ブランチでカバーするかを明記する。
@@ -329,7 +337,7 @@ gh issue comment <issue-number> --body-file <path-to-markdown>
 
 ## 実装・修正の進捗コメント（必須）
 
-エージェント側の実装または修正対応が一段落するたびに、進捗コメントを残し、本文の Acceptance Criteria タスクリストを再評価する。セッション終了時の Work Checkpoint（`references/session-handoff.md`）とは別物である。
+エージェント側の実装または修正対応が主要イベントに達したら、進捗コメントを残し、本文の Acceptance Criteria タスクリストを再評価する。セッション終了時の Work Checkpoint（`references/session-handoff.md`）とは別物である。
 
 **投稿先**: open PR がない間は Issue。open PR がある場合は該当 PR（「Issue と PR のコメント分担」参照）。
 
@@ -337,14 +345,14 @@ gh issue comment <issue-number> --body-file <path-to-markdown>
 
 次のいずれかを満たしたら、その区切りを完了と報告する前にコメントする。
 
-- Phase 4 の実装が一区切りついた（コミットまたはプッシュしたスライス、ユーザー依頼の実装完了）
+- PR 作成前の実装が一区切りついた
+- Phase 5 検証が完了した（結果を同じコメントに含めてよい）
 - テスト失敗・レビュー指摘・ユーザー follow-up への修正対応が終わった
-- その区切りの検証（Phase 5 相当）を実行した直後（結果を同じコメントに含めてよい）
 
 残さなくてよいもの:
 
 - ファイル保存や個別の編集操作ごと
-- 同一区切り内の連続コミットごと（区切りの最後に 1 件）
+- 同一区切り内の連続コミットごと
 - Phase 7 Completion Report が、そのセッション最後の実装区切りを兼ねる場合（重複投稿はしない）
 
 Work Checkpoint は作業が未完のままセッションを終えるときに残す。進捗コメントは完了した区切りの事実を残す。

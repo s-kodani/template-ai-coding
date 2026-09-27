@@ -1,5 +1,5 @@
 lockfile_version: '1'
-generated_at: '2026-09-14T06:10:32.369163+00:00'
+generated_at: '2026-09-19T00:14:35.395430+00:00'
 apm_version: 0.30.0
 dependencies:
 - repo_url: cli/cli
@@ -172,7 +172,7 @@ deployments:
   owners:
   - .
   active_owner: .
-  content_hash: sha256:52f99525f478ae66b6e9c181f6fb24225ac7bc85e0bb0d7829151c4f927f18d7
+  content_hash: sha256:c612c8ffe11a4147075d4327f31fac732ceaec1218b0df86bf19fba4083cecbb
 - kind: project-relative
   target: claude
   value: .claude/skills/commit-push-pr/reference.md
@@ -181,7 +181,7 @@ deployments:
   owners:
   - .
   active_owner: .
-  content_hash: sha256:801c331799b514d6cdb1f173cd951629379e6c8158e596aed88d89c324b57328
+  content_hash: sha256:04281e631769693f3baeefc8d11a154a3b5c485e282c9814441b1063cc25573f
 - kind: project-relative
   target: claude
   value: .claude/skills/commit-push/SKILL.md
@@ -289,7 +289,7 @@ deployments:
   owners:
   - .
   active_owner: .
-  content_hash: sha256:d4cc918e4cd4ef3e75b07a8307be87ef3ccf9fa72b5610c234a7bab3baadea43
+  content_hash: sha256:71a9dae67c626c9b3ec2c9a0b8f023066f603bb6308f1bfb1c7f255fcdbaa71a
 - kind: project-relative
   target: claude
   value: .claude/skills/implementation-workflow/SKILL.md
@@ -298,7 +298,7 @@ deployments:
   owners:
   - .
   active_owner: .
-  content_hash: sha256:f6106c7d7f63c12af147e048ef0030cd51652730484b440a147a142c6feb1625
+  content_hash: sha256:02167d5816a13294e0a8da5f14f70330bfb0d46b32769e80bac3505a755d90d9
 - kind: project-relative
   target: claude
   value: .claude/skills/implementation-workflow/references/completion-report.md
@@ -325,7 +325,7 @@ deployments:
   owners:
   - .
   active_owner: .
-  content_hash: sha256:ff6642925d78bd2ffe74a6617f76e90065e36dae2ad1320970bf3a3718608c8d
+  content_hash: sha256:4668bfd4b8c0ea7043999ae7fac4f9d110d84083a6ed50caaaff2359ba26219a
 - kind: project-relative
   target: claude
   value: .claude/skills/implementation-workflow/references/implementation-plan.md
@@ -334,7 +334,7 @@ deployments:
   owners:
   - .
   active_owner: .
-  content_hash: sha256:5f411be60e51a96f92c211830a1d8f04118c4faa7dbdd1d088b80dc1fca0b894
+  content_hash: sha256:a5d4cdea12a0f61df68076bbc25071142e8c2484801e2ec0fdc1808cbf2d6623
 - kind: project-relative
   target: claude
   value: .claude/skills/implementation-workflow/references/okf-documentation.md
@@ -361,7 +361,7 @@ deployments:
   owners:
   - .
   active_owner: .
-  content_hash: sha256:5e6804ee030a24e244c0125b32a877e1a608003f2e038d993de1468229a62517
+  content_hash: sha256:58ceb1cb89d1b3e67074e3aab7459a2698199f9e7c458b2f5787d8851c87ab9b
 - kind: project-relative
   target: claude
   value: .claude/skills/implementation-workflow/references/session-handoff.md
@@ -496,7 +496,7 @@ deployments:
   owners:
   - .
   active_owner: .
-  content_hash: sha256:9163f77e53e9e16d86dbaaddc1d3604fcf8f3f1a8fd662571387dcaf1863dc0b
+  content_hash: sha256:3c665f08b39ba5d2236cc781dd0bfeb33836a551411a6ff30593b0884b33aa4d
 - kind: project-relative
   target: claude
   value: .claude/skills/project-verification/references/ci-matrix.md
@@ -505,7 +505,7 @@ deployments:
   owners:
   - .
   active_owner: .
-  content_hash: sha256:b0624031021f3b7c83e8a12a54b59e643a9ab084fc684bbaaa80656e15571703
+  content_hash: sha256:20f7eabee3aa5905f2b5294a9ef35b560b44980c31528a7337e552abf5afa1d6
 - kind: project-relative
   target: claude
   value: .claude/skills/project-verification/references/ingest-validation.md
@@ -775,7 +775,7 @@ deployments:
   owners:
   - .
   active_owner: .
-  content_hash: sha256:52f99525f478ae66b6e9c181f6fb24225ac7bc85e0bb0d7829151c4f927f18d7
+  content_hash: sha256:c612c8ffe11a4147075d4327f31fac732ceaec1218b0df86bf19fba4083cecbb
 - kind: project-relative
   target: legacy
   value: .agents/skills/commit-push-pr/reference.md
@@ -784,7 +784,7 @@ deployments:
   owners:
   - .
   active_owner: .
-  content_hash: sha256:801c331799b514d6cdb1f173cd951629379e6c8158e596aed88d89c324b57328
+  content_hash: sha256:04281e631769693f3baeefc8d11a154a3b5c485e282c9814441b1063cc25573f
 - kind: project-relative
   target: legacy
   value: .agents/skills/commit-push/SKILL.md
@@ -820,7 +820,7 @@ deployments:
   owners:
   - .
   active_owner: .
-  content_hash: sha256:d4cc918e4cd4ef3e75b07a8307be87ef3ccf9fa72b5610c234a7bab3baadea43
+  content_hash: sha256:71a9dae67c626c9b3ec2c9a0b8f023066f603bb6308f1bfb1c7f255fcdbaa71a
 - kind: project-relative
   target: legacy
   value: .agents/skills/implementation-workflow/SKILL.md
@@ -829,7 +829,7 @@ deployments:
   owners:
   - .
   active_owner: .
-  content_hash: sha256:f6106c7d7f63c12af147e048ef0030cd51652730484b440a147a142c6feb1625
+  content_hash: sha256:02167d5816a13294e0a8da5f14f70330bfb0d46b32769e80bac3505a755d90d9
 - kind: project-relative
   target: legacy
   value: .agents/skills/implementation-workflow/references/completion-report.md
@@ -856,7 +856,7 @@ deployments:
   owners:
   - .
   active_owner: .
-  content_hash: sha256:ff6642925d78bd2ffe74a6617f76e90065e36dae2ad1320970bf3a3718608c8d
+  content_hash: sha256:4668bfd4b8c0ea7043999ae7fac4f9d110d84083a6ed50caaaff2359ba26219a
 - kind: project-relative
   target: legacy
   value: .agents/skills/implementation-workflow/references/implementation-plan.md
@@ -865,7 +865,7 @@ deployments:
   owners:
   - .
   active_owner: .
-  content_hash: sha256:5f411be60e51a96f92c211830a1d8f04118c4faa7dbdd1d088b80dc1fca0b894
+  content_hash: sha256:a5d4cdea12a0f61df68076bbc25071142e8c2484801e2ec0fdc1808cbf2d6623
 - kind: project-relative
   target: legacy
   value: .agents/skills/implementation-workflow/references/okf-documentation.md
@@ -892,7 +892,7 @@ deployments:
   owners:
   - .
   active_owner: .
-  content_hash: sha256:5e6804ee030a24e244c0125b32a877e1a608003f2e038d993de1468229a62517
+  content_hash: sha256:58ceb1cb89d1b3e67074e3aab7459a2698199f9e7c458b2f5787d8851c87ab9b
 - kind: project-relative
   target: legacy
   value: .agents/skills/implementation-workflow/references/session-handoff.md
@@ -1009,7 +1009,7 @@ deployments:
   owners:
   - .
   active_owner: .
-  content_hash: sha256:9163f77e53e9e16d86dbaaddc1d3604fcf8f3f1a8fd662571387dcaf1863dc0b
+  content_hash: sha256:3c665f08b39ba5d2236cc781dd0bfeb33836a551411a6ff30593b0884b33aa4d
 - kind: project-relative
   target: legacy
   value: .agents/skills/project-verification/references/ci-matrix.md
@@ -1018,7 +1018,7 @@ deployments:
   owners:
   - .
   active_owner: .
-  content_hash: sha256:b0624031021f3b7c83e8a12a54b59e643a9ab084fc684bbaaa80656e15571703
+  content_hash: sha256:20f7eabee3aa5905f2b5294a9ef35b560b44980c31528a7337e552abf5afa1d6
 - kind: project-relative
   target: legacy
   value: .agents/skills/project-verification/references/ingest-validation.md
@@ -1240,19 +1240,19 @@ local_deployed_file_hashes:
   .agents/skills/commit-only/SKILL.md: sha256:29c7ec0777dd6d7fbe56649df961935168a07f4f131746337f01f127a60d1d1b
   .agents/skills/commit-only/reference.md: sha256:8500b1098b337bb80e2751c37c2bc723f2c5af7ccbade2d5639dc7b10d14e039
   .agents/skills/commit-push-pr/SKILL.md: sha256:36e8b010144096e1088426ab3d50ff10a8c9418dacd28f54bbbfccda40792b2f
-  .agents/skills/commit-push-pr/delivery-reference.md: sha256:52f99525f478ae66b6e9c181f6fb24225ac7bc85e0bb0d7829151c4f927f18d7
-  .agents/skills/commit-push-pr/reference.md: sha256:801c331799b514d6cdb1f173cd951629379e6c8158e596aed88d89c324b57328
+  .agents/skills/commit-push-pr/delivery-reference.md: sha256:c612c8ffe11a4147075d4327f31fac732ceaec1218b0df86bf19fba4083cecbb
+  .agents/skills/commit-push-pr/reference.md: sha256:04281e631769693f3baeefc8d11a154a3b5c485e282c9814441b1063cc25573f
   .agents/skills/commit-push/SKILL.md: sha256:8aed89908ff87bb03a818e06f73e1deb36fd379a74770e162476ce04e64e8ad3
   .agents/skills/commit-push/reference.md: sha256:8500b1098b337bb80e2751c37c2bc723f2c5af7ccbade2d5639dc7b10d14e039
-  .agents/skills/implementation-workflow/README.md: sha256:d4cc918e4cd4ef3e75b07a8307be87ef3ccf9fa72b5610c234a7bab3baadea43
-  .agents/skills/implementation-workflow/SKILL.md: sha256:f6106c7d7f63c12af147e048ef0030cd51652730484b440a147a142c6feb1625
+  .agents/skills/implementation-workflow/README.md: sha256:71a9dae67c626c9b3ec2c9a0b8f023066f603bb6308f1bfb1c7f255fcdbaa71a
+  .agents/skills/implementation-workflow/SKILL.md: sha256:02167d5816a13294e0a8da5f14f70330bfb0d46b32769e80bac3505a755d90d9
   .agents/skills/implementation-workflow/references/completion-report.md: sha256:1f20bef268002599fc48914a65d7038128bc0eac9128b00d900831a681239c8d
   .agents/skills/implementation-workflow/references/decision-check.md: sha256:7b4881545a2a2561eb94b83ccaa144e5fbe44ce7d417d108c8fda1e20a413e5f
-  .agents/skills/implementation-workflow/references/github-issue-workflow.md: sha256:ff6642925d78bd2ffe74a6617f76e90065e36dae2ad1320970bf3a3718608c8d
-  .agents/skills/implementation-workflow/references/implementation-plan.md: sha256:5f411be60e51a96f92c211830a1d8f04118c4faa7dbdd1d088b80dc1fca0b894
+  .agents/skills/implementation-workflow/references/github-issue-workflow.md: sha256:4668bfd4b8c0ea7043999ae7fac4f9d110d84083a6ed50caaaff2359ba26219a
+  .agents/skills/implementation-workflow/references/implementation-plan.md: sha256:a5d4cdea12a0f61df68076bbc25071142e8c2484801e2ec0fdc1808cbf2d6623
   .agents/skills/implementation-workflow/references/okf-documentation.md: sha256:1a2426ec8f90be53a2e88b8e25336e217b37fbe31104b249f95d5945a800decf
   .agents/skills/implementation-workflow/references/release-note.md: sha256:4262658516cc32a071f2d8e45de9acde7ad7efd2ac431f9cb8af11137a54e5ea
-  .agents/skills/implementation-workflow/references/review-and-compliance.md: sha256:5e6804ee030a24e244c0125b32a877e1a608003f2e038d993de1468229a62517
+  .agents/skills/implementation-workflow/references/review-and-compliance.md: sha256:58ceb1cb89d1b3e67074e3aab7459a2698199f9e7c458b2f5787d8851c87ab9b
   .agents/skills/implementation-workflow/references/session-handoff.md: sha256:f85adecc63244185b169c74bc87eb4d202db32e3025180dd1200e6865e922404
   .agents/skills/implementation-workflow/references/verification.md: sha256:607a13de277127d15f99faa1543db01d814184eb283f12f9553cbeb960db02f9
   .agents/skills/mcp-server-engineering/README.md: sha256:c580ab8a79cf4c1594c395bd17e40408cd967043a276248b491290201444062a
@@ -1263,8 +1263,8 @@ local_deployed_file_hashes:
   .agents/skills/mcp-server-engineering/references/tool-design.md: sha256:3c97c8bc6b33894c0c7a295130267ff0efb349fa91fbc49f38d701fcdbfb3a5f
   .agents/skills/mcp-server-engineering/references/transport-and-state.md: sha256:c8f16b6b7b0689b7d5c510698494eb51f098010fc6a63c83515e820e8000fe61
   .agents/skills/mcp-server-engineering/references/version-and-sources.md: sha256:c51988bef125533ebbba276d93c1f1a538f49de01d44e61fac1199f96c7b0370
-  .agents/skills/project-verification/SKILL.md: sha256:9163f77e53e9e16d86dbaaddc1d3604fcf8f3f1a8fd662571387dcaf1863dc0b
-  .agents/skills/project-verification/references/ci-matrix.md: sha256:b0624031021f3b7c83e8a12a54b59e643a9ab084fc684bbaaa80656e15571703
+  .agents/skills/project-verification/SKILL.md: sha256:3c665f08b39ba5d2236cc781dd0bfeb33836a551411a6ff30593b0884b33aa4d
+  .agents/skills/project-verification/references/ci-matrix.md: sha256:20f7eabee3aa5905f2b5294a9ef35b560b44980c31528a7337e552abf5afa1d6
   .agents/skills/project-verification/references/ingest-validation.md: sha256:0973be051ac1250594e998320024703b510c6f8d34d1b52815f14a60e71e7903
   .agents/skills/project-verification/references/local-stack.md: sha256:d2d2f65c3741d2cfacf4448ec1cd931eb93575cf9600abc000c7021ea88321a2
   .agents/skills/project-verification/references/trace-validation.md: sha256:d1c64a208fd1d4093a1439a029c9bcfeb031812feab5dfd5c2ec9498094a4852
@@ -1273,19 +1273,19 @@ local_deployed_file_hashes:
   .claude/skills/commit-only/SKILL.md: sha256:29c7ec0777dd6d7fbe56649df961935168a07f4f131746337f01f127a60d1d1b
   .claude/skills/commit-only/reference.md: sha256:8500b1098b337bb80e2751c37c2bc723f2c5af7ccbade2d5639dc7b10d14e039
   .claude/skills/commit-push-pr/SKILL.md: sha256:36e8b010144096e1088426ab3d50ff10a8c9418dacd28f54bbbfccda40792b2f
-  .claude/skills/commit-push-pr/delivery-reference.md: sha256:52f99525f478ae66b6e9c181f6fb24225ac7bc85e0bb0d7829151c4f927f18d7
-  .claude/skills/commit-push-pr/reference.md: sha256:801c331799b514d6cdb1f173cd951629379e6c8158e596aed88d89c324b57328
+  .claude/skills/commit-push-pr/delivery-reference.md: sha256:c612c8ffe11a4147075d4327f31fac732ceaec1218b0df86bf19fba4083cecbb
+  .claude/skills/commit-push-pr/reference.md: sha256:04281e631769693f3baeefc8d11a154a3b5c485e282c9814441b1063cc25573f
   .claude/skills/commit-push/SKILL.md: sha256:8aed89908ff87bb03a818e06f73e1deb36fd379a74770e162476ce04e64e8ad3
   .claude/skills/commit-push/reference.md: sha256:8500b1098b337bb80e2751c37c2bc723f2c5af7ccbade2d5639dc7b10d14e039
-  .claude/skills/implementation-workflow/README.md: sha256:d4cc918e4cd4ef3e75b07a8307be87ef3ccf9fa72b5610c234a7bab3baadea43
-  .claude/skills/implementation-workflow/SKILL.md: sha256:f6106c7d7f63c12af147e048ef0030cd51652730484b440a147a142c6feb1625
+  .claude/skills/implementation-workflow/README.md: sha256:71a9dae67c626c9b3ec2c9a0b8f023066f603bb6308f1bfb1c7f255fcdbaa71a
+  .claude/skills/implementation-workflow/SKILL.md: sha256:02167d5816a13294e0a8da5f14f70330bfb0d46b32769e80bac3505a755d90d9
   .claude/skills/implementation-workflow/references/completion-report.md: sha256:1f20bef268002599fc48914a65d7038128bc0eac9128b00d900831a681239c8d
   .claude/skills/implementation-workflow/references/decision-check.md: sha256:7b4881545a2a2561eb94b83ccaa144e5fbe44ce7d417d108c8fda1e20a413e5f
-  .claude/skills/implementation-workflow/references/github-issue-workflow.md: sha256:ff6642925d78bd2ffe74a6617f76e90065e36dae2ad1320970bf3a3718608c8d
-  .claude/skills/implementation-workflow/references/implementation-plan.md: sha256:5f411be60e51a96f92c211830a1d8f04118c4faa7dbdd1d088b80dc1fca0b894
+  .claude/skills/implementation-workflow/references/github-issue-workflow.md: sha256:4668bfd4b8c0ea7043999ae7fac4f9d110d84083a6ed50caaaff2359ba26219a
+  .claude/skills/implementation-workflow/references/implementation-plan.md: sha256:a5d4cdea12a0f61df68076bbc25071142e8c2484801e2ec0fdc1808cbf2d6623
   .claude/skills/implementation-workflow/references/okf-documentation.md: sha256:1a2426ec8f90be53a2e88b8e25336e217b37fbe31104b249f95d5945a800decf
   .claude/skills/implementation-workflow/references/release-note.md: sha256:4262658516cc32a071f2d8e45de9acde7ad7efd2ac431f9cb8af11137a54e5ea
-  .claude/skills/implementation-workflow/references/review-and-compliance.md: sha256:5e6804ee030a24e244c0125b32a877e1a608003f2e038d993de1468229a62517
+  .claude/skills/implementation-workflow/references/review-and-compliance.md: sha256:58ceb1cb89d1b3e67074e3aab7459a2698199f9e7c458b2f5787d8851c87ab9b
   .claude/skills/implementation-workflow/references/session-handoff.md: sha256:f85adecc63244185b169c74bc87eb4d202db32e3025180dd1200e6865e922404
   .claude/skills/implementation-workflow/references/verification.md: sha256:607a13de277127d15f99faa1543db01d814184eb283f12f9553cbeb960db02f9
   .claude/skills/mcp-server-engineering/README.md: sha256:c580ab8a79cf4c1594c395bd17e40408cd967043a276248b491290201444062a
@@ -1296,8 +1296,8 @@ local_deployed_file_hashes:
   .claude/skills/mcp-server-engineering/references/tool-design.md: sha256:3c97c8bc6b33894c0c7a295130267ff0efb349fa91fbc49f38d701fcdbfb3a5f
   .claude/skills/mcp-server-engineering/references/transport-and-state.md: sha256:c8f16b6b7b0689b7d5c510698494eb51f098010fc6a63c83515e820e8000fe61
   .claude/skills/mcp-server-engineering/references/version-and-sources.md: sha256:c51988bef125533ebbba276d93c1f1a538f49de01d44e61fac1199f96c7b0370
-  .claude/skills/project-verification/SKILL.md: sha256:9163f77e53e9e16d86dbaaddc1d3604fcf8f3f1a8fd662571387dcaf1863dc0b
-  .claude/skills/project-verification/references/ci-matrix.md: sha256:b0624031021f3b7c83e8a12a54b59e643a9ab084fc684bbaaa80656e15571703
+  .claude/skills/project-verification/SKILL.md: sha256:3c665f08b39ba5d2236cc781dd0bfeb33836a551411a6ff30593b0884b33aa4d
+  .claude/skills/project-verification/references/ci-matrix.md: sha256:20f7eabee3aa5905f2b5294a9ef35b560b44980c31528a7337e552abf5afa1d6
   .claude/skills/project-verification/references/ingest-validation.md: sha256:0973be051ac1250594e998320024703b510c6f8d34d1b52815f14a60e71e7903
   .claude/skills/project-verification/references/local-stack.md: sha256:d2d2f65c3741d2cfacf4448ec1cd931eb93575cf9600abc000c7021ea88321a2
   .claude/skills/project-verification/references/trace-validation.md: sha256:d1c64a208fd1d4093a1439a029c9bcfeb031812feab5dfd5c2ec9498094a4852

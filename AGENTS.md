@@ -67,7 +67,7 @@ Skill とこのファイルが競合する場合は、**このリポジトリ固
 
 MCP サーバー実装・変更では `mcp-server-engineering` Skill を併用します。MCP 固有の完了チェックは `references/mcp-completion-checklist.md` を参照します。
 
-Pull Request は対応 Issue を **`Refs #<issue>`** で明示します（`src/` 変更がある PR は CI で `Refs` または `Closes` のいずれかを検証。運用上は `Refs` を使い、Issue Close は Phase 8 後に手動で行う）。
+Pull Request は対応 Issue を **`Refs #<issue>`** で明示します（`src/` `tests/` `scripts/` `infra/` `e2e/` `gateway/` `.apm/` 変更時は CI で `Refs` を検証。`Closes` / `Fixes` / `Resolves` は失敗。Issue Close は Phase 8 後に手動で行う）。
 
 作業開始前に `git fetch origin main` し、新規ブランチは `origin/main` から切ります。既存の作業ブランチでは `git merge origin/main` します（rebase は明示時のみ）。Cloud Agent の「fetch を先行しない」指示より本ルールを優先します。
 
@@ -92,11 +92,11 @@ Issue 本文・起票前確認・進捗コメント・Checkpoint・Resume・Clos
 
 - default branch は `main`。作業開始前に `git fetch origin main` し、新規ブランチはそこから切る。既存ブランチは `git merge origin/main`
 - 新規 Issue 起票前に、ユーザーへ既存 Issue の有無を確認する（詳細は `references/github-issue-workflow.md`）
-- PR は **`Refs #<issue>`** を明示（`src/` 変更時 CI は `Refs` / `Closes` のいずれかを検証。運用上は `Refs` を使う）
+- PR は **`Refs #<issue>`** を明示（`src/` `tests/` `scripts/` `infra/` `e2e/` `gateway/` `.apm/` 変更時 CI は `Refs` を検証。`Closes` は使わない）
 - Issue と PR は **1:N**。紐づく作業 PR がすべて closed（merged または closed）になる前に Issue を Close しない
 - Plan 承認後、Issue へ **Work Start コメント**（冒頭に Coverage: full / partial、作業ブランチ、Implementation Plan）を残してから実装に入る
 - **Pre-PR**（PR 作成まで）の進捗は Issue コメント、**Post-PR**（PR 作成後）の進捗・Review・Completion Report は PR コメント。PR 作成・マージ時は Issue へ最小通知のみ。当初スコープ外の対応は Issue コメント + 本文更新
-- 実装・修正の区切りごとに進捗コメントを残し、本文の Acceptance Criteria タスクリストを対応の都度再評価する（`[x]` 更新は Issue 本文）。Cursor Cloud で `gh` が read-only のときは書ける側（Issue または PR）へ同内容を投稿し、偽報告しない
+- 主要イベント（PR 作成前の一区切り、Phase 5 検証完了、レビュー修正完了）で進捗コメントを残し、本文の Acceptance Criteria タスクリストを再評価する（`[x]` 更新は Issue 本文）。Cursor Cloud で `gh` が read-only のときは書ける側（Issue または PR）へ同内容を投稿し、偽報告しない
 - 一連のワークフロー完了後にコードレビューとワークフロー遵守チェックを行い、must-fix が無いことを確認する。Issue Close 前に **Issue 本文 AC がすべて `[x]` であることを必ず確認**し、作業 PR がすべて closed になったあと Issue を**手動** Close する
 
 ---

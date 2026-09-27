@@ -66,11 +66,11 @@ Phase 5 では `project-verification` Skill を読み、変更種別に応じた
 
 ### Change Intensity — 変更強度
 
-| 強度 | 例 | Plan | grilling | ユーザー承認 |
-|------|-----|------|----------|--------------|
-| **軽微** | typo、コメント、Skill/設定の機械的修正 | 数行の簡易 Plan（`.plans/` の md） | **不要** | **必須** |
-| **標準** | 局所機能、通常のバグ修正 | 通常 Plan（全項目） | 未解決判断がある場合のみ | **必須** |
-| **設計** | API / DB / セキュリティ / ADR Level 1–2 候補 | 詳細 Plan | **必須** | **必須** |
+| 強度 | 例 | Plan | grilling | ユーザー承認 | マージレビュー |
+|------|-----|------|----------|--------------|----------------|
+| **軽微** | typo、コメント、Skill/設定の機械的修正 | 数行の簡易 Plan（`.plans/` の md） | **不要** | **必須**（依頼者の Plan 承認） | GitHub の必須レビュー 1 に従う |
+| **標準** | 局所機能、通常のバグ修正 | 通常 Plan（全項目） | 未解決判断がある場合のみ | **必須** | Plan 承認 + 人間 reviewer 1（CODEOWNERS） |
+| **設計** | API / DB / セキュリティ / ADR Level 1–2 候補 | 詳細 Plan | **必須** | **必須** | Plan 承認 + grilling + CODEOWNER / Tech Lead |
 
 Level 1 Architecture Decision および重大な Level 2 Design Decision では、ユーザー確認を必須とする。Plan 承認とは別に、該当判断の確認を取る。
 

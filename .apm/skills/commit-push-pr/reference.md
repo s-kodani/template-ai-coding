@@ -81,8 +81,7 @@ Use `<Prefix>(scope):` when helpful.
 
 ## 関連Issue
 
-- Closes #123
-- Refs #456
+- Refs #123
 ```
 
 ### Generation Rules
