@@ -145,7 +145,7 @@ def validate_pr_workflow(
         result.add(
             "PR body must include an issue reference such as "
             "'Refs #123' when src/, tests/, scripts/, infra/, e2e/, gateway/, "
-            "or .apm/ files change."
+            "or .apm/ files change (pyproject.toml and uv.lock alone are exempt)."
         )
 
     if has_prefix(changed_files, RELEASE_LOG_TRIGGER_PREFIXES):
