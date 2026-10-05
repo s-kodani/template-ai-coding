@@ -5,7 +5,7 @@ description: アプリ、Keycloak、MCP Gateway、Langfuse、任意 Langflow の
 tags: [docker, langfuse, langflow, postgres, keycloak, gateway, ci, devsecops]
 status: stable
 generated:
-  at: "2026-09-19T00:00:00Z"
+  at: "2026-10-05T00:00:00Z"
   by: process:cursor-agent
 ---
 
@@ -173,7 +173,7 @@ make -C infra e2e-smoke              # -m e2e_smoke（最小 subset）
 | `.github/workflows/e2e-nightly.yml` | e2e-full / e2e-brave-empty | Playwright e2e（schedule + `workflow_dispatch`。Secrets 必須） |
 | | security | Bandit, `uv audit`, gitleaks |
 | | build-and-scan | `docker compose build`, Trivy（mcp-server / chainlit / mcp-gateway / web-search-mcp イメージ、`scanners: vuln`） |
-| `.github/workflows/pr-workflow.yml` | workflow | PR 本文の `Refs #<issue>`（`src/` `tests/` `scripts/` `infra/` `e2e/` `gateway/` `.apm/` 変更時。`Closes` / `Fixes` / `Resolves` は禁止。Issue 存在確認あり）、Release Log 更新要否（`src/` / `infra/` 変更時） |
+| `.github/workflows/pr-workflow.yml` | workflow | PR 本文の `Refs #<issue>`（`src/` `tests/` `scripts/` `infra/` `e2e/` `gateway/` `.apm/` のアプリケーション変更時。`pyproject.toml` / `uv.lock` のみの変更は対象外。`Closes` / `Fixes` / `Resolves` は禁止。Issue 存在確認あり）、Release Log 更新要否（`src/` / `infra/` 変更時） |
 | `.github/workflows/okf.yml` | okf | OKF bundle 検証 |
 
 ### ローカル検証
@@ -197,6 +197,7 @@ pre-commit はコミット前の Shift Left 用。初回は `uv run pre-commit i
 ### 依存更新
 
 - `uv.lock` を Source of Truth とし、Dependabot（`.github/dependabot.yml`）が pip と GitHub Actions を週次更新する。
+- `uv audit` はルート `uv.lock` を対象にする。既知 CVE は CI 失敗。修正版があるパッケージは lock を上げて解消する。
 - Trivy は CRITICAL/HIGH かつ修正版ありの CVE で CI を失敗させる（`ignore-unfixed: true`）。
 
 ### Branch protection（`main`）
