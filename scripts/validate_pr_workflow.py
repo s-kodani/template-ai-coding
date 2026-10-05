@@ -22,6 +22,7 @@ ISSUE_REF_PREFIXES = (
     "gateway/",
     ".apm/",
 )
+ISSUE_REF_EXEMPT_NAMES = frozenset({"uv.lock", "pyproject.toml"})
 RELEASE_LOG_TRIGGER_PREFIXES = ("src/", "infra/")
 RELEASE_LOG_PATH = "docs/releases/log.md"
 REFS_ISSUE_RE = re.compile(r"(?:^|\b)refs?\s*#(\d+)", re.IGNORECASE)
@@ -59,6 +60,15 @@ def read_changed_files_from_stdin() -> list[str]:
 
 def has_prefix(changed_files: list[str], prefixes: tuple[str, ...]) -> bool:
     return any(path.startswith(prefixes) for path in changed_files)
+
+
+def requires_issue_reference(changed_files: list[str]) -> bool:
+    """True when a non-manifest file under ISSUE_REF_PREFIXES changed."""
+    return any(
+        path.startswith(ISSUE_REF_PREFIXES)
+        and path.rsplit("/", 1)[-1] not in ISSUE_REF_EXEMPT_NAMES
+        for path in changed_files
+    )
 
 
 def extract_refs_issue_numbers(pr_body: str | None) -> list[int]:
@@ -131,11 +141,11 @@ def validate_pr_workflow(
         )
 
     refs_numbers = extract_refs_issue_numbers(pr_body)
-    if has_prefix(changed_files, ISSUE_REF_PREFIXES) and not refs_numbers:
+    if requires_issue_reference(changed_files) and not refs_numbers:
         result.add(
             "PR body must include an issue reference such as "
             "'Refs #123' when src/, tests/, scripts/, infra/, e2e/, gateway/, "
-            "or .apm/ files change."
+            "or .apm/ files change (pyproject.toml and uv.lock alone are exempt)."
         )
 
     if has_prefix(changed_files, RELEASE_LOG_TRIGGER_PREFIXES):

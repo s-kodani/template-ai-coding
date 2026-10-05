@@ -2,6 +2,8 @@
 
 ## v?.?.? (未確定)
 
+- **Fixed**: Dependabot が `gateway/pyproject.toml` だけを更新する PR で、PR Workflow が `Refs #<issue>` 不足により失敗していた。`pyproject.toml` / `uv.lock` のみの変更は Issue 参照を必須にしない（[インフラ](/current/infrastructure.md)）
+- **Fixed**: `uv audit` がルート lock の pyjwt / urllib3 / virtualenv の既知 CVE で security ジョブを落としていた。修正版へ更新した（[インフラ](/current/infrastructure.md)、[ADR-0010](/decisions/ADR-0010-devsecops-pattern-a.md)）
 - **Added**: Chainlit の Keycloak ログインからチャット 1 ターンまでを Playwright スモーク（`e2e/`、`make -C infra e2e`）で確認できるようにした。既定の `uv run pytest` と PR の quality ジョブでは実行しない（[インフラ](/current/infrastructure.md)、[UI 機能](/current/features/ui.md)）
 - **Added**: 直結 MCP クライアント（Inspector / Cursor 等）が Keycloak の認可コード + PKCE（匿名 DCR）で knowledge-mcp / web-search-mcp に接続できるようにした。MCP は Resource Server のまま JWT を検証し、Chainlit → Gateway の Token Exchange は残す。Keycloak を 26.6.4 へ上げた。README の Inspector 手順も OAuth を正、`mcp_dev_token.py` をフォールバックにした（[認証認可](/current/features/authentication.md)、[ADR-0014](/decisions/ADR-0014-mcp-direct-three-legged-oauth.md)、[インフラ](/current/infrastructure.md)）
 - **Fixed**: Chainlit のログインが生きたままアイドルすると Gateway MCP が `Forbidden: Not authenticated for MCP tools` のまま復旧しなかった問題を直した。Keycloak が refresh token を拒否したら保存トークンを削除し、403 で再ログインを促す。5xx / 接続失敗は一時障害として保存トークンを残す。ツール実行中の再接続失敗でチャットターンが落ちない（[認証認可](/current/features/authentication.md)、[UI 機能](/current/features/ui.md)）
