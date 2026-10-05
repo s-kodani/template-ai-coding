@@ -57,6 +57,23 @@ def test_issue_reference_not_required_for_lockfile_only() -> None:
     assert result.ok, result.errors
 
 
+def test_issue_reference_not_required_for_nested_manifest_only() -> None:
+    result = validate_pr_workflow(
+        changed_files=["gateway/pyproject.toml", "gateway/uv.lock"],
+        pr_body="Dependabot bump with no issue link",
+    )
+    assert result.ok, result.errors
+
+
+def test_issue_reference_still_required_when_gateway_source_changes() -> None:
+    result = validate_pr_workflow(
+        changed_files=["gateway/pyproject.toml", "gateway/src/app.py"],
+        pr_body="Dependabot-style body without Refs",
+    )
+    assert not result.ok
+    assert any("Refs #" in error for error in result.errors)
+
+
 def test_requires_release_note_declaration_for_src_changes() -> None:
     result = validate_pr_workflow(
         changed_files=["src/knowledge_mcp/server.py"],
