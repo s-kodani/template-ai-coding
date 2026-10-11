@@ -2,6 +2,7 @@
 
 ## v?.?.? (未確定)
 
+- **Fixed**: `uv audit` がルート lock の `multidict==6.7.1`（GHSA-54p9-h82j-f925）で security ジョブを落としていた。`6.9.1` へ更新した（[インフラ](/current/infrastructure.md)、[ADR-0010](/decisions/ADR-0010-devsecops-pattern-a.md)）
 - **Fixed**: Dependabot が `gateway/pyproject.toml` だけを更新する PR で、PR Workflow が `Refs #<issue>` 不足により失敗していた。`pyproject.toml` / `uv.lock` のみの変更は Issue 参照を必須にしない（[インフラ](/current/infrastructure.md)）
 - **Fixed**: `uv audit` がルート lock の pyjwt / urllib3 / virtualenv の既知 CVE で security ジョブを落としていた。修正版へ更新した（[インフラ](/current/infrastructure.md)、[ADR-0010](/decisions/ADR-0010-devsecops-pattern-a.md)）
 - **Added**: Chainlit の Keycloak ログインからチャット 1 ターンまでを Playwright スモーク（`e2e/`、`make -C infra e2e`）で確認できるようにした。既定の `uv run pytest` と PR の quality ジョブでは実行しない（[インフラ](/current/infrastructure.md)、[UI 機能](/current/features/ui.md)）
