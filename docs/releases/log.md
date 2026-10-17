@@ -2,6 +2,7 @@
 
 ## v?.?.? (未確定)
 
+- **Fixed**: `uv audit` がルート lock の `mcp==1.29.1`（GHSA-84m7-p3x7-pcfv / CVE-2026-59951）で security ジョブを落としていた。1.x の修正版 `1.30.0` へ更新した。gateway lock は同じ advisory の 2.x 脆弱範囲である `2.1.1` のまま `pyproject` の `>=2.3.0` と乖離していたため `2.3.0` に合わせた（[インフラ](/current/infrastructure.md)、[ADR-0010](/decisions/ADR-0010-devsecops-pattern-a.md)）
 - **Fixed**: `uv audit` がルート lock の `multidict==6.7.1`（GHSA-54p9-h82j-f925）で security ジョブを落としていた。`6.9.1` へ更新した（[インフラ](/current/infrastructure.md)、[ADR-0010](/decisions/ADR-0010-devsecops-pattern-a.md)）
 - **Fixed**: Dependabot が `gateway/pyproject.toml` だけを更新する PR で、PR Workflow が `Refs #<issue>` 不足により失敗していた。`pyproject.toml` / `uv.lock` のみの変更は Issue 参照を必須にしない（[インフラ](/current/infrastructure.md)）
 - **Fixed**: `uv audit` がルート lock の pyjwt / urllib3 / virtualenv の既知 CVE で security ジョブを落としていた。修正版へ更新した（[インフラ](/current/infrastructure.md)、[ADR-0010](/decisions/ADR-0010-devsecops-pattern-a.md)）
