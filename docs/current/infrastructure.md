@@ -112,13 +112,14 @@ Chainlit は Keycloak の `knowledge` realm で OAuth する（[ADR-0011](/decis
 | `test_chat_session.py` | マルチターン会話（ツール不要） |
 | `test_mcp_catalog_ui.py` | `dev2` の knowledge 接続 403、reload 再接続 |
 | `test_auth_reauth.py` | token 削除 → POST /mcp 403 → 再ログイン復旧 |
+| `test_login_helper.py` | Keycloak フォーム遅延描画と SSO スキップ（compose 不要） |
 
 前提: `make -C infra up && make -C infra seed`、`.env` の `OPENAI_API_KEY`。`search_web` 正系は `BRAVE_SEARCH_API_KEY` も必要（未設定時 skip）。Brave key 未設定エラー経路はホスト env に key が**ない**ときのみ実行（ある場合 skip）。スタック未起動は失敗。
 
 ```bash
 uv sync --extra dev --extra e2e
 uv run playwright install chromium   # システムに Google Chrome がある場合は不要
-make -C infra e2e                    # 全 17 ケース
+make -C infra e2e                    # 全 19 ケース
 make -C infra e2e-smoke              # -m e2e_smoke（最小 subset）
 ```
 

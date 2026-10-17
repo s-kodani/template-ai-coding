@@ -52,11 +52,15 @@ def login_keycloak(page: Page, chainlit_url: str, username: str, password: str) 
     page.goto(f"{chainlit_url}/login", wait_until="domcontentloaded")
     page.get_by_role("button", name=_KEYCLOAK_PROVIDER).click()
     username_field = page.locator("#username")
-    if username_field.is_visible(timeout=5_000):
+    chat_input = page.locator("#chat-input")
+    # Locator.is_visible(timeout=...) is ignored and returns immediately, so wait
+    # for the Keycloak form or an already-authenticated chat before filling.
+    expect(username_field.or_(chat_input)).to_be_visible(timeout=30_000)
+    if username_field.is_visible():
         username_field.fill(username)
         page.locator("#password").fill(password)
         page.locator("#kc-login").click()
-    expect(page.locator("#chat-input")).to_be_visible(timeout=60_000)
+    expect(chat_input).to_be_visible(timeout=60_000)
 
 
 def send_chat(page: Page, prompt: str, *, timeout_ms: int = CHAT_TIMEOUT_MS) -> Locator:
