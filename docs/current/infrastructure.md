@@ -120,7 +120,7 @@ Chainlit は Keycloak の `knowledge` realm で OAuth する（[ADR-0011](/decis
 ```bash
 uv sync --extra dev --extra e2e
 uv run playwright install chromium   # システムに Google Chrome がある場合は不要
-make -C infra e2e                    # 全 19 ケース
+make -C infra e2e                    # 全 20 ケース
 make -C infra e2e-smoke              # -m e2e_smoke（最小 subset）
 ```
 
