@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from contextlib import nullcontext
 from types import SimpleNamespace
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, call, patch
 
 from knowledge_mcp import tracing
 
@@ -106,10 +106,20 @@ def test_record_generation_result_updates_generation() -> None:
 
     with patch.object(tracing, "get_client", return_value=mock_client):
         tracing.record_generation_result(response, model="gpt-4o-mini")
+        tracing.record_generation_result(
+            response, model="gpt-4o-mini", tool_choice="web-search__search_web"
+        )
 
-    mock_client.update_current_generation.assert_called_once_with(
-        model="gpt-4o-mini",
-        usage_details={"input": 10, "output": 5, "total": 15},
-        metadata={"tool_choice": "auto"},
-    )
+    assert mock_client.update_current_generation.call_args_list == [
+        call(
+            model="gpt-4o-mini",
+            usage_details={"input": 10, "output": 5, "total": 15},
+            metadata={"tool_choice": "auto"},
+        ),
+        call(
+            model="gpt-4o-mini",
+            usage_details={"input": 10, "output": 5, "total": 15},
+            metadata={"tool_choice": "web-search__search_web"},
+        ),
+    ]
     tracing._langfuse_enabled = False

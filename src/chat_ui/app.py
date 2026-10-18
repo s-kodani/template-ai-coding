@@ -26,8 +26,11 @@ from chat_ui.mcp_tools import (
     call_session_tool,
     collect_openai_tools,
     mcp_tool_name_from_llm,
+    merge_assistant_with_tool_facts,
     prefix_tools_for_gateway,
     resolve_tool_target,
+    select_tool_choice,
+    tool_choice_label,
 )
 from chat_ui.mcp_ui import write_mcp_autoload_script
 from chat_ui.token_manager import build_token_manager
@@ -68,7 +71,9 @@ register_gateway_mcp_connect(
 SYSTEM_PROMPT = (
     "You are a helpful assistant with access to MCP tools from the gateway "
     "and any additional MCP servers the user has connected. "
-    "Use those tools when they help answer the user."
+    "The tools array lists the callable function names; call a listed tool "
+    "when the user asks you to use it, and never claim a listed tool is unavailable. "
+    "When a tool returns URLs or an error, include those facts in your reply."
 )
 
 
@@ -184,14 +189,23 @@ async def _dispatch_tool(name: str, arguments: dict[str, Any]) -> dict[str, Any]
 
 
 @observe(name="llm.generate", as_type="generation", capture_input=False, capture_output=False)
-async def _generate(messages: list[dict[str, Any]], tools: list[dict[str, Any]]) -> Any:
+async def _generate(
+    messages: list[dict[str, Any]],
+    tools: list[dict[str, Any]],
+    tool_choice: Any = "auto",
+) -> Any:
+    effective_choice = tool_choice if tools else "auto"
     response = await openai_client.chat.completions.create(
         model=settings.chat_model,
         messages=messages,
         tools=tools,
-        tool_choice="auto",
+        tool_choice=effective_choice,
     )
-    record_generation_result(response, model=settings.chat_model)
+    record_generation_result(
+        response,
+        model=settings.chat_model,
+        tool_choice=tool_choice_label(effective_choice),
+    )
     return response
 
 
@@ -216,8 +230,11 @@ async def on_message(message: cl.Message) -> None:
         os.environ.setdefault("FASTMCP_TELEMETRY_MODE", "native")
 
         tools = _llm_tools()
-        response = await _generate(messages, tools)
+        response = await _generate(
+            messages, tools, tool_choice=select_tool_choice(tools, message.content)
+        )
         choice = response.choices[0].message
+        tool_payloads: list[dict[str, Any]] = []
 
         while choice.tool_calls:
             messages.append(
@@ -241,6 +258,7 @@ async def on_message(message: cl.Message) -> None:
             for tool_call in choice.tool_calls:
                 args = json.loads(tool_call.function.arguments or "{}")
                 tool_result = await _dispatch_tool(tool_call.function.name, args)
+                tool_payloads.append(tool_result)
                 messages.append(
                     {
                         "role": "tool",
@@ -252,7 +270,10 @@ async def on_message(message: cl.Message) -> None:
             response = await _generate(messages, tools)
             choice = response.choices[0].message
 
-        assistant_text = choice.content or "I could not generate a response."
+        assistant_text = merge_assistant_with_tool_facts(
+            choice.content or "I could not generate a response.",
+            tool_payloads,
+        )
         messages.append({"role": "assistant", "content": assistant_text})
         cl.user_session.set("messages", messages)
         update_current_turn_io(user_message=message.content, assistant_message=assistant_text)

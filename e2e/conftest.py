@@ -64,12 +64,13 @@ def login_keycloak(page: Page, chainlit_url: str, username: str, password: str) 
 
 
 def send_chat(page: Page, prompt: str, *, timeout_ms: int = CHAT_TIMEOUT_MS) -> Locator:
+    assistant_messages = page.locator('[data-step-type="assistant_message"]')
+    existing = assistant_messages.count()
     chat_input = page.locator("#chat-input")
     chat_input.fill(prompt)
     page.locator("#chat-submit").click()
-    reply = page.locator('[data-step-type="assistant_message"]').last
-    expect(reply).to_be_visible(timeout=timeout_ms)
-    return reply
+    expect(assistant_messages).to_have_count(existing + 1, timeout=timeout_ms)
+    return assistant_messages.last
 
 
 def expect_mcp_post(
