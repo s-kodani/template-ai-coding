@@ -217,7 +217,9 @@ def record_embedding_usage(observation: Any, usage: dict[str, int] | None) -> No
         return
 
 
-def record_generation_result(response: Any, *, model: str) -> None:
+def record_generation_result(
+    response: Any, *, model: str, tool_choice: str = "auto"
+) -> None:
     """Attach model and token usage to the active Langfuse generation observation."""
     if not _langfuse_enabled:
         return
@@ -241,7 +243,7 @@ def record_generation_result(response: Any, *, model: str) -> None:
         client.update_current_generation(
             model=model,
             usage_details=usage_details,
-            metadata={"tool_choice": "auto"},
+            metadata={"tool_choice": tool_choice},
         )
     except (ImportError, RuntimeError, AttributeError):
         return

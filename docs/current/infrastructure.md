@@ -5,7 +5,7 @@ description: アプリ、Keycloak、MCP Gateway、Langfuse、任意 Langflow の
 tags: [docker, langfuse, langflow, postgres, keycloak, gateway, ci, devsecops]
 status: stable
 generated:
-  at: "2026-10-05T00:00:00Z"
+  at: "2026-10-18T10:20:00Z"
   by: process:cursor-agent
 ---
 
@@ -113,6 +113,7 @@ Chainlit は Keycloak の `knowledge` realm で OAuth する（[ADR-0011](/decis
 | `test_mcp_catalog_ui.py` | `dev2` の knowledge 接続 403、reload 再接続 |
 | `test_auth_reauth.py` | token 削除 → POST /mcp 403 → 再ログイン復旧 |
 | `test_login_helper.py` | Keycloak フォーム遅延描画と SSO スキップ（compose 不要） |
+| `test_send_chat_helper.py` | 既存の assistant_message があっても新しい返信を待つ（compose 不要） |
 
 前提: `make -C infra up && make -C infra seed`、`.env` の `OPENAI_API_KEY`。`search_web` 正系は `BRAVE_SEARCH_API_KEY` も必要（未設定時 skip）。Brave key 未設定エラー経路はホスト env に key が**ない**ときのみ実行（ある場合 skip）。スタック未起動は失敗。
 
@@ -139,6 +140,8 @@ make -C infra e2e-smoke              # -m e2e_smoke（最小 subset）
 |---|---|---|
 | `e2e-full` | 全 e2e | `OPENAI_API_KEY`、任意 `BRAVE_SEARCH_API_KEY` |
 | `e2e-brave-empty` | Brave key 空のエラー経路 1 ケース | `OPENAI_API_KEY` |
+
+失敗時は `docker compose logs --tail=200` で chainlit / mcp-gateway / web-search-mcp / mcp-server を残す。web search ケースの断言失敗メッセージには assistant 返信本文を含める。
 
 ローカルで CI 用 `.env` を生成する場合: `OPENAI_API_KEY=... python3 scripts/prepare_e2e_env.py`（Brave 空は `--brave-empty`）。
 

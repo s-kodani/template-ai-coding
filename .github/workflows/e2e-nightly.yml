@@ -48,6 +48,12 @@ jobs:
           BRAVE_SEARCH_API_KEY: ${{ secrets.BRAVE_SEARCH_API_KEY }}
         run: uv run pytest e2e --browser chromium -v
 
+      - name: Dump stack logs on failure
+        if: failure()
+        run: >
+          docker compose -f infra/app/compose.yml logs --tail=200
+          chainlit mcp-gateway web-search-mcp mcp-server
+
   e2e-brave-empty:
     runs-on: ubuntu-latest
     timeout-minutes: 45
@@ -85,3 +91,9 @@ jobs:
         run: >
           uv run pytest e2e/test_chat_web_search.py::test_search_web_without_api_key_reports_error
           --browser chromium -v
+
+      - name: Dump stack logs on failure
+        if: failure()
+        run: >
+          docker compose -f infra/app/compose.yml logs --tail=200
+          chainlit mcp-gateway web-search-mcp mcp-server

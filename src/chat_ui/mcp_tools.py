@@ -9,6 +9,7 @@ from knowledge_mcp.tracing import (
     tool_observation,
 )
 
+ToolChoice = dict[str, Any] | Literal["auto"]
 ToolTarget = tuple[Literal["session", "unknown"], str | None]
 
 
@@ -53,6 +54,39 @@ def llm_tool_name(server_id: str, tool_name: str) -> str:
     return f"{server_id}__{tool_name}"
 
 
+def mcp_tool_description(mcp_name: str, description: str | None) -> str:
+    lead = f"MCP tool {mcp_name}."
+    cleaned = (description or "").strip()
+    return f"{lead} {cleaned}" if cleaned else lead
+
+
+def _tool_aliases(llm_name: str) -> set[str]:
+    aliases = {llm_name}
+    if "__" in llm_name:
+        aliases.add(llm_name.split("__", 1)[1])
+    return aliases
+
+
+def select_tool_choice(tools: list[dict[str, Any]], user_text: str) -> ToolChoice:
+    """Force the named function when the user mentions exactly one connected tool."""
+    if not tools or not user_text:
+        return "auto"
+    hits: list[str] = []
+    for tool in tools:
+        name = str(tool.get("function", {}).get("name") or "")
+        if name and any(alias and alias in user_text for alias in _tool_aliases(name)):
+            hits.append(name)
+    if len(hits) != 1:
+        return "auto"
+    return {"type": "function", "function": {"name": hits[0]}}
+
+
+def tool_choice_label(tool_choice: ToolChoice) -> str:
+    if isinstance(tool_choice, dict):
+        return str(tool_choice.get("function", {}).get("name") or "auto")
+    return str(tool_choice)
+
+
 def mcp_tool_name_from_llm(llm_name: str, server_id: str) -> str:
     prefix = f"{server_id}__"
     if llm_name.startswith(prefix):
@@ -68,7 +102,13 @@ def prefix_tools_for_gateway(
         mcp_name = tool.get("name")
         if not mcp_name:
             continue
-        prefixed.append({**tool, "name": llm_tool_name(server_id, str(mcp_name))})
+        prefixed.append(
+            {
+                **tool,
+                "name": llm_tool_name(server_id, str(mcp_name)),
+                "description": mcp_tool_description(str(mcp_name), tool.get("description")),
+            }
+        )
     return prefixed
 
 
@@ -86,7 +126,17 @@ def catalog_from_listed_tools(
             if name in targets:
                 continue
             targets[name] = (server_id, mcp_name)
-            openai_tools.append(openai_tool_from_mcp({**tool, "name": name}))
+            openai_tools.append(
+                openai_tool_from_mcp(
+                    {
+                        **tool,
+                        "name": name,
+                        "description": mcp_tool_description(
+                            str(mcp_name), tool.get("description")
+                        ),
+                    }
+                )
+            )
     return openai_tools, targets
 
 

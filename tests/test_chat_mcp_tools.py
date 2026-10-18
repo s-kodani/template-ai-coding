@@ -16,6 +16,8 @@ from chat_ui.mcp_tools import (
     parse_tool_result,
     prefix_tools_for_gateway,
     resolve_tool_target,
+    select_tool_choice,
+    tool_choice_label,
 )
 
 SEARCH_TOOL = {
@@ -159,10 +161,60 @@ def test_prefix_tools_for_gateway() -> None:
     assert prefixed == [
         {
             "name": "knowledge__search_knowledge",
-            "description": "Search",
+            "description": "MCP tool search_knowledge. Search",
             "inputSchema": {},
         }
     ]
+
+
+def test_select_tool_choice_forces_named_gateway_tool() -> None:
+    tools = collect_openai_tools(
+        [],
+        {
+            "web-search-mcp": [
+                {
+                    "name": "web-search__search_web",
+                    "description": "MCP tool search_web. Search",
+                    "inputSchema": {"type": "object", "properties": {}},
+                }
+            ]
+        },
+    )
+    prompt = "search_web ツールで pytest documentation を検索してください。"
+    assert select_tool_choice(tools, prompt) == {
+        "type": "function",
+        "function": {"name": "web-search__search_web"},
+    }
+    assert tool_choice_label(select_tool_choice(tools, prompt)) == "web-search__search_web"
+
+
+def test_select_tool_choice_stays_auto_when_no_tool_or_several_named() -> None:
+    tools = collect_openai_tools(
+        [],
+        {
+            "knowledge-mcp": [
+                {
+                    "name": "knowledge__search_knowledge",
+                    "description": "kb",
+                    "inputSchema": {},
+                },
+                {
+                    "name": "knowledge__get_document",
+                    "description": "doc",
+                    "inputSchema": {},
+                },
+            ]
+        },
+    )
+    assert select_tool_choice(tools, "こんにちは") == "auto"
+    assert (
+        select_tool_choice(
+            tools,
+            "search_knowledge で探して get_document で本文を取ってください。",
+        )
+        == "auto"
+    )
+    assert select_tool_choice([], "search_web を使って") == "auto"
 
 
 def test_catalog_from_listed_tools_prefixes_server_id_and_keeps_collisions() -> None:
@@ -186,8 +238,8 @@ def test_catalog_from_listed_tools_prefixes_server_id_and_keeps_collisions() -> 
         "other__search_knowledge",
         "other__ping",
     ]
-    assert tools[0]["function"]["description"] == "kb"
-    assert tools[1]["function"]["description"] == "dup"
+    assert tools[0]["function"]["description"] == "MCP tool search_knowledge. kb"
+    assert tools[1]["function"]["description"] == "MCP tool search_knowledge. dup"
     assert targets == {
         "knowledge__search_knowledge": ("knowledge", "search_knowledge"),
         "other__search_knowledge": ("other", "search_knowledge"),

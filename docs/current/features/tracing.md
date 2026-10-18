@@ -5,8 +5,8 @@ description: Langfuse SDK 4 と OpenTelemetry による分散トレース、MCP 
 tags: [langfuse, tracing, otel, mcp, chainlit]
 status: stable
 generated:
-  at: "2026-09-06T11:23:04Z"
-  by: process:codex-agent
+  at: "2026-10-18T10:20:00Z"
+  by: process:cursor-agent
 ---
 
 # Langfuse OTEL トレーシング
@@ -104,7 +104,7 @@ Chainlit の `on_message` 内で `chat_trace_attributes` → Langfuse `propagate
 | `langfuse.observation.type` | `generation` |
 | `langfuse.observation.model.name` | `CHAT_MODEL` |
 | `langfuse.observation.usage_details` | OpenAI 互換 API の `prompt_tokens` / `completion_tokens` / `total_tokens` → `input` / `output` / `total` |
-| `langfuse.observation.metadata.tool_choice` | `auto` |
+| `langfuse.observation.metadata.tool_choice` | `auto`、またはユーザーが1つ名指しした function 名（例: `web-search__search_web`） |
 
 実装: `@observe(name="llm.generate", as_type="generation")` + `record_generation_result`。
 

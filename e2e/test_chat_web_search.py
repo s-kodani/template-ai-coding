@@ -22,7 +22,8 @@ def test_dev2_search_web_returns_url(
     del openai_api_key, brave_search_api_key
 
     reply = send_chat(logged_in_dev2, SEARCH_WEB_PROMPT)
-    assert reply_contains_url(reply)
+    text = reply.inner_text()
+    assert reply_contains_url(reply), f"assistant reply had no URL: {text!r}"
 
 
 def test_search_web_without_api_key_reports_error(
@@ -33,10 +34,11 @@ def test_search_web_without_api_key_reports_error(
     del openai_api_key, require_empty_brave_search_api_key
 
     reply = send_chat(logged_in_dev2, SEARCH_WEB_PROMPT)
+    text = reply.inner_text()
     assert reply_contains_any(
         reply,
         "API key",
         "BRAVE_SEARCH_API_KEY",
         "error",
         "利用",
-    )
+    ), f"assistant reply missed Brave error keywords: {text!r}"
