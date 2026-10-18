@@ -12,6 +12,7 @@ from chat_ui.mcp_tools import (
     find_session_for_tool,
     llm_tool_name,
     mcp_tool_name_from_llm,
+    merge_assistant_with_tool_facts,
     openai_tool_from_mcp,
     parse_tool_result,
     prefix_tools_for_gateway,
@@ -215,6 +216,37 @@ def test_select_tool_choice_stays_auto_when_no_tool_or_several_named() -> None:
         == "auto"
     )
     assert select_tool_choice([], "search_web を使って") == "auto"
+
+
+def test_merge_assistant_appends_omitted_tool_urls_and_errors() -> None:
+    omitted = merge_assistant_with_tool_facts(
+        "公式のpytestドキュメントのURLの一つは次の通りです：\npytest documentation",
+        [
+            {
+                "query": "pytest documentation",
+                "results": [
+                    {
+                        "title": "pytest: helps you write better programs",
+                        "url": "https://docs.pytest.org/en/stable/",
+                        "snippet": "The pytest framework",
+                    }
+                ],
+            }
+        ],
+    )
+    assert "https://docs.pytest.org/en/stable/" in omitted
+
+    already = merge_assistant_with_tool_facts(
+        "See https://docs.pytest.org/en/stable/",
+        [{"results": [{"url": "https://docs.pytest.org/en/stable/"}]}],
+    )
+    assert already == "See https://docs.pytest.org/en/stable/"
+
+    error_reply = merge_assistant_with_tool_facts(
+        "検索できませんでした。",
+        [{"error": "BRAVE_SEARCH_API_KEY is not configured"}],
+    )
+    assert "BRAVE_SEARCH_API_KEY is not configured" in error_reply
 
 
 def test_catalog_from_listed_tools_prefixes_server_id_and_keeps_collisions() -> None:

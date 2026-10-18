@@ -26,6 +26,7 @@ from chat_ui.mcp_tools import (
     call_session_tool,
     collect_openai_tools,
     mcp_tool_name_from_llm,
+    merge_assistant_with_tool_facts,
     prefix_tools_for_gateway,
     resolve_tool_target,
     select_tool_choice,
@@ -233,6 +234,7 @@ async def on_message(message: cl.Message) -> None:
             messages, tools, tool_choice=select_tool_choice(tools, message.content)
         )
         choice = response.choices[0].message
+        tool_payloads: list[dict[str, Any]] = []
 
         while choice.tool_calls:
             messages.append(
@@ -256,6 +258,7 @@ async def on_message(message: cl.Message) -> None:
             for tool_call in choice.tool_calls:
                 args = json.loads(tool_call.function.arguments or "{}")
                 tool_result = await _dispatch_tool(tool_call.function.name, args)
+                tool_payloads.append(tool_result)
                 messages.append(
                     {
                         "role": "tool",
@@ -267,7 +270,10 @@ async def on_message(message: cl.Message) -> None:
             response = await _generate(messages, tools)
             choice = response.choices[0].message
 
-        assistant_text = choice.content or "I could not generate a response."
+        assistant_text = merge_assistant_with_tool_facts(
+            choice.content or "I could not generate a response.",
+            tool_payloads,
+        )
         messages.append({"role": "assistant", "content": assistant_text})
         cl.user_session.set("messages", messages)
         update_current_turn_io(user_message=message.content, assistant_message=assistant_text)

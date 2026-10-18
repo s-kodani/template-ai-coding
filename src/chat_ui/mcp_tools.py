@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from typing import Any, Literal
 
 from knowledge_mcp.tracing import (
@@ -11,6 +12,7 @@ from knowledge_mcp.tracing import (
 
 ToolChoice = dict[str, Any] | Literal["auto"]
 ToolTarget = tuple[Literal["session", "unknown"], str | None]
+_TOOL_URL = re.compile(r"https?://[^\s\"'\\]+")
 
 
 def openai_tool_from_mcp(tool: dict[str, Any]) -> dict[str, Any]:
@@ -85,6 +87,32 @@ def tool_choice_label(tool_choice: ToolChoice) -> str:
     if isinstance(tool_choice, dict):
         return str(tool_choice.get("function", {}).get("name") or "auto")
     return str(tool_choice)
+
+
+def merge_assistant_with_tool_facts(
+    assistant_text: str, payloads: list[dict[str, Any]]
+) -> str:
+    """Append tool URLs and errors the model omitted from its reply."""
+    facts: list[str] = []
+    seen: set[str] = set()
+
+    def add(item: str) -> None:
+        text = item.strip()
+        if text and text not in seen:
+            seen.add(text)
+            facts.append(text)
+
+    for payload in payloads:
+        error = payload.get("error")
+        if error:
+            add(str(error))
+        for url in _TOOL_URL.findall(json.dumps(payload, ensure_ascii=False)):
+            add(url)
+
+    missing = [fact for fact in facts if fact not in assistant_text]
+    if not missing:
+        return assistant_text
+    return assistant_text.rstrip() + "\n" + "\n".join(missing)
 
 
 def mcp_tool_name_from_llm(llm_name: str, server_id: str) -> str:
