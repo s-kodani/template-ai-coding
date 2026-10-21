@@ -78,10 +78,10 @@ def test_chainlit_http_healthcheck_and_app_up_waits_until_ready() -> None:
     check = " ".join(chainlit["healthcheck"]["test"])
 
     assert "127.0.0.1" in check
-    assert "8080" in check
+    assert "8080/login" in check
     assert "urlopen" in check
     assert "--wait" in makefile
-    assert "--wait-timeout" in makefile
+    assert "--wait-timeout 180" in makefile
 
 
 def test_realm_defines_chainlit_client_and_dev_user() -> None:
