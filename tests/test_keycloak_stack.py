@@ -71,6 +71,19 @@ def test_chainlit_waits_for_keycloak_and_splits_browser_and_backchannel_urls() -
     assert "keycloak:8080" in env["OAUTH_GENERIC_USER_INFO_URL"]
 
 
+def test_chainlit_http_healthcheck_and_app_up_waits_until_ready() -> None:
+    compose = _compose()
+    makefile = MAKEFILE.read_text(encoding="utf-8")
+    chainlit = compose["services"]["chainlit"]
+    check = " ".join(chainlit["healthcheck"]["test"])
+
+    assert "127.0.0.1" in check
+    assert "8080" in check
+    assert "urlopen" in check
+    assert "--wait" in makefile
+    assert "--wait-timeout" in makefile
+
+
 def test_realm_defines_chainlit_client_and_dev_user() -> None:
     realm = _realm()
 

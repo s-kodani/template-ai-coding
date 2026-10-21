@@ -7,12 +7,15 @@ import json
 import os
 import re
 import shutil
+import time
+import urllib.request
+from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import asyncpg
 import pytest
-from playwright.sync_api import APIResponse, Locator, Page, Response, expect
+from playwright.sync_api import APIResponse, Error, Locator, Page, Response, expect
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_BASE_URL = "http://localhost:8080"
@@ -20,6 +23,14 @@ CHAT_TIMEOUT_MS = 120_000
 MCP_STORAGE_KEY = "mcp_storage_key"
 REAUTH_REQUIRED_DETAIL = "Keycloak セッションが無効です。再ログインしてください"
 _KEYCLOAK_PROVIDER = re.compile(r"keycloak", re.IGNORECASE)
+_TRANSIENT_GOTO = (
+    "ERR_SOCKET_NOT_CONNECTED",
+    "ERR_CONNECTION_REFUSED",
+    "ERR_CONNECTION_RESET",
+    "ERR_CONNECTION_CLOSED",
+    "ERR_EMPTY_RESPONSE",
+    "ERR_ABORTED",
+)
 
 
 def _load_repo_env() -> None:
@@ -48,8 +59,49 @@ def _browser_channel() -> str | None:
     return None
 
 
+def wait_for_http(
+    url: str,
+    *,
+    timeout_s: float = 60,
+    sleep: Callable[[float], None] = time.sleep,
+) -> None:
+    deadline = time.monotonic() + timeout_s
+    last_error: Exception | None = None
+    while time.monotonic() < deadline:
+        try:
+            with urllib.request.urlopen(url, timeout=3):
+                return
+        except OSError as exc:
+            last_error = exc
+            sleep(0.25)
+    message = f"Timed out waiting for HTTP {url}"
+    raise RuntimeError(message) from last_error
+
+
+def goto_chainlit(
+    page: Page,
+    url: str,
+    *,
+    timeout_s: float = 30,
+    sleep: Callable[[float], None] = time.sleep,
+) -> None:
+    deadline = time.monotonic() + timeout_s
+    last_error: Exception | None = None
+    while time.monotonic() < deadline:
+        try:
+            page.goto(url, wait_until="domcontentloaded")
+            return
+        except Error as exc:
+            if not any(code in str(exc) for code in _TRANSIENT_GOTO):
+                raise
+            last_error = exc
+            sleep(0.25)
+    assert last_error is not None
+    raise last_error
+
+
 def login_keycloak(page: Page, chainlit_url: str, username: str, password: str) -> None:
-    page.goto(f"{chainlit_url}/login", wait_until="domcontentloaded")
+    goto_chainlit(page, f"{chainlit_url}/login")
     page.get_by_role("button", name=_KEYCLOAK_PROVIDER).click()
     username_field = page.locator("#username")
     chat_input = page.locator("#chat-input")
@@ -196,7 +248,9 @@ def pytest_configure(config: pytest.Config) -> None:
 
 @pytest.fixture(scope="session")
 def chainlit_url() -> str:
-    return (os.environ.get("E2E_BASE_URL") or DEFAULT_BASE_URL).rstrip("/")
+    url = (os.environ.get("E2E_BASE_URL") or DEFAULT_BASE_URL).rstrip("/")
+    wait_for_http(url)
+    return url
 
 
 @pytest.fixture(scope="session")

@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Iterator
+from contextlib import nullcontext
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from threading import Thread
+from unittest.mock import Mock
 
 import pytest
-from conftest import login_keycloak
-from playwright.sync_api import Page, expect
+from conftest import goto_chainlit, login_keycloak, wait_for_http
+from playwright.sync_api import Error, Page, expect
 
 CHAT_HTML = """<!doctype html>
 <textarea id="chat-input"></textarea>
@@ -101,3 +103,38 @@ def test_login_keycloak_skips_form_when_chat_already_visible(
     origin = serve_routes({"/login": SSO_LOGIN_HTML, "/chat": CHAT_HTML})
     login_keycloak(page, origin, "dev", "dev")
     expect(page.locator("#chat-input")).to_be_visible()
+
+
+def test_goto_chainlit_retries_aborted_navigation() -> None:
+    page = Mock()
+    page.goto.side_effect = [
+        Error("Page.goto: net::ERR_ABORTED at http://localhost:8080/login"),
+        None,
+    ]
+    goto_chainlit(page, "http://localhost:8080/login", timeout_s=2, sleep=lambda _: None)
+    assert page.goto.call_count == 2
+
+
+def test_goto_chainlit_retries_socket_not_connected() -> None:
+    page = Mock()
+    page.goto.side_effect = [
+        Error("Page.goto: net::ERR_SOCKET_NOT_CONNECTED at http://localhost:8080/"),
+        None,
+    ]
+    goto_chainlit(page, "http://localhost:8080", timeout_s=2, sleep=lambda _: None)
+    assert page.goto.call_count == 2
+
+
+def test_wait_for_http_retries_until_success(monkeypatch: pytest.MonkeyPatch) -> None:
+    calls = {"n": 0}
+
+    def fake_urlopen(url: str, timeout: float = 3) -> object:
+        del url, timeout
+        calls["n"] += 1
+        if calls["n"] < 3:
+            raise OSError("connection refused")
+        return nullcontext()
+
+    monkeypatch.setattr("conftest.urllib.request.urlopen", fake_urlopen)
+    wait_for_http("http://localhost:8080", timeout_s=2, sleep=lambda _: None)
+    assert calls["n"] == 3

@@ -14,7 +14,7 @@ langfuse-down:
 	docker compose -f $(INFRA_DIR)langfuse/docker-compose.yml -f $(INFRA_DIR)langfuse/network.yml down
 
 app-up: network
-	docker compose -f $(INFRA_DIR)app/compose.yml --env-file $(ROOT)/.env up -d --build
+	docker compose -f $(INFRA_DIR)app/compose.yml --env-file $(ROOT)/.env up -d --build --wait --wait-timeout 180
 
 app-down:
 	docker compose -f $(INFRA_DIR)app/compose.yml down
