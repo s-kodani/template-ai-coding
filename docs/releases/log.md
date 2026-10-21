@@ -2,6 +2,7 @@
 
 ## v?.?.? (未確定)
 
+- **Fixed**: E2E Nightly の `e2e-full` が Chainlit の HTTP 待ち受け前に `page.goto` し、`ERR_SOCKET_NOT_CONNECTED` で間欠失敗することがあった。Chainlit に `/login` healthcheck を付け、`make -C infra up` が `docker compose up --wait` する。logout 直後の `ERR_ABORTED` は `goto_chainlit` が再試行する（断言は弱めない）（[インフラ](/current/infrastructure.md)）
 - **Fixed**: ユーザーが接続済み MCP ツールを1つ名指ししても `tool_choice=auto` だと LLM が `web-search__search_web` を呼ばず、呼んでも URL / エラーを返信から落とすことがあった。名指し時は最初の generate だけその function を必須にし、ツール結果の URL / `error` は省略時に返信へ足し、nightly 失敗時は返信本文とコンテナログを残す（[UI 機能](/current/features/ui.md)、[インフラ](/current/infrastructure.md)）
 - **Fixed**: `uv audit` がルート lock の `mcp==1.29.1`（GHSA-84m7-p3x7-pcfv / CVE-2026-59951）で security ジョブを落としていた。1.x の修正版 `1.30.0` へ更新した。gateway lock は同じ advisory の 2.x 脆弱範囲である `2.1.1` のまま `pyproject` の `>=2.3.0` と乖離していたため `2.3.0` に合わせた（[インフラ](/current/infrastructure.md)、[ADR-0010](/decisions/ADR-0010-devsecops-pattern-a.md)）
 - **Fixed**: `uv audit` がルート lock の `multidict==6.7.1`（GHSA-54p9-h82j-f925）で security ジョブを落としていた。`6.9.1` へ更新した（[インフラ](/current/infrastructure.md)、[ADR-0010](/decisions/ADR-0010-devsecops-pattern-a.md)）

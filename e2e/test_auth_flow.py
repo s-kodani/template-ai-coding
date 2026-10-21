@@ -3,13 +3,13 @@
 from __future__ import annotations
 
 import pytest
-from conftest import login_keycloak, logout_chainlit, send_chat
+from conftest import goto_chainlit, login_keycloak, logout_chainlit, send_chat
 from playwright.sync_api import Page, expect
 
 
 @pytest.mark.e2e_smoke
 def test_unauthenticated_user_cannot_chat(page: Page, chainlit_url: str) -> None:
-    page.goto(chainlit_url, wait_until="domcontentloaded")
+    goto_chainlit(page, chainlit_url)
     expect(page.locator("#chat-input")).not_to_be_visible(timeout=10_000)
 
 
@@ -24,7 +24,7 @@ def test_logout_then_login_restores_chat(
 
     login_keycloak(page, chainlit_url, e2e_username, e2e_password)
     logout_chainlit(page, chainlit_url)
-    page.goto(chainlit_url, wait_until="domcontentloaded")
+    goto_chainlit(page, chainlit_url)
     expect(page.locator("#chat-input")).not_to_be_visible(timeout=10_000)
 
     login_keycloak(page, chainlit_url, e2e_username, e2e_password)

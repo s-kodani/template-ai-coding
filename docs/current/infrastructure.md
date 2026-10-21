@@ -5,7 +5,7 @@ description: アプリ、Keycloak、MCP Gateway、Langfuse、任意 Langflow の
 tags: [docker, langfuse, langflow, postgres, keycloak, gateway, ci, devsecops]
 status: stable
 generated:
-  at: "2026-10-18T10:20:00Z"
+  at: "2026-10-21T23:30:00Z"
   by: process:cursor-agent
 ---
 
@@ -43,6 +43,8 @@ generated:
 make -C infra up
 make -C infra seed
 ```
+
+`make -C infra up` のアプリ側（`app-up`）は `docker compose up --wait` する。Chainlit を含む各サービスに healthcheck があり、Chainlit は `http://127.0.0.1:8080/login` が応答するまで Healthy にならない。`up` 完了後は UI に到達できる。
 
 Langflow Ingest PoC はデフォルト起動に含まれない。
 
@@ -115,7 +117,7 @@ Chainlit は Keycloak の `knowledge` realm で OAuth する（[ADR-0011](/decis
 | `test_login_helper.py` | Keycloak フォーム遅延描画と SSO スキップ（compose 不要） |
 | `test_send_chat_helper.py` | 既存の assistant_message があっても新しい返信を待つ（compose 不要） |
 
-前提: `make -C infra up && make -C infra seed`、`.env` の `OPENAI_API_KEY`。`search_web` 正系は `BRAVE_SEARCH_API_KEY` も必要（未設定時 skip）。Brave key 未設定エラー経路はホスト env に key が**ない**ときのみ実行（ある場合 skip）。スタック未起動は失敗。
+前提: `make -C infra up && make -C infra seed`、`.env` の `OPENAI_API_KEY`。`search_web` 正系は `BRAVE_SEARCH_API_KEY` も必要（未設定時 skip）。Brave key 未設定エラー経路はホスト env に key が**ない**ときのみ実行（ある場合 skip）。`make up` は Chainlit HTTP ready まで待つ。`chainlit_url` を使う e2e も HTTP 応答を確認してから `page.goto` する。一時的な `net::ERR_SOCKET_NOT_CONNECTED` / `ERR_ABORTED` は `goto_chainlit` が再試行する（断言は変えない）。スタック未起動は失敗。
 
 ```bash
 uv sync --extra dev --extra e2e
@@ -134,7 +136,7 @@ make -C infra e2e-smoke              # -m e2e_smoke（最小 subset）
 
 ### CI（nightly）
 
-`.github/workflows/e2e-nightly.yml` が schedule（UTC 03:00）と `workflow_dispatch` で Playwright e2e を実行する。PR の `quality` ジョブでは引き続き実行しない。
+`.github/workflows/e2e-nightly.yml` が schedule（UTC 03:00）と `workflow_dispatch` で Playwright e2e を実行する。PR の `quality` ジョブでは引き続き実行しない。ジョブは `make -C infra up`（Chainlit HTTP ready 待ち）のあと seed し pytest する。
 
 | ジョブ | 内容 | Secrets |
 |---|---|---|
