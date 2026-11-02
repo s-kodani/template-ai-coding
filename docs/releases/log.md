@@ -2,6 +2,7 @@
 
 ## v?.?.? (未確定)
 
+- **Fixed**: `uv audit` がルート lock の `authlib==1.7.2`（16 advisories、修正 1.9.0 / 1.9.1）、`dnspython==2.8.0`（GHSA-45c3-73f7-pv4m、修正 2.9.0）、`joserfc==1.7.4`（GHSA-jpxq-7h8p-2q76 / GHSA-9pg5-8c7x-5hfx、修正 1.7.5 / 1.7.6）で security ジョブを落としていた。それぞれ `1.9.1` / `2.9.1` / `1.7.7` へ更新した（[インフラ](/current/infrastructure.md)、[ADR-0010](/decisions/ADR-0010-devsecops-pattern-a.md)）
 - **Fixed**: `uv audit` がルート lock の `fastmcp`/`fastmcp-slim==3.4.7`（GHSA-7xgj-8392-5q4r、修正 3.4.10 / 4.1.2）、`filelock==3.32.4`（3 advisories、修正 4.2.1）、`opentelemetry-api==1.44.0`（GHSA-xcq7-p3pf-p88h、修正 1.45.1）で security ジョブを落としていた。FastMCP は 3.4.x の `3.4.11`（`pyproject` に `<4`）、filelock は `4.2.4`（virtualenv の `filelock<5` 内）、OpenTelemetry は api/sdk を `1.45.1` へ揃えた。gateway は対象パッケージなし（api は既に 1.45.1）（[インフラ](/current/infrastructure.md)、[ADR-0010](/decisions/ADR-0010-devsecops-pattern-a.md)）
 - **Fixed**: `uv audit` がルート lock の `aiohttp==3.14.3`（8 advisories、修正 3.14.4）、`certifi==2026.7.22`（compromised emSign root CA、修正 2026.10.19）、`virtualenv==21.14.5`（4 advisories、修正 21.14.9）で security ジョブを落としていた。それぞれ `3.14.5` / `2026.10.23` / `21.14.13` へ更新した。gateway lock の `certifi` も同じ advisory のため揃えた（[インフラ](/current/infrastructure.md)、[ADR-0010](/decisions/ADR-0010-devsecops-pattern-a.md)）
 - **Fixed**: E2E Nightly の `e2e-full` が Chainlit の HTTP 待ち受け前に `page.goto` し、`ERR_SOCKET_NOT_CONNECTED` で間欠失敗することがあった。Chainlit に `/login` healthcheck を付け、`make -C infra up` が `docker compose up --wait` する。logout 直後の `ERR_ABORTED` は `goto_chainlit` が再試行する（断言は弱めない）（[インフラ](/current/infrastructure.md)）
