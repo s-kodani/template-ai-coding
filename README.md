@@ -1,8 +1,10 @@
-# MCP ベクトル検索 + Chainlit + Langfuse
+# MCP Apps ベクトル検索 + Open WebUI + Langfuse
 
-FastMCP ベクトル検索、Chainlit チャット UI、Langfuse トレーシングのローカル検証スタックです。
+FastMCP ベクトル検索、MCP Apps、Open WebUI、Langfuse トレーシングのローカル検証スタックです。
 
 ## クイックスタート
+
+ホストに Docker Compose、uv、Node.js 22以上とnpmが必要です（Nodeの固定版は `.tool-versions`）。`make -C infra up` は、ホスト側のPython処理を始める前にMCP Appを自動buildします。
 
 1. 環境ファイルをコピーします。
 
@@ -29,9 +31,21 @@ make -C infra up
 make -C infra seed
 ```
 
-5. Chainlit は http://localhost:8080 を開き、Keycloak でログインします。開発ユーザー: `dev` / `dev`（knowledge + web-search）、`dev2` / `dev2`（web-search のみ）、`readerless` / `readerless`（MCP reader role なし）。Langfuse は http://localhost:3000 です。既定の Gateway MCP（knowledge-mcp / web-search-mcp）は MCP Gateway 経由です。Web 検索を使う場合は `.env` に `BRAVE_SEARCH_API_KEY` を設定してください。追加の Streamable HTTP / SSE サーバは、`.chainlit/config.toml` の URL allowlist 内であれば MCP 接続 UI から接続できます（stdio は無効）。Keycloak 管理 UI は http://localhost:8081（`admin` / `admin`）です。
+5. Open WebUI は http://localhost:8080 を開き、初回は「はじめる」、続いて Keycloak でログインします。開発ユーザーは `dev` / `dev`（knowledge + web-search）、`dev2` / `dev2`（web-search のみ）、`readerless` / `readerless`（MCP reader role なし）。「search_knowledge で Architecture Overview を調べて」と送ると検索結果のMCP Appが表示され、タイトルからチャンク本文を取得できます。「前へ／次へ」と5・10・20件の切替でページごとにサーバーへ問い合わせます。Appからのツール呼び出しにはOpen WebUI標準の確認ダイアログが表示されます。
+
+   MCP接続先は管理者が `infra/app/gateway-registry.yml` で管理します。既定接続は起動時に設定済みです。Web検索には `.env` の `BRAVE_SEARCH_API_KEY` が必要です。Langfuseは http://localhost:3000、Keycloak管理UIは http://localhost:8081（ローカル既定 `admin` / `admin`）です。
 
 6. Langfuse でサインアップ後、`LANGFUSE_PUBLIC_KEY` と `LANGFUSE_SECRET_KEY` を `.env` に追加し、アプリサービスを再起動します。
+
+## 既存スタックからの移行
+
+`make -C infra up` は旧Keycloakコンテナのデータを停止中に空の専用volumeへ引き継ぎ、既存realmへOpen WebUI専用clientとscopeを冪等に追加します。既存の文書・realm・旧トークンテーブルは削除しません。旧Keycloakと移行先volumeの両方にデータがある場合は上書きせず停止するため、表示されたバックアップとvolumeを確認してください。
+
+既存Keycloakが別volumeやbindで保存されている場合も、保存先を切り替えずに停止します。既存データを使うCompose定義を確認してから起動してください。
+
+Open WebUIの会話・OAuth状態は `open_webui_data`、KeycloakのIDは `keycloak_data` に保存します。`.env` の `OPEN_WEBUI_SECRET_KEY` と `OPEN_WEBUI_OAUTH_CLIENT_SECRET` は再作成時も固定してください。既存 `.env` には `.env.example` の同名設定を追加できます。旧Chainlitのログインセッションは引き継がず、Keycloakで再ログインします。
+
+realm設定だけの再同期は `make -C infra sync-auth` です。手動で追加したMCP接続もRegistryへ反映してUIサービスを再作成してください。
 
 ## Langflow クイックスタート（任意）
 
@@ -69,7 +83,7 @@ make -C infra langflow-down
 
 | サービス | URL |
 |---|---|
-| Chainlit | http://localhost:8080 |
+| Open WebUI | http://localhost:8080 |
 | Keycloak | http://localhost:8081 |
 | knowledge-mcp（FastMCP） | http://127.0.0.1:8000/mcp |
 | web-search-mcp（FastMCP） | http://127.0.0.1:8001/mcp |
@@ -81,7 +95,13 @@ make -C infra langflow-down
 
 ## 開発
 
+生成HTMLはgit管理外です。clean checkoutでは、editable installも含めて `uv sync` / `uv run` / `uv build` の前にAppをbuildしてください。`make -C infra app-ui` でも同じbuildを実行できます。CIとCloud Agentのinstallもこの順序でセットアップします。
+
 ```bash
+# Node.js 22以上。生成HTMLをPythonパッケージに同梱するため先にbuildする。
+npm --prefix apps/knowledge-search ci
+npm --prefix apps/knowledge-search test
+npm --prefix apps/knowledge-search run build
 uv sync --frozen --extra dev
 uv sync --directory gateway --frozen --extra dev
 uv run ruff check src tests scripts gateway e2e
@@ -90,7 +110,7 @@ uv run --directory gateway pytest
 uv run python scripts/validate_okf.py
 ```
 
-Chainlit のログイン〜チャット 1 ターンは Playwright スモーク（`e2e/`。PR CI では走らない）。スタック起動と seed のあと:
+Open WebUIのSSO・権限・MCP Apps・チャットは Playwright スモーク（`e2e/`。PR CI では走らない）。スタック起動と seed のあと:
 
 ```bash
 uv sync --extra e2e

@@ -34,8 +34,8 @@ def _token(private_key: object, **claims: object) -> str:
     payload = {
         "iss": ISSUER,
         "sub": "user-1",
-        "azp": "chainlit",
-        "aud": ["chainlit", "mcp-gateway"],
+        "azp": "open-webui",
+        "aud": ["open-webui", "mcp-gateway"],
         "exp": int(time.time()) + 3600,
         "nbf": int(time.time()) - 5,
         "realm_access": {"roles": ["knowledge-mcp-reader"]},
@@ -123,16 +123,16 @@ def test_mcp_tools_list_filters_allowed_and_exchanges_token(
     private_key, _ = rsa_keys
     seen: dict[str, object] = {}
 
-    async def fake_lister(**kwargs: object) -> list[dict[str, object]]:
+    async def fake_lister(**kwargs: object) -> dict[str, object]:
         seen.update(kwargs)
-        return [
+        return {"tools": [
             {
                 "name": "search_knowledge",
                 "description": "Search",
                 "inputSchema": {"type": "object"},
             },
             {"name": "hidden", "description": "nope", "inputSchema": {}},
-        ]
+        ]}
 
     async def fake_exchange(**kwargs: object) -> dict[str, object]:
         seen["subject_token"] = kwargs["subject_token"]
@@ -164,7 +164,7 @@ def test_mcp_tools_call_uses_jwt_not_params_user(
 
     async def fake_caller(**kwargs: object) -> dict[str, str]:
         seen.update(kwargs)
-        return {"ok": True}
+        return {"content": [{"type": "text", "text": '{"ok": true}'}], "isError": False}
 
     async def fake_exchange(**kwargs: object) -> dict[str, object]:
         seen["subject_token"] = kwargs["subject_token"]
@@ -204,7 +204,7 @@ def test_mcp_tools_call_forwards_client_meta(
 
     async def fake_caller(**kwargs: object) -> dict[str, str]:
         seen["meta"] = kwargs.get("meta")
-        return {"ok": True}
+        return {"content": [{"type": "text", "text": '{"ok": true}'}], "isError": False}
 
     async def fake_exchange(**kwargs: object) -> dict[str, object]:
         mcp_token = _token(private_key, aud=[RESOURCE], azp="mcp-gateway")
@@ -240,7 +240,11 @@ def test_mcp_tools_call_web_search_exchanges_scope_and_forwards_call(
 
     async def fake_caller(**kwargs: object) -> dict[str, str]:
         seen.update(kwargs)
-        return {"query": "news", "results": []}
+        return {
+            "content": [{"type": "text", "text": '{"query": "news", "results": []}'}],
+            "structuredContent": {"query": "news", "results": []},
+            "isError": False,
+        }
 
     async def fake_exchange(**kwargs: object) -> dict[str, object]:
         seen["exchange_scope"] = kwargs["scope"]
@@ -371,3 +375,225 @@ def test_mcp_list_rejects_unknown_auth_mode(
     )
     assert response.status_code == 500
     assert response.json()["code"] == "UNSUPPORTED_AUTH_MODE"
+
+
+UI_URI = "ui://knowledge/search-results.html"
+
+
+def _apps_client(
+    private_key: object,
+    monkeypatch: pytest.MonkeyPatch,
+    *,
+    seen: dict[str, object],
+    **adapters: object,
+) -> TestClient:
+    async def fake_exchange(**kwargs: object) -> dict[str, object]:
+        seen["exchange_scope"] = kwargs["scope"]
+        seen["subject_token"] = kwargs["subject_token"]
+        return {
+            "access_token": _token(private_key, aud=[RESOURCE], azp="mcp-gateway"),
+            "expires_in": 300,
+        }
+
+    monkeypatch.setattr("mcp_gateway.app.exchange_token", fake_exchange)
+    settings = Settings(registry_path=str(REGISTRY), keycloak_issuer=ISSUER)
+    return TestClient(create_app(settings, jwt_signing_key=private_key, **adapters))
+
+
+def test_mcp_initialize_negotiates_supported_version_and_resources(
+    rsa_keys: tuple[object, str],
+) -> None:
+    private_key, _ = rsa_keys
+    app = create_app(Settings(registry_path=str(REGISTRY)), jwt_signing_key=private_key)
+    response = TestClient(app).post(
+        "/mcp/knowledge",
+        headers={"Authorization": f"Bearer {_token(private_key)}"},
+        json=_rpc("initialize", {"protocolVersion": "2099-01-01", "capabilities": {}}),
+    )
+    result = response.json()["result"]
+    assert result["protocolVersion"] == "2025-11-25"
+    assert result["capabilities"]["resources"] == {"listChanged": False, "subscribe": False}
+    assert result["capabilities"]["extensions"]["io.modelcontextprotocol/ui"] == {}
+
+
+def test_mcp_tools_list_keeps_apps_metadata_and_pagination(
+    rsa_keys: tuple[object, str], monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    private_key, _ = rsa_keys
+    seen: dict[str, object] = {}
+
+    async def lister(**kwargs: object) -> dict[str, object]:
+        seen.update(kwargs)
+        return {
+            "tools": [{
+                "name": "search_knowledge",
+                "description": "Search",
+                "inputSchema": {"type": "object"},
+                "outputSchema": {"type": "object", "properties": {"hits": {"type": "array"}}},
+                "annotations": {"readOnlyHint": True},
+                "_meta": {"ui": {"resourceUri": UI_URI}},
+            }],
+            "nextCursor": "page-2",
+            "_meta": {"page": {"source": "knowledge"}},
+        }
+
+    client = _apps_client(private_key, monkeypatch, seen=seen, tool_lister=lister)
+    response = client.post(
+        "/mcp/knowledge",
+        headers={"Authorization": f"Bearer {_token(private_key)}"},
+        json=_rpc("tools/list", {"cursor": "page-1"}),
+    )
+    assert response.status_code == 200, response.text
+    result = response.json()["result"]
+    assert result["tools"][0]["_meta"]["ui"]["resourceUri"] == UI_URI
+    assert result["tools"][0]["annotations"]["readOnlyHint"] is True
+    assert result["tools"][0]["outputSchema"]["properties"]["hits"]["type"] == "array"
+    assert result["nextCursor"] == "page-2"
+    assert result["_meta"] == {"page": {"source": "knowledge"}}
+    assert seen["cursor"] == "page-1"
+
+
+def test_mcp_tools_call_keeps_original_result_and_nested_meta(
+    rsa_keys: tuple[object, str], monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    private_key, _ = rsa_keys
+    seen: dict[str, object] = {}
+
+    async def caller(**kwargs: object) -> dict[str, object]:
+        seen.update(kwargs)
+        return {
+            "content": [{"type": "text", "text": "Search failed"}, {"type": "text", "text": "Retry"}],
+            "structuredContent": {"error": "unavailable"},
+            "isError": True,
+            "_meta": {"ui": {"resourceUri": UI_URI}},
+        }
+
+    client = _apps_client(private_key, monkeypatch, seen=seen, tool_caller=caller)
+    response = client.post(
+        "/mcp/knowledge",
+        headers={"Authorization": f"Bearer {_token(private_key)}"},
+        json=_rpc("tools/call", {
+            "name": "search_knowledge", "arguments": {"query": "x"},
+            "_meta": {"ui": {"pagination": {"page": 2}}, "baggage": "user=1"},
+        }),
+    )
+    assert response.status_code == 200, response.text
+    result = response.json()["result"]
+    assert result["isError"] is True
+    assert result["content"] == [
+        {"type": "text", "text": "Search failed"}, {"type": "text", "text": "Retry"},
+    ]
+    assert result["structuredContent"] == {"error": "unavailable"}
+    assert result["_meta"] == {"ui": {"resourceUri": UI_URI}}
+    assert seen["meta"] == {"ui": {"pagination": {"page": 2}}, "baggage": "user=1"}
+
+
+def test_mcp_resources_read_preserves_html_csp_and_uses_exchange(
+    rsa_keys: tuple[object, str], monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    private_key, _ = rsa_keys
+    seen: dict[str, object] = {}
+
+    async def reader(**kwargs: object) -> dict[str, object]:
+        seen.update(kwargs)
+        return {"contents": [{
+            "uri": UI_URI, "mimeType": "text/html;profile=mcp-app", "text": "<main>Search</main>",
+            "_meta": {"ui": {"csp": {"connectDomains": [], "resourceDomains": []}}},
+        }]}
+
+    client = _apps_client(private_key, monkeypatch, seen=seen, resource_reader=reader)
+    source_token = _token(private_key)
+    response = client.post(
+        "/mcp/knowledge",
+        headers={"Authorization": f"Bearer {source_token}"},
+        json=_rpc("resources/read", {"uri": UI_URI, "_meta": {"ui": {"view": "results"}}}),
+    )
+    assert response.status_code == 200, response.text
+    content = response.json()["result"]["contents"][0]
+    assert content["mimeType"] == "text/html;profile=mcp-app"
+    assert content["text"] == "<main>Search</main>"
+    assert content["_meta"]["ui"]["csp"] == {"connectDomains": [], "resourceDomains": []}
+    assert seen["subject_token"] == source_token
+    assert seen["token"] != source_token
+    assert seen["uri"] == UI_URI
+    assert seen["meta"] == {"ui": {"view": "results"}}
+
+
+def test_mcp_resources_list_filters_exact_uris_and_preserves_empty_page_cursor(
+    rsa_keys: tuple[object, str], monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    private_key, _ = rsa_keys
+    seen: dict[str, object] = {}
+
+    async def lister(**kwargs: object) -> dict[str, object]:
+        seen.update(kwargs)
+        return {
+            "resources": [{"uri": "ui://private/admin.html", "name": "Admin"}],
+            "nextCursor": "next-page",
+            "_meta": {"source": "upstream"},
+        }
+
+    client = _apps_client(private_key, monkeypatch, seen=seen, resource_lister=lister)
+    response = client.post(
+        "/mcp/knowledge",
+        headers={"Authorization": f"Bearer {_token(private_key)}"},
+        json=_rpc("resources/list", {"cursor": "current-page"}),
+    )
+    assert response.status_code == 200, response.text
+    assert response.json()["result"] == {
+        "resources": [], "nextCursor": "next-page", "_meta": {"source": "upstream"},
+    }
+    assert seen["cursor"] == "current-page"
+
+
+@pytest.mark.parametrize("uri", ["ui://private/admin.html", "http://169.254.169.254/", "", UI_URI + "?x=1"])
+def test_mcp_resources_read_denies_unlisted_uri_before_exchange(
+    rsa_keys: tuple[object, str], monkeypatch: pytest.MonkeyPatch, uri: str,
+) -> None:
+    private_key, _ = rsa_keys
+    seen: dict[str, object] = {}
+    client = _apps_client(private_key, monkeypatch, seen=seen)
+    response = client.post(
+        "/mcp/knowledge",
+        headers={"Authorization": f"Bearer {_token(private_key)}"},
+        json=_rpc("resources/read", {"uri": uri}),
+    )
+    assert response.status_code == 404
+    assert response.json()["code"] == "RESOURCE_NOT_FOUND"
+    assert "subject_token" not in seen
+
+
+@pytest.mark.parametrize("method,params", [
+    ("tools/list", {}),
+    ("resources/list", {}),
+    ("resources/read", {"uri": UI_URI}),
+])
+def test_mcp_lists_and_resource_read_deny_missing_role_before_exchange(
+    rsa_keys: tuple[object, str], monkeypatch: pytest.MonkeyPatch, method: str, params: dict,
+) -> None:
+    private_key, _ = rsa_keys
+    seen: dict[str, object] = {}
+    client = _apps_client(private_key, monkeypatch, seen=seen)
+    response = client.post(
+        "/mcp/knowledge",
+        headers={"Authorization": f"Bearer {_token(private_key, realm_access={'roles': []})}"},
+        json=_rpc(method, params),
+    )
+    assert response.status_code == 403
+    assert response.json()["code"] == "ACCESS_DENIED"
+    assert "subject_token" not in seen
+
+
+def test_mcp_resources_are_not_exposed_without_resource_allowlist(
+    rsa_keys: tuple[object, str], monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    private_key, _ = rsa_keys
+    seen: dict[str, object] = {}
+    client = _apps_client(private_key, monkeypatch, seen=seen)
+    headers = {"Authorization": f"Bearer {_token(private_key, realm_access={'roles': ['web-search-reader']})}"}
+    listed = client.post("/mcp/web-search", headers=headers, json=_rpc("resources/list"))
+    read = client.post("/mcp/web-search", headers=headers, json=_rpc("resources/read", {"uri": UI_URI}))
+    assert listed.status_code == 200
+    assert listed.json()["result"] == {"resources": []}
+    assert read.status_code == 404
+    assert "subject_token" not in seen

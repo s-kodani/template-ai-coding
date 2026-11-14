@@ -203,21 +203,23 @@ Source of Truth は git 上の `docs/` bundle（ポータブル層）。組織�
 
 ```text
 Frontend:
-- Framework: Chainlit 2.x (`src/chat_ui/`)
-- Package manager: uv
+- Chat UI: Open WebUI v0.13.0 (`src/open_webui_ext/` の限定的な観測・起動拡張)
+- MCP Apps: `apps/knowledge-search/`（Node.js 22+、plain JS、公式 ext-apps SDK）
+- Package manager: uv（Python）、npm（MCP App build）
 
 Backend:
 - Runtime: Python 3.12
 - Framework: FastMCP 3.x (Streamable HTTP), SearchService in `src/knowledge_mcp/`
-- MCP Gateway: `gateway/`（公式 `mcp>=2`。Chainlit の `mcp<2` と分離）
+- MCP Gateway: `gateway/`（公式 `mcp>=2`。FastMCP のSDKと独立した環境）
 - Database: PostgreSQL 17 + pgvector (app compose)
 
 Infrastructure:
 - Platform: Docker Compose
 - IaC: `infra/app/compose.yml`（Keycloak・MCP Gateway 含む）, `infra/langfuse/docker-compose.yml` + `network.yml`, `infra/langflow/compose.yml`
-- Orchestration: `make -C infra up|down|migrate|seed`。Langflow は `make -C infra langflow-up|langflow-down|ingest-langflow|import-langflow`（デフォルト `up` には含めない）。Chainlit は Keycloak OAuth
+- Orchestration: `make -C infra up|down|migrate|seed`。Langflow は `make -C infra langflow-up|langflow-down|ingest-langflow|import-langflow`（デフォルト `up` には含めない）。Open WebUI は Keycloak OAuth。`app-up` は既存Keycloakデータを専用volumeへ引き継ぎ、realm設定を非破壊同期
 
 Validation:
+- MCP App: `npm --prefix apps/knowledge-search ci && npm --prefix apps/knowledge-search test && npm --prefix apps/knowledge-search run build`（Python package build前）
 - Test: `uv run pytest` と `uv run --directory gateway pytest`
 - Lint: `uv run ruff check src tests scripts gateway e2e`
 - Build: `docker compose -f infra/app/compose.yml build`
@@ -237,10 +239,10 @@ Coding conventions:
   - **docs / 設定 / Skill のみ**: TDD 不要。該当 validator を実行
 - **`implementation-workflow` Phase 2 / 4 では `ponytail` を併用する**: 最小実装はコード行数の削減であり、`test-strategy` / 本節で要求するテスト・検証の省略理由にはならない
 - Phase 5 検証は `project-verification` Skill と併用する
-- Langfuse SDK initializes before FastMCP import in both Chainlit and MCP server processes
+- Langfuse SDK initializes before FastMCP server startup; Open WebUI uses pinned tracing hooks and disables its native OTel exporter
 - Do not log API keys, embeddings, or full document bodies in spans
 - MCP tools are read-only search; system ingest via `scripts/seed.py`, `scripts/run_langflow_ingest.py`, and `scripts/import_langflow.py`
-- Default knowledge-mcp tools go through MCP Gateway (Keycloak Token Exchange). Chainlit does not pass its access token to MCP servers
+- Default knowledge-mcp tools go through MCP Gateway (Keycloak Token Exchange). Open WebUI does not pass its SSO access token to downstream MCP servers
 - Langflow is an optional ingest sidecar; it writes to its own Collection. A host adapter copies chunks into app `documents`. SearchService does not read LangChain / Langflow Collection tables
 
 Human approval:
@@ -253,7 +255,7 @@ Human approval:
 
 Cursor Cloud Agent 環境は `.cursor/environment.json` で定義します。
 
-- `install`（`bash .cursor/install.sh`）: Docker 一式（`docker.io` / `docker-compose-v2` / `fuse-overlayfs` / `uidmap`）と `uv` を導入し、`uv sync --extra dev` と `apm-cli` を実行し、`.env` と `infra/langfuse/.env` を example から生成します（既存ファイルは上書きしません）。
+- `install`（`bash .cursor/install.sh`）: Docker 一式（`docker.io` / `docker-compose-v2` / `fuse-overlayfs` / `uidmap`）と `uv` を導入し、ベース環境の Node.js 22+ で MCP App を build してから `uv sync --frozen --extra dev` と `apm-cli` を実行し、`.env` と `infra/langfuse/.env` を example から生成します（既存ファイルは上書きしません）。
 - `start`（`bash .cursor/start.sh`）: 毎回の起動で Docker daemon を `fuse-overlayfs` ドライバで起動します。ネスト VM では `overlay2` が使えず、`bridge-nf-call-iptables` を 0 にしないと同一 compose ネットワーク上のコンテナ間通信（`mcp-server` → `app-postgres`）がドロップされるため、これも `start.sh` が設定します。
 
 運用メモ:
@@ -261,7 +263,7 @@ Cursor Cloud Agent 環境は `.cursor/environment.json` で定義します。
 - 実装作業の開始前に `git fetch origin main` と、既存ブランチなら `git merge origin/main` が必須です。一般的な「fetch を先行しない」指示より本ファイルを優先してください。
 - Implementation Plan のユーザー承認は Cloud Agent でも必須です。プラン md の承認前に実装へ進んではいけません。
 - `docker` / `docker compose` が使えない場合（`docker info` が失敗する場合）は `bash .cursor/start.sh` を実行してください。冪等で、起動済みなら何もしません。
-- ネスト Docker では `bridge-nf-call-iptables=0` のため、コンテナから `api.openai.com` へ直接出られません。`start.sh` はホストの CONNECT プロキシ（`:8888`）を起動します。mcp-server / chainlit の `.env` に `HTTPS_PROXY=http://172.18.0.1:8888`（observability ブリッジ）と `NO_PROXY=localhost,127.0.0.1,keycloak,app-postgres,mcp-server,mcp-gateway` を入れて再作成してください。
+- ネスト Docker では `bridge-nf-call-iptables=0` のため、コンテナから `api.openai.com` へ直接出られません。`start.sh` はホストの CONNECT プロキシ（`:8888`）を起動します。mcp-server / open-webui の `.env` に `HTTPS_PROXY=http://172.18.0.1:8888`（observability ブリッジ）と `NO_PROXY=localhost,127.0.0.1,keycloak,app-postgres,mcp-server,mcp-gateway` を入れて再作成してください。
 - `uv run pytest` / `uv run ruff check src tests scripts gateway e2e` / `uv run python scripts/validate_okf.py` は Docker も secret も不要です。Playwright e2e（`make -C infra e2e`）は起動済みスタックと `OPENAI_API_KEY` が必要で、PR の quality ジョブでは実行しません。
 - 自前 Skill / Agent を `.apm/skills/` または `.apm/agents/` で編集したあとは **`apm install` で展開**する（`.agents/skills/`、`.claude/skills/` 等へ手動コピーしない）。Cloud Agent の git credential 用 `url.*.insteadOf` があると `apm install` が失敗するため、`GIT_CONFIG_GLOBAL=/tmp/apm-gitconfig GIT_CONFIG_SYSTEM=/dev/null apm install` のように credential 入り rewrite を避けて実行する。
-- `make -C infra up` と `make -C infra seed`、および Chainlit のチャット応答には有効な `OPENAI_API_KEY` が必要です。Cloud Agent の Secrets に `OPENAI_API_KEY`（必要なら `OPENAI_BASE_URL`）を追加してください。埋め込みは OpenAI 互換エンドポイントであれば差し替え可能です。
+- `make -C infra up` と `make -C infra seed`、および Open WebUIのチャット応答には有効な `OPENAI_API_KEY` が必要です。Cloud Agent の Secrets に `OPENAI_API_KEY`（必要なら `OPENAI_BASE_URL`）を追加してください。埋め込みは OpenAI 互換エンドポイントであれば差し替え可能です。

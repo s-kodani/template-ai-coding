@@ -3,14 +3,17 @@ type: Decision Record
 title: "ADR-0011: Keycloak を Chainlit のローカル IdP にする"
 description: ローカル検証スタックの Chainlit 認証に Keycloak OAuth / OIDC を使う。
 tags: [decision, architecture, authentication, keycloak, chainlit]
-status: stable
-decision_status: accepted
+status: deprecated
+decision_status: superseded
 generated:
-  at: "2026-08-29T14:30:00Z"
-  by: process:cursor-agent
+  at: "2026-11-14T11:36:15Z"
+  by: process:codex-agent
+superseded_by: /decisions/ADR-0015-open-webui-mcp-apps.md
 ---
 
 # ADR-0011: Keycloak を Chainlit のローカル IdP にする
+
+この判断は[ADR-0015](/decisions/ADR-0015-open-webui-mcp-apps.md)により置き換えられた。以下は当時の構成・理由の履歴であり、現行のUI・認証は[現在状態](/current/architecture.md)を参照する。
 
 ## 背景
 

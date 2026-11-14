@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Idempotent repository bootstrap for Cloud Agents.
-# Installs the Docker-based runtime and Python toolchain, then syncs dependencies.
+# Installs the Docker-based runtime and Python toolchain, builds the App, then syncs dependencies.
 # Runs once to build the environment snapshot; per-boot work lives in start.sh.
 set -euo pipefail
 
@@ -24,8 +24,14 @@ sudo usermod -aG docker "$USER"
 # uv: install from PyPI (astral.sh is not in the Cloud Agent egress allowlist).
 sudo python3 -m pip install --quiet --upgrade uv
 
+# Hatchling includes the generated App HTML even for editable installs.
+# The Cloud base image must provide Node.js 22+ (see .tool-versions).
+node -e 'if (Number(process.versions.node.split(".")[0]) < 22) { console.error("Node.js 22+ is required to build the MCP App"); process.exit(1); }'
+npm --prefix apps/knowledge-search ci
+npm --prefix apps/knowledge-search run build
+
 # Python dependencies, including dev extras (pytest, ruff, pyyaml).
-uv sync --extra dev
+uv sync --frozen --extra dev
 
 # APM CLI: deploy `.apm/skills/` and `.apm/agents/` via `apm install` (do not copy deploy paths manually).
 pip install --user --quiet apm-cli

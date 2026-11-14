@@ -1,200 +1,85 @@
 ---
 type: Observability
-title: Langfuse OTEL トレーシング
-description: Langfuse SDK 4 と OpenTelemetry による分散トレース、MCP _meta 伝播、送信メタデータの正本。
-tags: [langfuse, tracing, otel, mcp, chainlit]
+title: Langfuse OTELトレーシング
+description: Open WebUIの限定hookとFastMCPによる1ターン1trace、MCP _meta伝播、App操作、秘匿ルール。
+tags: [langfuse, tracing, otel, mcp, mcp-apps, open-webui]
 status: stable
 generated:
-  at: "2026-10-18T10:20:00Z"
-  by: process:cursor-agent
+  at: "2026-11-14T11:36:15Z"
+  by: process:codex-agent
 ---
 
-# Langfuse OTEL トレーシング
+# Langfuse OTELトレーシング
 
-## 目的
+## 観測単位
 
-1 チャットターンあたり Langfuse 一覧に **ルート 1 件**（`chat.turn`）を表示し、LLM・MCP クライアント/サーバー・embedding・Postgres クライアントを **同一 trace 内** にネストする。設計判断は [ADR-0004](/decisions/ADR-0004-langfuse-mcp-meta-tracing.md)。Compose と手動検証手順は [インフラ](/current/infrastructure.md)。
-
-## コード入口
-
-| コンポーネント | 初期化 | 主な観測 |
-|---|---|---|
-| Chainlit | `src/chat_ui/app.py`（FastMCP import 前） | `chat.turn`, `llm.generate`, tool observation |
-| knowledge-mcp | `src/knowledge_mcp/server.py`（FastMCP import 前） | FastMCP server span, `search.embed` / `search.query` / `get_document.fetch` |
-| web-search-mcp | `src/web_search_mcp/server.py`（FastMCP import 前） | FastMCP server span, `search_web` ツール I/O |
-| 共通（knowledge） | `src/knowledge_mcp/tracing.py` | SDK 初期化、`_meta` 注入、ヘルパー |
-| 共通（web-search） | `src/web_search_mcp/tracing.py` | SDK 初期化、ツール I/O 記録 |
-
-Langfuse キー未設定時は **no-op**（サービスは起動可能）。
-
-## 観測ツリー（1 ターン）
+通常のチャットは1ターンにつき`chat.turn`を1本のルートにし、LLM、Tool、MCP、embedding、DBを同じtrace内へ接続する。ユーザーが後から行うApp内のページ取得・本文取得は、独立した`mcp.app`ルートにする。HostのApp callbackにはchat / message IDがないため、過去の`chat.turn`への結合は行わない。
 
 ```mermaid
 flowchart TD
-    chat["chat.turn<br/>span + trace 属性"]
-    llm["llm.generate<br/>generation"]
-    tool["tool observation<br/>search_knowledge / get_document"]
-    client["FastMCP CLIENT span"]
-    server["FastMCP SERVER span"]
-    embed_otel["search.embed<br/>OTel span"]
-    embed_lf["search.embed<br/>embedding observation"]
-    query["search.query<br/>OTel span"]
-    fetch["get_document.fetch<br/>OTel span"]
-    db["asyncpg spans"]
-
-    chat --> llm
-    chat --> tool
-    tool --> client
-    client -->|"traceparent + baggage in MCP _meta"| server
-    server --> embed_otel
-    embed_otel --> embed_lf
-    server --> query
-    server --> fetch
-    query --> db
+    Chat[chat.turn] --> LLM[llm.generate / generation]
+    Chat --> Tool[search_knowledge / tool]
+    Tool --> Client[MCP SDK CLIENT]
+    Client -->|_meta traceparent + baggage| MCP[FastMCP SERVER]
+    MCP --> Embed[search.embed / embedding]
+    MCP --> Query[search.query]
+    Query --> DB[asyncpg]
+    App[mcp.app / 後続App操作] --> Detail[get_document / tool]
+    Detail -->|_meta traceparent + baggage| Fetch[MCP SERVER / get_document.fetch]
 ```
 
-- Gateway プロセスは Langfuse export しない。W3C / baggage を下流 `_meta` へ転送するのみ（[ADR-0012](/decisions/ADR-0012-mcp-gateway-resource-server.md)、[ADR-0013](/decisions/ADR-0013-mcp-gateway-per-server-streamable-http.md)）。
-- Langfuse 有効時、`search.embed` は OTel スパン（FastMCP server の子）の内側に **embedding observation** をネストする。無効時は OTel スパンのみ。
+## 実装入口
 
-## 環境変数
-
-| 変数 | 必須 | 用途 |
-|---|---|---|
-| `LANGFUSE_PUBLIC_KEY` | トレース送信時 | Langfuse プロジェクト公開鍵 |
-| `LANGFUSE_SECRET_KEY` | トレース送信時 | Langfuse プロジェクト秘密鍵 |
-| `LANGFUSE_HOST` | 推奨 | Langfuse Web URL（compose 内は `http://langfuse-web:3000`） |
-| `LANGFUSE_TRACING_ENABLED` | 任意 | `false` で明示 no-op（既定 `true`） |
-| `LANGFUSE_TRACING_ENVIRONMENT` | 任意 | プロセス共通の `langfuse.environment`（例: `local`） |
-| `LANGFUSE_RELEASE` | 任意 | プロセス共通の `langfuse.release`（例: git SHA） |
-| `FASTMCP_TELEMETRY_MODE` | 推奨 | 既定 `native`（MCP `_meta` 伝播） |
-| `OTEL_SERVICE_NAME` | Compose 設定済み | OTel Resource の `service.name`。Chainlit は `chainlit`、MCP サーバーは `knowledge-mcp` / `web-search-mcp` |
-
-初回は Langfuse UI でサインアップし API キーを `.env` にコピーする（[インフラ](/current/infrastructure.md)）。
-
-## トレース相関属性
-
-Chainlit の `on_message` 内で `chat_trace_attributes` → Langfuse `propagate_attributes` を呼び、`as_baggage=True` で MCP 下流へ伝播する。
-
-| Langfuse / OTEL 属性 | 送信元 | 値の例 |
-|---|---|---|
-| `user.id` | Chainlit ログインユーザ | Keycloak `sub`（なければ `identifier`） |
-| `session.id` | Chainlit | `cl.context.session.id` |
-| `langfuse.trace.tags` | 固定 + 将来拡張 | `["chainlit"]` |
-| `langfuse.trace.metadata.component` | 固定 | `chainlit` |
-| `langfuse.trace.metadata.chat_model` | 設定 | `CHAT_MODEL` |
-| `langfuse.environment` | env / SDK | `LANGFUSE_TRACING_ENVIRONMENT` |
-| `langfuse.release` | env / SDK | `LANGFUSE_RELEASE` |
-| `service.name` | Compose / OTel Resource | `chainlit` / `knowledge-mcp` / `web-search-mcp` |
-
-### `chat.turn` の入出力
-
-| 属性 | 内容 |
+| コンポーネント | 初期化・観測 |
 |---|---|
-| input | `{"content": "<ユーザー発話>"}` |
-| output | `{"content": "<最終 assistant 応答>"}` |
+| Open WebUI | `src/open_webui_ext/tracing.py`。Langfuse 4.15.1。会話・generation・Tool・App RPCを観測 |
+| knowledge-mcp | `src/knowledge_mcp/server.py`でFastMCP import前にLangfuseを初期化。`tracing.py`で検索 / embedding / DBを観測 |
+| web-search-mcp | `src/web_search_mcp/server.py`で同じ初期化順。`tracing.py`でWeb検索ToolのI/Oを記録 |
+| MCP Gateway | Langfuse exportは行わず、受信`_meta`とW3C contextを下流へ中継 |
 
-`@observe(capture_input=False, capture_output=False)` とし、`update_current_turn_io` で明示設定する。
+Langfuseキーが未設定、または`LANGFUSE_TRACING_ENABLED=false`なら観測をno-opにし、検索・会話を継続できる。
 
-## 観測別メタデータ
+## Open WebUIの限定hook
 
-### `llm.generate`（generation）
+標準Host実装を変更せず、固定v0.13.0の次の4点へ`src/open_webui_ext/patch.py`でhookを追加する。対象ファイルのhashと一意なanchorが一致しなければimage buildを失敗させる。
 
-| 属性 | 内容 |
+| 対象 | hookの責務 |
 |---|---|
-| `langfuse.observation.type` | `generation` |
-| `langfuse.observation.model.name` | `CHAT_MODEL` |
-| `langfuse.observation.usage_details` | OpenAI 互換 API の `prompt_tokens` / `completion_tokens` / `total_tokens` → `input` / `output` / `total` |
-| `langfuse.observation.metadata.tool_choice` | `auto`、またはユーザーが1つ名指しした function 名（例: `web-search__search_web`） |
+| chat completionのbackground worker | `chat.turn`の開始・終了、user / chat属性とbaggage、入力・最終応答 |
+| providerへの`generate_chat_completion` | `llm.generate`、model、token usage、stream終了までのlifecycle |
+| `MCPClient.call_tool_raw` | Tool observation、秘匿済み引数・結果、MCP `_meta`へtrace context注入 |
+| `mcp_app_rpc` | 独立した`mcp.app`、viewer、接続先、操作method |
 
-実装: `@observe(name="llm.generate", as_type="generation")` + `record_generation_result`。
+Open WebUIのOTel以外の既存依存をconstraintsで固定し、Langfuse 4.15.1を追加する。OTelは`infra/app/open-webui-otel-requirements.txt`でAPI / SDK / exporterを1.45.2、instrumentation系を0.66b2へ固定する。[GHSA-mf5v-w3w3-f6cg](https://github.com/open-telemetry/opentelemetry-python/security/advisories/GHSA-mf5v-w3w3-f6cg)のJSON metadata経由の過大な`traceparent`解析を修正する組み合わせで、他のbase image依存は更新しない。`pip check`をbuild gateにする。`ENABLE_OTEL=false`で上流の汎用OTel exporterと二重初期化しない。streamはLangfuseのcontext保持wrapperを使い、SSEからusageだけを観測する。キャンセル時にもspanを終了し、並行ターンのcontextを分離する。
 
-### ツール observation（Chainlit 側）
+## 属性とI/O
 
-Gateway / 追加 MCP セッションの `tools/call` を Langfuse `tool` observation として記録。
-
-| observation metadata キー | 意味 |
+| 属性 | 値 |
 |---|---|
-| `tool.route` | `gateway` / `session` / `unknown` |
-| `tool.llm_name` | LLM が選んだ function 名 |
-| `tool.server_id` | Gateway サーバー ID（route=gateway 時） |
-| `tool.mcp_name` | 下流 MCP ツール名 |
-| `tool.session` | 追加 MCP セッション名（route=session 時） |
+| `user.id` | Open WebUIのOAuth属性に保存されたKeycloak `sub`を優先。存在しない場合は内部user ID |
+| `session.id` | 通常の会話はOpen WebUI chat ID。App callbackにはchat IDを付けない |
+| trace tags / component | `open-webui`。App操作は`mcp-app`も付ける |
+| `service.name` | `open-webui`、`knowledge-mcp`、`web-search-mcp` |
+| environment / release | `LANGFUSE_TRACING_ENVIRONMENT` / `LANGFUSE_RELEASE`の設定値 |
+| generation model / usage | 実際のmodel、入力・出力・合計token。stream / nonstream両対応 |
 
-input / output はツール引数と結果 JSON。`get_document` の `content` は先頭 500 文字に truncate（[API 契約](/current/features/api.md)）。
+Tool observationには`tool.route=gateway`、`tool.server_id`、`tool.mcp_name`を付ける。MCPのJSON textと`structuredContent`は同じ検索データを保持し、トレースへ送るときにsanitizeする。
 
-### MCP サーバー（FastMCP server span）
+MCP `_meta`には`traceparent`、存在時の`tracestate`、`baggage`を注入する。Gatewayはネストしたmetadataを保持し、FastMCP側の`extract_langfuse_propagated_context`が親へ接続する。通常のチャットでAppを表示する最初の検索も、元の`chat.turn`内に記録する。
 
-| 項目 | 内容 |
-|---|---|
-| input / output | `record_tool_input` / `record_tool_output`（サーバー span に付与） |
-| 子 OTel: `search.embed` | `search.query_length`（Langfuse 無効時の OTel metadata） |
-| 子 OTel: `search.query` | `search.result_count`, `search.top_similarity` |
-| 子 OTel: `get_document.fetch` | `document.found`, `document.id_length` |
+## 秘匿とexport
 
-### `search.embed`（embedding observation）
+- APIキー、access / refresh token、Authorization、embeddingの値をspanへ記録しない。
+- Open WebUI拡張は`_meta`を出力観測から除き、token / API key / embedding関連フィールドをredactする。長い文字列は500文字でtruncateし、Tool結果のJSON text内もsanitizeする。
+- MCP側の`get_document.content`は先頭500文字にtruncateする。UIに渡す本文は、このトレース用truncateとは別に保持する。
+- user識別にメールアドレスをtrace metadataへ載せない。
+- MCP側Langfuse exporterは`fastmcp`と`opentelemetry.instrumentation.asyncpg`を追加許可し、不要なHTTPクライアントspanを送らない。
+- Open WebUIのMCP SDK 2.3.0はCLIENT spanのIDを送信`_meta`へ注入するため、親を持つ`mcp-python-sdk` spanも公開`should_export_span`で出力する。標準フィルターだけでは下流の親IDが欠落する。SDK spanの属性はMCP methodとJSON-RPC request IDで、引数・結果・HTMLは含まない。独立したinitialize spanは出力しない。
 
-Langfuse 有効時のみ。OTel `search.embed` スパンの子。
+## 設定と検証
 
-| 属性 | 内容 |
-|---|---|
-| `langfuse.observation.type` | `embedding` |
-| `langfuse.observation.model.name` | `EMBEDDING_MODEL` |
-| input | `input_length`, `dimensions` |
-| `langfuse.observation.usage_details` | API `usage.total_tokens` → `total`（取得時のみ） |
+`LANGFUSE_PUBLIC_KEY`、`LANGFUSE_SECRET_KEY`、`LANGFUSE_HOST`、必要時のenvironment / releaseをルート`.env`へ設定する。Compose内の送信先は`http://langfuse-web:3000`。キーはResource・Tool schema・ログに含めない。
 
-## MCP `_meta` 伝播
+自動検証は`tests/test_openwebui_ext.py`、`tests/test_openwebui_ext_patch.py`と既存の`test_trace_propagation.py`、`test_langfuse_span_export.py`、`test_tracing_metadata.py`、`test_tool_trace_output.py`。並行ユーザーの分離、stream / cancellation、model / usage、sanitize、Appとチャットの観測単位を対象にする。
 
-FastMCP native telemetry（`FASTMCP_TELEMETRY_MODE=native`）に加え、`inject_langfuse_propagated_meta` が以下を MCP `_meta` へ載せる。
-
-| `_meta` キー | 内容 |
-|---|---|
-| `traceparent` | W3C Trace Context |
-| `tracestate` | W3C（存在時） |
-| `baggage` | W3C Baggage（`langfuse_trace_id` および `propagate_attributes(..., as_baggage=True)` の属性） |
-
-Gateway は受信 `_meta` を下流 MCP（knowledge-mcp / web-search-mcp）へマージ転送する。MCP サーバーは `extract_langfuse_propagated_context` で親 span に接続する（knowledge-mcp のみ OTel 子 span を追加 export）。
-
-## Export フィルタ
-
-Langfuse SDK 4 既定に加え、`should_export_langfuse_span` で以下のみ追加許可する。
-
-- `fastmcp`
-- `opentelemetry.instrumentation.asyncpg`
-
-**送らない例**: `opentelemetry.instrumentation.httpx`（embedding の HTTP クライアントノイズ回避）。
-
-## 秘匿・ truncate
-
-- API キー、embedding ベクトル、document 全文を span にログしない
-- ツール output の `content` フィールドは 500 文字で truncate（`sanitize_tool_output_for_trace`）
-- `user.id` は Keycloak `sub` を優先（集計用。メール等の PII を trace metadata に載せない）
-
-## スコープ外（意図的未実装）
-
-| 項目 | 理由 |
-|---|---|
-| OTel metrics / logs パイプライン | [ADR-0004](/decisions/ADR-0004-langfuse-mcp-meta-tracing.md) でトレースのみ |
-| Gateway からの Langfuse export | 伝播のみ。export は Chainlit / MCP サーバー（knowledge-mcp / web-search-mcp） |
-| `langfuse.openai` ラッパー | 素の `AsyncOpenAI` + `@observe` + `record_generation_result` で usage を付与 |
-| `sample_rate`, `mask_otel_spans` | 将来の運用要件に応じて検討 |
-| `langfuse.trace.public` | 共有トレース要件が出たら追加 |
-
-## 検証
-
-### 自動
-
-```bash
-uv run pytest tests/test_trace_propagation.py tests/test_langfuse_span_export.py tests/test_tracing_metadata.py tests/test_tool_trace_output.py
-```
-
-### 手動（Langfuse UI）
-
-[インフラ](/current/infrastructure.md) の「トレース検証チェックリスト」に従う。
-
-## 関連ドキュメント
-
-- [UI（Chainlit）](/current/features/ui.md) — OAuth、Gateway 配線、`_meta` 注入
-- [API（MCP ツール）](/current/features/api.md) — ツール I/O と truncate
-- [バックエンド](/current/features/backend.md) — SearchService
-- [ADR-0003](/decisions/ADR-0003-chainlit-traced-client.md) — traced クライアント UI
-- [ADR-0004](/decisions/ADR-0004-langfuse-mcp-meta-tracing.md) — `_meta` 伝播の設計判断
+実環境では、1ターン1ルート、ToolとMCPの親子関係、embedding / DB、user / chat識別、後続App操作の独立ルートを確認する。手順は[インフラ](/current/infrastructure.md)。一般のMCP伝播の判断は[ADR-0004](/decisions/ADR-0004-langfuse-mcp-meta-tracing.md)、UI移行は[ADR-0015](/decisions/ADR-0015-open-webui-mcp-apps.md)を参照。

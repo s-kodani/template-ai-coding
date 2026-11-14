@@ -12,7 +12,7 @@ from fastapi.testclient import TestClient
 
 from mcp_gateway.app import create_app
 from mcp_gateway.config import Settings
-from mcp_gateway.jwt_auth import verify_chainlit_token, verify_exchanged_token
+from mcp_gateway.jwt_auth import verify_chat_token, verify_exchanged_token
 from mcp_gateway.policy import authorize_tool
 from mcp_gateway.principal import Principal
 from mcp_gateway.token_exchange import exchange_token
@@ -37,8 +37,8 @@ def _token(private_key: object, **claims: object) -> str:
     payload = {
         "iss": ISSUER,
         "sub": "user-1",
-        "azp": "chainlit",
-        "aud": ["chainlit", "mcp-gateway"],
+        "azp": "open-webui",
+        "aud": ["open-webui", "mcp-gateway"],
         "exp": int(time.time()) + 3600,
         "nbf": int(time.time()) - 5,
         "realm_access": {"roles": ["knowledge-mcp-reader"]},
@@ -50,14 +50,14 @@ def _token(private_key: object, **claims: object) -> str:
 
 def test_verify_rejects_missing_gateway_audience(rsa_keys: tuple[object, str]) -> None:
     private_key, _ = rsa_keys
-    token = _token(private_key, aud=["chainlit"])
+    token = _token(private_key, aud=["open-webui"])
     with pytest.raises(Exception) as exc:
-        verify_chainlit_token(
+        verify_chat_token(
             token,
             issuer=ISSUER,
             jwks_uri="",
             audience="mcp-gateway",
-            azp="chainlit",
+            azp="open-webui",
             signing_key=private_key,
         )
     assert exc.value.code == "INVALID_AUDIENCE"  # type: ignore[attr-defined]
@@ -67,12 +67,12 @@ def test_verify_rejects_wrong_azp(rsa_keys: tuple[object, str]) -> None:
     private_key, _ = rsa_keys
     token = _token(private_key, azp="other-client")
     with pytest.raises(Exception) as exc:
-        verify_chainlit_token(
+        verify_chat_token(
             token,
             issuer=ISSUER,
             jwks_uri="",
             audience="mcp-gateway",
-            azp="chainlit",
+            azp="open-webui",
             signing_key=private_key,
         )
     assert exc.value.code == "INVALID_AUDIENCE"  # type: ignore[attr-defined]
@@ -82,12 +82,12 @@ def test_verify_rejects_expired(rsa_keys: tuple[object, str]) -> None:
     private_key, _ = rsa_keys
     token = _token(private_key, exp=int(time.time()) - 10)
     with pytest.raises(Exception) as exc:
-        verify_chainlit_token(
+        verify_chat_token(
             token,
             issuer=ISSUER,
             jwks_uri="",
             audience="mcp-gateway",
-            azp="chainlit",
+            azp="open-webui",
             signing_key=private_key,
         )
     assert exc.value.code == "TOKEN_EXPIRED"  # type: ignore[attr-defined]
@@ -307,3 +307,23 @@ def test_list_servers_uses_public_base_url(
     assert response.status_code == 200
     urls = {item["id"]: item["url"] for item in response.json()["servers"]}
     assert urls["knowledge"] == "http://gw.internal:9/mcp/knowledge"
+
+
+def test_default_gateway_accepts_open_webui_and_rejects_old_ui_party(
+    rsa_keys: tuple[object, str],
+) -> None:
+    private_key, _ = rsa_keys
+    app = create_app(Settings(registry_path=str(REGISTRY)), jwt_signing_key=private_key)
+    client = TestClient(app)
+    accepted = client.get(
+        "/v1/mcp",
+        headers={"Authorization": f"Bearer {_token(private_key, azp='open-webui')}"},
+    )
+    rejected = client.get(
+        "/v1/mcp",
+        headers={"Authorization": f"Bearer {_token(private_key, azp='chainlit')}"},
+    )
+    assert accepted.status_code == 200
+    assert {server["id"] for server in accepted.json()["servers"]} == {"knowledge"}
+    assert rejected.status_code == 403
+    assert rejected.json()["code"] == "INVALID_AUDIENCE"

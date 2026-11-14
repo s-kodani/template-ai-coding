@@ -3,14 +3,17 @@ type: Decision Record
 title: "ADR-0009: Chainlit 2.12 の MCP user_servers allowlist"
 description: 追加 MCP は user_servers と静的 URL allowlist に限定し、stdio は宣言しない。
 tags: [decision, chainlit, mcp, security]
-status: stable
-decision_status: accepted
+status: deprecated
+decision_status: superseded
 generated:
-  at: "2026-09-06T08:41:05Z"
+  at: "2026-11-14T11:36:15Z"
   by: process:codex-agent
+superseded_by: /decisions/ADR-0015-open-webui-mcp-apps.md
 ---
 
 # ADR-0009: Chainlit 2.12 の MCP user_servers allowlist
+
+この判断は[ADR-0015](/decisions/ADR-0015-open-webui-mcp-apps.md)により置き換えられた。以下は当時の構成・理由の履歴であり、現行のUI・認証は[現在状態](/current/architecture.md)を参照する。
 
 ## 背景
 

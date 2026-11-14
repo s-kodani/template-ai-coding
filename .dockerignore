@@ -1,0 +1,15 @@
+.git
+.venv
+gateway/.venv
+.plans
+.env
+.env.*
+!.env.example
+infra/langfuse/.env
+**/node_modules
+**/__pycache__
+**/.pytest_cache
+**/.ruff_cache
+test-results
+output
+.playwright-cli

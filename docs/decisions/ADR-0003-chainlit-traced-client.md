@@ -3,11 +3,17 @@ type: Decision Record
 title: "ADR-0003: traced MCP クライアント UI として Chainlit"
 description: Chainlit がチャット UI、Langfuse ルートトレース、既定 FastMCP クライアント、追加 MCP 接続 UI を担う。
 tags: [decision, chainlit, ui]
-status: stable
-decision_status: accepted
+status: deprecated
+decision_status: superseded
+superseded_by: /decisions/ADR-0015-open-webui-mcp-apps.md
+generated:
+  at: "2026-11-14T11:36:15Z"
+  by: process:codex-agent
 ---
 
 # ADR-0003: traced MCP クライアント UI として Chainlit
+
+この判断は[ADR-0015](/decisions/ADR-0015-open-webui-mcp-apps.md)により置き換えられた。以下は当時の構成・理由の履歴であり、現行のUI・認証は[現在状態](/current/architecture.md)を参照する。
 
 ## 背景
 
