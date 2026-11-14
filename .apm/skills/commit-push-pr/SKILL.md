@@ -1,11 +1,11 @@
 ---
 name: commit-push-pr
-description: Commit local changes, push the current branch, and create a Pull Request. Use when the user asks to commit, push, and open a PR in one workflow.
+description: Commit, push, and create or update a Pull Request as the repository's standard implementation delivery, or when explicitly requested. Honor explicit local-only or no-PR instructions; merging and Issue closure are separate operations.
 ---
 
 # Commit, Push, And Create PR
 
-Use this skill when committing local changes, pushing the current branch, and opening a Pull Request.
+Use this skill for standard implementation delivery or an explicit commit/push/PR request. Follow the repository's delivery policy and `../implementation-workflow/references/delivery.md`. An agent-authored Plan exclusion does not authorize stopping before PR submission.
 
 ## Preconditions
 
@@ -21,7 +21,8 @@ Use this skill when committing local changes, pushing the current branch, and op
 3. Run project-appropriate quality checks（`delivery-reference.md` / `project-verification` Skill）。
 4. Stage and commit changes.
 5. Push the branch to `origin`.
-6. Create a PR using **ManagePullRequest** tool（またはリポジトリ標準の PR API）。`gh pr create` に依存しない。
+6. Create or update a PR using **ManagePullRequest** tool（またはリポジトリ標準の PR API）。既存PRを重複作成しない。`gh pr create` に依存しない。
+7. Issue本文のWork PRsへ登録し、`validate_delivery --phase submitted`でローカルHEADとPR HEADを照合してから「PR提出済み」と報告する。IssueはOpenを維持する。mergeとCloseは別の承認・検証を必要とする。
 
 Read `reference.md` and `delivery-reference.md` when generating the commit message, PR title, or PR body.
 

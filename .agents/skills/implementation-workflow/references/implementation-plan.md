@@ -55,6 +55,7 @@ Plan は陳腐化することを前提とする。セッション間で必要な
 | Goal | 何を実現するか |
 | Current State | 既存実装・ドキュメント・ADR から判明したこと |
 | Scope | 影響する機能、モジュール、API、データ、インフラ、外部連携、ドキュメント |
+| Delivery | 通常は検証・commit・push・PR提出まで。ユーザー明示の例外があれば元の指示を記録。merge/Issue Closeとは分ける（`delivery.md`） |
 | Implementation Approach | 主要な変更方針、順序、互換性、移行方針 |
 | Files / Components | 主な変更対象 |
 | Decision Candidates | ADR が必要になりうる設計判断 |

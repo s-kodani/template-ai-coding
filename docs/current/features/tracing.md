@@ -50,7 +50,7 @@ Langfuseキーが未設定、または`LANGFUSE_TRACING_ENABLED=false`なら観�
 | `MCPClient.call_tool_raw` | Tool observation、秘匿済み引数・結果、MCP `_meta`へtrace context注入 |
 | `mcp_app_rpc` | 独立した`mcp.app`、viewer、接続先、操作method |
 
-Open WebUIのOTel以外の既存依存をconstraintsで固定し、Langfuse 4.15.1を追加する。OTelは`infra/app/open-webui-otel-requirements.txt`でAPI / SDK / exporterを1.45.2、instrumentation系を0.66b2へ固定する。[GHSA-mf5v-w3w3-f6cg](https://github.com/open-telemetry/opentelemetry-python/security/advisories/GHSA-mf5v-w3w3-f6cg)のJSON metadata経由の過大な`traceparent`解析を修正する組み合わせで、他のbase image依存は更新しない。`pip check`をbuild gateにする。`ENABLE_OTEL=false`で上流の汎用OTel exporterと二重初期化しない。streamはLangfuseのcontext保持wrapperを使い、SSEからusageだけを観測する。キャンセル時にもspanを終了し、並行ターンのcontextを分離する。
+Open WebUIへLangfuse 4.15.1を追加する。OTelは`infra/app/open-webui-otel-requirements.txt`でAPI / SDK / exporterを1.45.2、instrumentation系を0.66b2へ固定する。[GHSA-mf5v-w3w3-f6cg](https://github.com/open-telemetry/opentelemetry-python/security/advisories/GHSA-mf5v-w3w3-f6cg)のJSON metadata経由の過大な`traceparent`解析を修正する組み合わせである。その他のセキュリティ修正・互換依存は`open-webui-security-requirements.txt`で固定し、残るbase image依存をconstraintsで保持する。`pip check`をbuild gateにする。`ENABLE_OTEL=false`で上流の汎用OTel exporterと二重初期化しない。streamはLangfuseのcontext保持wrapperを使い、SSEからusageだけを観測する。キャンセル時にもspanを終了し、並行ターンのcontextを分離する。
 
 ## 属性とI/O
 

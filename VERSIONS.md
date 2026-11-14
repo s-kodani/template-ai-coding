@@ -14,6 +14,7 @@ Python 依存の解決結果は `uv.lock` と `gateway/uv.lock` を Source of Tr
 | MCP SDK（Gateway） | `>=2.3.0,<3` | 2.3.0 (`gateway/uv.lock`) |
 | MCP SDK（Open WebUI） | v0.13.0 base imageの依存をconstraintsで保持 | 2.3.0（実imageで確認） |
 | OTel（Open WebUI） | image専用のsecurity fix固定 | 1.45.2 / 0.66b2 (`infra/app/open-webui-otel-requirements.txt`) |
+| Open WebUI security fixes | OS更新、明示したPython修正版と互換依存だけ更新 | `infra/app/open-webui-security-requirements.txt`。CPU版torch/torchaudio 2.10.0、torchvision 0.25.0。残るbase依存は固定 |
 | Langfuse Python SDK | `>=4.15.1,<5` | 4.15.1 (`uv.lock`) |
 | OpenTelemetry API / SDK（アプリ） | `>=1.29.0` | 1.45.2、instrumentation / asyncpg / semantic-conventions は0.66b2 (`uv.lock`) |
 | OpenTelemetry API（Gateway） | `>=1.45.2` | 1.45.2 (`gateway/uv.lock`) |

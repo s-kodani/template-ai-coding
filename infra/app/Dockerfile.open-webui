@@ -6,13 +6,37 @@ ENV ENABLE_OTEL=false \
 
 COPY src/open_webui_ext /app/backend/open_webui_ext
 COPY infra/app/open-webui-otel-requirements.txt /tmp/open-webui-otel-requirements.txt
+COPY infra/app/open-webui-security-requirements.txt /tmp/open-webui-security-requirements.txt
 
-# Upgrade only the explicitly pinned OTel security-fix family; freeze the rest.
-RUN python -m pip freeze | sed '/^opentelemetry-/Id' > /tmp/open-webui-constraints.txt \
-    && python -m pip install --no-cache-dir --constraint /tmp/open-webui-constraints.txt \
-        --requirement /tmp/open-webui-otel-requirements.txt langfuse==4.15.1 \
+RUN apt-get update \
+    && apt-get upgrade -y --no-install-recommends \
+    && rm -rf /var/lib/apt/lists/*
+
+# Keep the existing CPU-only runtime; PyPI's x86 torch wheels pull CUDA libraries.
+RUN python -m pip install --no-cache-dir --no-deps \
+    --index-url https://download.pytorch.org/whl/cpu \
+    torch==2.10.0 torchaudio==2.10.0 torchvision==0.25.0
+
+# Freeze every base package except the explicit security/compatibility updates.
+RUN python - <<'PY'
+from pathlib import Path
+import subprocess
+import sys
+
+args = [sys.executable, "-m", "pip", "freeze"]
+for name in ("otel", "security"):
+    for line in Path(f"/tmp/open-webui-{name}-requirements.txt").read_text().splitlines():
+        if line.strip() and not line.lstrip().startswith("#"):
+            args.extend(["--exclude", line.split("==", 1)[0]])
+with Path("/tmp/open-webui-constraints.txt").open("w") as output:
+    subprocess.run(args, stdout=output, check=True)
+PY
+
+RUN python -m pip install --no-cache-dir --constraint /tmp/open-webui-constraints.txt \
+        --requirement /tmp/open-webui-otel-requirements.txt \
+        --requirement /tmp/open-webui-security-requirements.txt langfuse==4.15.1 \
     && python -m pip check \
     && python -m open_webui_ext.patch /app/backend/open_webui \
-    && rm /tmp/open-webui-constraints.txt /tmp/open-webui-otel-requirements.txt
+    && rm /tmp/open-webui-constraints.txt /tmp/open-webui-otel-requirements.txt /tmp/open-webui-security-requirements.txt
 
 CMD ["python", "-m", "open_webui_ext.startup"]

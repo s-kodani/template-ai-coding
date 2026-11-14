@@ -2,6 +2,7 @@
 
 ## v?.?.? (未確定)
 
+- **Fixed**: Open WebUI imageのTrivy HIGH/CRITICAL失敗を修正するため、OSと認証・文書処理・ML系の修正版を明示的に固定した。CPU版PyTorchの互換構成と`pip check`を維持し、setuptools同梱の古いライブラリも更新した（[インフラ](/current/infrastructure.md)）。
 - **Added**: MCP Appsでナレッジ検索の順位・タイトル・類似度・抜粋・出典とチャンク本文を表示する。`search_knowledge`の`offset`とpaginationにより、20件を超える検索結果を5・10・20件ずつサーバー側から取得できる（[UI](/current/features/ui.md)、[API](/current/features/api.md)）。
 - **Changed**: 標準Chat UIをOpen WebUI v0.13.0へ移行し、MCP接続先を管理者登録へ統一した。Keycloak SSO、role別接続表示、Gateway Token Exchange、Langfuseの1ターン1traceを維持し、Appの後続操作は独立traceにする。既存realmには専用client / scopeだけを冪等同期し、Keycloakデータの初回volume移行でユーザー識別子を維持する（[認証認可](/current/features/authentication.md)、[ADR-0015](/decisions/ADR-0015-open-webui-mcp-apps.md)）。
 - **Changed**: GatewayがTool metadata、全content、structuredContent、isErrorと認証付きApps ResourceのHTML / MIME / CSPを保持する。ResourceはroleとURI完全一致allowlistで制限する。検索ページはHNSW探索上限に依存しないexact距離順位を使い、総件数・snapshotは導入しない（[API](/current/features/api.md)、[検索バックエンド](/current/features/backend.md)）。

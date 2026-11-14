@@ -35,6 +35,7 @@ Implementation Plan は一時的な作業成果物。`.plans/` 配下の Markdow
 | Session Handoff / Resume — Checkpoint、再開時の Source of Truth | `references/session-handoff.md` |
 | Phase 5 — 検証、OKF Documentation Validation | `references/verification.md` |
 | Phase 6 — OKF Concept、Current-state、ADR、Documentation Reconciliation | `references/okf-documentation.md` |
+| 納品範囲、PR提出確認、merge後のIssue Close判定 | `references/delivery.md` |
 | Release Log — 未確定見出し、SemVer、記載要否 | `references/release-note.md` |
 | Phase 7 — Completion Report、一時成果物ルール | `references/completion-report.md` |
 | Phase 8 — コードレビュー、ワークフロー遵守チェック | `references/review-and-compliance.md` |
@@ -57,7 +58,7 @@ Implementation Plan は一時的な作業成果物。`.plans/` 配下の Markdow
 10. **着手時に Issue へ Work Start コメントを残す** — 冒頭に Coverage（full / partial）、作業ブランチ、Implementation Plan を記載する。Plan 承認後・Phase 3 / 4 前。詳細は `references/github-issue-workflow.md`。
 11. **主要イベントで進捗コメントを残し、AC タスクリストを再評価する** — PR 作成前の一区切り、Phase 5 検証完了、レビュー修正完了。Pre-PR は Issue、Post-PR は PR。投稿成功を確認するまでその区切りを完了としない。詳細は `references/github-issue-workflow.md`。
 12. **セッション終了時に Checkpoint を残す** — open PR があれば PR、なければ Issue。別セッションが Repository 状態と照合して再開できる事実を残す。
-13. **一連のワークフロー完了後にレビューする** — コードレビューとワークフロー遵守チェックを行い、must-fix が無いことを確認する。Issue Close 前は本文 AC がすべて `[x]` であることを必ず確認する。Issue と PR は 1:N。紐づく作業 PR がすべて closed になる前に Issue を Close しない。詳細は `references/review-and-compliance.md` と `references/github-issue-workflow.md`。
+13. **通常納品をPR提出まで進め、Issue完了と分ける** — commit/push/PRを通常の実装納品に含める。例外はユーザーの明示指示だけ。PR提出とmerge後のCloseは `references/delivery.md` の実状態validatorで確認し、必要PRが0件・未merged・不明ならIssueをCloseしない。レビュー手順は `references/review-and-compliance.md`。
 
 ---
 
@@ -87,14 +88,16 @@ Phase 5: Verify
         ↓
 Phase 6: Documentation Reconciliation
         ↓
+commit / push / PR提出 + submitted validator（通常納品。IssueはOpen）
+        ↓
 Phase 7: Completion Report（Post-PR 時は PR。Close しない）
         ↓
 Phase 8: Review & Compliance（Post-PR 時は PR）
         │  must-fix があれば Phase 4 に戻る（進捗コメント必須）
         ↓
-紐づく作業 PR がすべて closed（merged または closed）
+必要な作業PRが1件以上あり全件merged（merge承認は別）
         ↓
-Issue 本文 AC 全 [x] を確認
+最新SHAのCI・人間レビュー・Issue AC全[x]を実状態validatorで確認
         ↓
 Issue Close（手動。PR 本文の `Closes` による自動 Close は使わない）
 ```
@@ -176,13 +179,13 @@ ADR 候補基準と Decision Level（1: Architecture / 2: Design / 3: Implementa
 
 ## Phase 7: Completion Report
 
-Changes、Verification、Documentation 更新を Completion Report として残す。open PR がある場合は PR コメント、PR がない場合は Issue コメント。この時点では Issue を Close しない。一時成果物ルールは `references/completion-report.md`。
+通常は検証・文書整合後にcommit/push/PR作成・更新とsubmitted validatorを行い、Changes、Verification、DocumentationをPRへ報告する。ユーザー明示のローカル限定作業や提出を妨げる事情はIssueへ記録し、通常納品完了と扱わない。この時点でIssueをCloseしない。納品条件は `references/delivery.md`、一時成果物ルールは `references/completion-report.md`。
 
 ---
 
 ## Phase 8: Review & Compliance
 
-一連のワークフロー完了後、最終差分のコードレビューとワークフロー遵守チェックを行う。結果は open PR がある場合は PR コメント、PR がない場合は Issue コメントへ残す。must-fix があれば Phase 4 に戻り、再検証してからレビューをやり直す。Issue Close 前に **Issue 本文の Acceptance Criteria がすべて `[x]` であることを必ず確認**する。must-fix が無く、紐づく作業 PR がすべて closed であることを確認してから Issue を手動 Close する。詳細は `references/review-and-compliance.md`。
+一連のワークフロー完了後、最終差分のコードレビューとワークフロー遵守チェックを行う。結果は open PR がある場合は PR コメント、PR提出前は Issue コメントへ残す。must-fix があれば Phase 4 に戻り、再検証してからレビューをやり直す。PR提出後はIssueをOpenで維持し、merge後の最終確認で `references/delivery.md` のCloseゲートを満たした場合だけ手動Closeする。詳細は `references/review-and-compliance.md`。
 
 ---
 
@@ -197,4 +200,4 @@ Plan 作成時は `ponytail` で Scope を最小化し、変更強度に応じ�
 `ponytail` に従って実装し、検証する。主要イベントで Pre-PR は Issue、Post-PR は PR へ進捗コメントを残し、Acceptance Criteria タスクリストを再評価する。  
 最終状態を OKF で構造化された恒久知識へ整合させる。  
 Release Note は Phase 6 で `## v?.?.? (未確定)` へ追記し、タグ確定時に SemVer 見出しへ置き換える。  
-紐づく作業 PR がすべて closed になったあと、コードレビューとワークフロー遵守を確認し、Issue 本文 AC がすべて `[x]` であることを確認してから Issue を手動 Close する。**
+通常納品はcommit/push/PR提出まで。Issue完了は必要PRの全merge後の最終確認とし、`references/delivery.md` の実状態ゲートを通してから手動Closeする。**

@@ -41,7 +41,7 @@ make -C infra seed
 
 `app-up`は`docker compose up --build --wait`で各サービスのhealthcheckを待つ。Open WebUIのready判定は`/ready`。Keycloak ready後に`keycloak-sync`が専用client / scopeを同期し、完了してからUIを起動する。
 
-Open WebUIは`ghcr.io/open-webui/open-webui:v0.13.0`ベースの派生イメージ。OTel系以外の上流依存をconstraintsで保持し、Langfuse 4.15.1を導入する。OTelは専用requirementsでAPI / SDK / exporterを1.45.2、instrumentation系を0.66b2へ固定する。`pip check`と4ファイルのhash検査付き観測パッチをbuild gateにする。native OTELは無効。上流更新時は同じgateと回帰テストを再検証する。
+Open WebUIは`ghcr.io/open-webui/open-webui:v0.13.0`ベースの派生イメージ。OS修正パッケージを更新し、Pythonは`open-webui-security-requirements.txt`と`open-webui-otel-requirements.txt`で指定した修正版・互換性に必要な依存だけを更新する。他の上流依存はconstraintsで保持し、Langfuse 4.15.1を導入する。PyTorchは公式CPU indexからtorch / torchaudio 2.10.0、torchvision 0.25.0を揃え、CUDA依存を追加しない。`pip check`と4ファイルのhash検査付き観測パッチをbuild gateにする。native OTELは無効。上流更新時は同じgateと回帰テストを再検証する。
 
 MCP AppはNode 22 build stageでplain JavaScriptと公式Apps SDKをbundleし、`src/knowledge_mcp/static/search-results.html`をPython runtimeへ含める。ソース変更後のローカル生成は次を実行する。
 
@@ -147,6 +147,8 @@ make -C infra e2e-smoke
 ## CI/CD と DevSecOps
 
 [ADR-0010](/decisions/ADR-0010-devsecops-pattern-a.md) に従い、パターンA（OSS Shift Left）で PR / `main` push 時に自動検証する。
+
+実装の通常納品はcommit/push/PR提出まで進め、Issueはmerge後の最終確認までOpenを維持する。`scripts/validate_delivery.py`はGitHub CLIの読み取りAPIを使い、提出時はcleanなローカルHEADと登録済みPRのHEADを照合する。Close判定はIssue本文`Work PRs`の全件merged、最終SHAの必須CI・人間レビュー、AC充足を確認する。PR0件・未mergeclosed・取得不能は拒否する。これは読み取り専用の運用ゲートであり、汎用MCP/APIのClose権限自体は制限しない。手順の正本はimplementation-workflow Skillの`references/delivery.md`。
 
 Python依存の正本は`uv.lock`と`gateway/uv.lock`。ルートはdnspython 2.9.2、OpenTelemetry API / SDK 1.45.2とinstrumentation / asyncpg / semantic-conventions 0.66b2を使用し、GatewayのOpenTelemetry APIも1.45.2に固定する。dnspythonの過大なメモリ・CPU消費（[GHSA-vvf4-9x63-8xvv](https://github.com/advisories/GHSA-vvf4-9x63-8xvv)）とOpenTelemetryのtraceparent解析によるDoS（[GHSA-mf5v-w3w3-f6cg](https://github.com/advisories/GHSA-mf5v-w3w3-f6cg)）の修正版を含む。
 
