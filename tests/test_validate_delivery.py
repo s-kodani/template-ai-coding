@@ -94,6 +94,25 @@ def test_incomplete_empty_or_malformed_acceptance_criteria_is_rejected(task):
     assert not validate(data).ok
 
 
+@pytest.mark.parametrize("marker", ["*", "+", "1.", "1)", "> -", "> > +"])
+def test_mixed_markdown_task_markers_cannot_hide_unchecked_criteria(marker):
+    data = state(merged=True)
+    data[f"{PREFIX}/issues/139"]["body"] = (
+        f"## Acceptance Criteria\n- [x] implemented\n{marker} [ ] pending\n"
+        "## Work PRs\n- #142\n"
+    )
+    assert not validate(data).ok
+
+
+def test_complete_criteria_with_mixed_markdown_task_markers_pass():
+    data = state(merged=True)
+    data[f"{PREFIX}/issues/139"]["body"] = (
+        "## Acceptance Criteria\n- [x] first\n* [X] second\n+ [x] third\n"
+        "1. [x] fourth\n2) [x] fifth\n## Work PRs\n- #142\n"
+    )
+    assert validate(data).ok
+
+
 @pytest.mark.parametrize("defect", ["failure", "missing", "stale", "untrusted-app"])
 def test_ci_must_succeed_for_the_final_sha(defect):
     data = state(merged=True)

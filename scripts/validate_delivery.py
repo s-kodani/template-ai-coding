@@ -59,7 +59,7 @@ def _registered_prs(body: str) -> set[int]:
 
 def _complete_ac(body: str) -> bool:
     section = _section(body, "Acceptance Criteria|受入条件|受け入れ条件")
-    tasks = re.findall(r"(?m)^[ \t]*-[ \t]+\[([^\]]*)\](.*)$", section)
+    tasks = re.findall(r"(?m)^[ \t>]*(?:[-+*]|[0-9]+[.)])[ \t]+\[([^\]]*)\](.*)$", section)
     return bool(tasks) and all(status.lower() == "x" and label.strip() for status, label in tasks)
 
 
