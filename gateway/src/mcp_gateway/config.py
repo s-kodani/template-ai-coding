@@ -14,7 +14,7 @@ class Settings(BaseSettings):
         "http://keycloak:8080/realms/knowledge/protocol/openid-connect/token"
     )
     gateway_audience: str = "mcp-gateway"
-    gateway_azp: str = "chainlit"
+    gateway_azp: str = "open-webui"
     gateway_client_id: str = "mcp-gateway"
     gateway_client_secret: str = "mcp-gateway-local-secret"
     registry_path: str = "infra/app/gateway-registry.yml"

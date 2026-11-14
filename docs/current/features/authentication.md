@@ -1,261 +1,100 @@
 ---
-type: Authentication Flow
-title: Chainlit × Gateway × MCP Resource Server の認証認可
-description: 未ログインの Chainlit アクセスから Gateway 経由の MCP ツール実行までの認証・認可シーケンス（knowledge-mcp / web-search-mcp、現行実装）。
-tags: [authentication, authorization, keycloak, gateway, mcp, chainlit]
+type: Authentication
+title: Open WebUI・Gateway・MCPの認証認可
+description: Keycloak SSO、Open WebUIグループ、Gateway Token Exchange、Apps ResourceとToolの認可、直結MCPの3LO。
+tags: [authentication, keycloak, open-webui, gateway, mcp, mcp-apps]
 status: stable
 generated:
-  at: "2026-09-13T08:20:00Z"
-  by: process:cursor-agent
+  at: "2026-11-14T12:25:36Z"
+  by: process:codex-agent
 ---
 
-# Chainlit × Gateway × MCP Resource Server の認証認可
+# Open WebUI・Gateway・MCPの認証認可
 
-未ログインのブラウザが `http://localhost:8080` を開いてから、Gateway 経由で MCP ツール（knowledge-mcp / web-search-mcp）を実行するまでの **現行シーケンス** です。以下のシーケンス図は knowledge-mcp を例示します。web-search-mcp も同一 Gateway 経路で、Token Exchange の `scope`（`web-search-mcp-tools`）、下流 `aud`（`http://localhost:8001/mcp`）、realm role（`web-search-reader`）が異なります。なぜこの形かは [ADR-0011](/decisions/ADR-0011-keycloak-chainlit-oauth.md)、[ADR-0012](/decisions/ADR-0012-mcp-gateway-resource-server.md)、輸送は [ADR-0013](/decisions/ADR-0013-mcp-gateway-per-server-streamable-http.md)。直結クライアントの 3LO は [ADR-0014](/decisions/ADR-0014-mcp-direct-three-legged-oauth.md)。UI の見え方は [Chainlit チャット UI](/current/features/ui.md)、HTTP 契約は [MCP ツール契約](/current/features/api.md)、ホストと Compose は [インフラ](/current/infrastructure.md)。
+## 設定の正本
 
-Chainlit の Keycloak トークンは knowledge-mcp に渡さない。
+- realm / client / scope / 開発ユーザー: `infra/app/keycloak/knowledge-realm.json`。
+- Gatewayの接続先、下流resource、scope、allowed Tool / Resource、required role: `infra/app/gateway-registry.yml`。
+- Open WebUIのMCP接続とグループ: `src/open_webui_ext/startup.py`がRegistryから生成する。
+- 既存realmへの追加・更新: `scripts/sync_keycloak_openwebui.py`。Open WebUI専用clientとscope、mapper、scope紐付けだけを同期する。
 
-## 登場者と設定の正本
+[ADR-0015](/decisions/ADR-0015-open-webui-mcp-apps.md)が現行UIの判断。GatewayのToken Exchange境界は[ADR-0012](/decisions/ADR-0012-mcp-gateway-resource-server.md)、サーバー単位の輸送は[ADR-0013](/decisions/ADR-0013-mcp-gateway-per-server-streamable-http.md)を維持する。
 
-| 登場者 | 役割 | 正本 |
+## 利用者と接続先
+
+| 開発ユーザー | knowledge | Web検索 |
 |---|---|---|
-| ブラウザ | Chainlit と Keycloak 認可画面だけを見る | — |
-| Chainlit | OAuth クライアント。トークン保存。カタログ REST + FastMCP Client | `src/chat_ui/auth.py`、`token_manager.py`、`gateway_client.py` |
-| Keycloak | IdP と Token Exchange | `infra/app/keycloak/knowledge-realm.json` |
-| アプリ Postgres | refresh / access の暗号化保存 | `chainlit_oauth_tokens`（pgcrypto） |
-| MCP Gateway | Chainlit JWT 検証、role 検査、Token Exchange、下流 MCP 呼び出し | `gateway/`、`infra/app/gateway-registry.yml` |
-| knowledge-mcp | Resource Server。交換後 JWT を検証してベクトル検索ツールを実行 | `src/knowledge_mcp/auth.py` |
-| web-search-mcp | Resource Server。交換後 JWT を検証して Web 検索ツールを実行 | `src/web_search_mcp/auth.py` |
+| `dev` / `dev` | 許可 | 許可 |
+| `dev2` / `dev2` | 拒否 | 許可 |
+| `readerless` / `readerless` | 拒否 | 拒否 |
 
-ローカル開発ユーザー:
+Keycloakの`knowledge-mcp-reader`と`web-search-reader`を、Open WebUIの同名・固定IDグループに対応付ける。`mcp_roles` claimはID token / userinfoにも載せ、ログイン時にメンバーシップを同期する。接続設定の`access_grants`は各グループへのread権限。`BYPASS_ADMIN_ACCESS_CONTROL=false`により、UI管理者も明示grantを迂回しない。
 
-| ユーザー | パスワード | realm role | Gateway での knowledge | Gateway での web-search |
-|---|---|---|---|---|
-| `dev` | `dev` | `knowledge-mcp-reader`, `web-search-reader` | 一覧に出る。ツール実行可 | 一覧に出る。ツール実行可 |
-| `dev2` | `dev2` | `web-search-reader` のみ | 非表示 | 一覧に出る。ツール実行可 |
-| `readerless` | `readerless` | `knowledge-mcp-reader` なし | `GET /v1/mcp` から消える | 非表示 |
+UIの表示制御だけに認可を委ねない。GatewayはJWTの`realm_access.roles`とRegistryを照合し、下流MCPもroleとscopeを検証する。
 
-サーバーごとの実行条件は Registry の `authorization.required_roles` と Keycloak の `users[].realmRoles` を揃える。ユーザー → サーバーの個別 allowlist は持たない。
+## トークンの境界
 
-## トークンは3種類（上流1 + 下流2）
-
-| | Chainlit 用（上流） | knowledge-mcp 用（下流） | web-search-mcp 用（下流） |
-|---|---|---|---|
-| 発行 | Keycloak authorization code（client `chainlit`） | Gateway が Token Exchange（client `mcp-gateway`） | 同上 |
-| 主な claim | `aud=mcp-gateway`、`azp=chainlit`、`sub`、`realm_access.roles` | `aud=http://localhost:8000/mcp`、`scope=mcp-tools`、`knowledge-mcp-reader` | `aud=http://localhost:8001/mcp`、`scope=web-search-mcp-tools`、`web-search-reader` |
-| 使える先 | Gateway の `GET /v1/mcp` と `POST /mcp/{server_id}` | knowledge-mcp の `/mcp` | web-search-mcp の `/mcp` |
-| ブラウザ | 直接持たない（Cookie / Chainlit セッション） | 持たない | 持たない |
-
-Chainlit 用 JWT に `sub` と roles を載せるため、realm import は `basic` / `profile` / `email` / `roles` / `chainlit-mcp-gateway` を client scope として残す。
-
-## セッション寿命と失効時の挙動
-
-セッションも 2 種類あり、寿命の正本が別々にある。
-
-| | Chainlit ログインセッション | Keycloak SSO セッション |
-|---|---|---|
-| 実体 | Cookie の JWT | Keycloak 側のセッション。refresh token がこれに紐づく |
-| 正本 | `.chainlit/config.toml` の `user_session_timeout` | `infra/app/keycloak/knowledge-realm.json` |
-| 現行値 | 36000 秒（10 時間） | Idle 28800 秒（8 時間）、Max 36000 秒（10 時間） |
-| 期限の性質 | ログイン時刻からの絶対期限 | Idle は最終利用からの相対、Max は絶対 |
-
-access token の寿命は `accessTokenLifespan` の 300 秒。`offline_access` は要求しないため、refresh token は SSO セッションが生きている間だけ有効。
-
-Chainlit が Keycloak を叩くのは MCP 接続とツール実行のときだけで、チャットしているだけでは SSO セッションは延命されない。Chainlit Cookie が Keycloak の Max を超えないよう `user_session_timeout <= ssoSessionMaxLifespan` を保つ（`tests/test_keycloak_stack.py` で検証）。それでも Idle は相対期限なので、アイドルが Idle を超えると Chainlit ログインだけが残る状態になりうる。その場合は refresh 失敗として扱う。
-
-`KeycloakTokenManager.get_access_token` の refresh 結果:
-
-| Keycloak の応答 | 挙動 |
+| 経路 | 主なclaim |
 |---|---|
-| 2xx | 新しい access / refresh を保存して返す |
-| 4xx かつ `invalid_grant` / `invalid_token` | WARNING ログ → `chainlit_oauth_tokens` の該当行を削除 → `ReauthRequired` |
-| その他の 4xx（`invalid_client` など設定不備） | WARNING ログ → 行は残す → `None` |
-| 5xx / 接続失敗 | WARNING ログ → 行は残す → `None`（一時障害） |
+| Open WebUI → Gateway | `iss=http://localhost:8081/realms/knowledge`、`aud=mcp-gateway`、`azp=open-webui`、`sub`、realm roles |
+| Gateway → knowledge-mcp | `aud=http://localhost:8000/mcp`、scope `mcp-tools`、role `knowledge-mcp-reader` |
+| Gateway → web-search-mcp | `aud=http://localhost:8001/mcp`、scope `web-search-mcp-tools`、role `web-search-reader` |
 
-ログに載せるのは status code と OAuth の `error` だけで、トークン値は出さない。
+Gatewayは受信tokenを下流へパススルーしない。接続先ごとにToken Exchangeし、交換後JWTのaudienceも再検証する。App iframeへいずれのtokenも渡さない。
 
-`ReauthRequired` は UI まで次のように伝わる。
-
-- プラグ UI の `POST /mcp`: **403** `Keycloak セッションが無効です。再ログインしてください`（401 にすると `/login` リロードループ）。トークンがそもそも取り出せない場合も同じ文言を返す。失効行を消した直後の再試行で文言が変わらないようにするため
-- ツール実行中の reconnect: `_dispatch_tool` が `HTTPException` を捕まえ、同じ文言をツール結果として返す。チャットターンは落ちない
-
-行を消すのは、失効した refresh token で Keycloak を叩き続けないため。再ログインすれば `oauth_callback` が新しいトークンを入れ直す。
-
-## 全体シーケンス
+## ログインからTool・Appまで
 
 ```mermaid
 sequenceDiagram
-    actor User as ブラウザ
-    participant Chainlit
-    participant Keycloak
-    participant PG as アプリ Postgres
-    participant Gateway as MCP Gateway
+    participant Browser as ブラウザ / App
+    participant UI as Open WebUI
+    participant KC as Keycloak
+    participant GW as MCP Gateway
     participant MCP as knowledge-mcp
-
-    User->>Chainlit: GET http://localhost:8080（未ログイン）
-    Chainlit-->>User: Keycloak へリダイレクト
-    User->>Keycloak: 認可（realm=knowledge, client=chainlit）
-    Keycloak-->>Chainlit: authorization code
-    Chainlit->>Keycloak: token + userinfo（keycloak:8080）
-    Note over Keycloak,Chainlit: access token<br/>aud=mcp-gateway azp=chainlit
-    Chainlit->>PG: access/refresh を pgp_sym_encrypt
-    Chainlit-->>User: ログイン完了（metadata は keycloak_sub のみ）
-
-    User->>Chainlit: チャット開始
-    Chainlit->>PG: session.id と sub を紐付け、access token 取得
-    Chainlit->>Gateway: GET /v1/mcp（Bearer Chainlit JWT）
-    Gateway->>Gateway: iss/aud/azp/sub 検証<br/>required_roles ⊆ realm_access.roles
-    Gateway-->>Chainlit: 許可された {id, name, tools, url} だけ
-    loop 返ってきた各 url
-        Chainlit->>Gateway: POST /mcp/{id} tools/list
-        Gateway->>Keycloak: Token Exchange（scope=mcp-tools、audience なし）
-        Gateway->>MCP: MCP list tools（Bearer 交換後 JWT）
-        MCP-->>Gateway: schema（allowed_tools でフィルタ）
-    end
-    Chainlit-->>User: LLM 名は server_id__mcp_tool_name
-
-    User->>Chainlit: 質問
-    Chainlit->>Gateway: POST /mcp/knowledge tools/call
-    Gateway->>Gateway: JWT 検証 + allowed_tools + required_roles
-    Gateway->>Keycloak: Token Exchange（キャッシュ可）
-    Gateway->>MCP: tools/call（Bearer 交換後 JWT、_meta 転送）
-    MCP->>MCP: aud/scope/knowledge-mcp-reader を検証
-    MCP-->>Chainlit: ツール結果
+    Browser->>UI: http://localhost:8080
+    UI-->>Browser: Keycloak SSO
+    Browser->>KC: 認可コード + PKCE S256
+    KC-->>UI: callback / token
+    UI->>UI: mcp_rolesをグループへ同期
+    UI->>GW: system_oauth Bearer / tools/list
+    GW->>GW: iss / aud / azp / role検証
+    GW->>KC: Token Exchange scope=mcp-tools
+    KC-->>GW: 下流resource token
+    GW->>MCP: Bearer / tools/list・tools/call
+    MCP->>MCP: aud / scope / role検証
+    MCP-->>UI: JSON text + structuredContent + UI URI
+    UI->>GW: resources/read UI URI
+    GW->>GW: role + URI完全一致allowlist
+    GW->>MCP: 交換後token / resources/read
+    MCP-->>UI: HTML + MIME + CSP
+    UI-->>Browser: sandboxed MCP App
+    Browser->>UI: App内のページ切替・本文取得
+    UI->>UI: viewer / binding / visibilityと確認
+    UI->>GW: 同じviewerのSSO認証でtools/call
 ```
 
-## フェーズ 1 — ログイン（authorization code）
+Open WebUIの`system_oauth`は各HTTPリクエストで現在の利用者のSSO access tokenを解決する。App RPCもログイン中viewerの認証、server / tool binding、接続先へのアクセス権、App-visible Toolを再検査する。過去のAppを別ユーザーで開いても元の利用者のtokenを流用しない。
 
-1. 未ログインで Chainlit（`:8080`）を開くとチャットできない。
-2. Chainlit は generic OAuth（`OAUTH_GENERIC_NAME=keycloak`）で Keycloak に飛ばす。組み込み Keycloak provider は使わない（ブラウザ用ホストとコンテナ DNS を分けられないため。`OAUTH_KEYCLOAK_NAME=unused`）。
-3. **ブラウザ** の認可 URL は `http://localhost:8081`（realm `knowledge`、client `chainlit`、scope `openid profile email`）。
-4. **Chainlit コンテナ** の token / userinfo は `http://keycloak:8080`。
-5. コールバックは `http://localhost:8080/auth/oauth/keycloak/callback`。
-6. Chainlit 2.12 の `GenericOAuthProvider` は `refresh_token` を捨てる。`get_raw_token_response` をラップして token 応答を残す。
-7. userinfo の email が識別子（`dev@localhost`）。
-8. `oauth_callback` がユーザーを受理する。`cl.User.metadata` に入れるのは `keycloak_sub` だけ。access / refresh は `KeycloakTokenManager` が Postgres に upsert する（`TOKEN_STORE_DATABASE_URL` + `TOKEN_STORE_KEY`）。Chainlit 内蔵 data layer の `DATABASE_URL` は空。
+Gatewayは`tools/list`・`tools/call`・`resources/list`・`resources/read`のroleをToken Exchange前に検証する。knowledgeのResource allowlistは`ui://knowledge/search-results.html`のみ。未登録URIは404、role不足は403。Web検索のResource一覧は空で、Resource readを許可しない。詳細なAPIは[契約](/current/features/api.md)を参照。
 
-この時点の access token（password grant / code grant とも同じ mapper）:
+## OIDCとセッション
 
-- `iss` = `http://localhost:8081/realms/knowledge`
-- `aud` に `mcp-gateway`（scope `chainlit-mcp-gateway`）
-- `azp` = `chainlit`
-- `sub`（scope `basic`）
-- `realm_access.roles`（scope `roles`）。`dev` は `knowledge-mcp-reader` を含む
-- `email` / 表示名（scope `email` / `profile`）
+- clientはconfidential `open-webui`。callbackは`http://localhost:8080/oauth/oidc/callback`、PKCEはS256。
+- Open WebUIは内部URL`http://keycloak:8080/realms/knowledge/.well-known/openid-configuration`を読む。Keycloakのfrontend hostnameは`http://localhost:8081`、dynamic backchannelを有効にし、ブラウザ向けURLとコンテナのtoken / userinfo / JWKSを分ける。
+- Keycloak access tokenは300秒、SSO idleは8時間、maxは10時間。Open WebUIのJWT期限は10時間。`offline_access`は要求しない。
+- Open WebUIがSSO tokenの更新を管理する。利用者の認証が失効した場合は再ログインする。Gatewayへの401再試行で期限切れtokenを匿名接続へ置き換えない。
+- 会話・OAuth状態は`open_webui_data`へ保存し、固定`WEBUI_SECRET_KEY`を維持する。旧Chainlit Cookieは新UIの認証に使わない。
 
-## フェーズ 2 — チャット開始とカタログ（認可の発見）
+Open WebUI v0.13.0の標準SSO処理は、refreshが失敗すると保存済みOAuthセッションを破棄する。失効したrefresh tokenの拒否に加え、一時的な5xxや通信失敗もこの扱いになる。cookieに対応するセッションが使えない場合は、同じ利用者の別の保存済みSSOセッションを探す。有効なセッションを取得できなければ、MCPを再利用するにはKeycloakでSSOログインをやり直す。Open WebUIのユーザーと保存済み会話は維持される（[固定版のOAuth実装](https://github.com/open-webui/open-webui/blob/v0.13.0/backend/open_webui/utils/oauth.py)）。
 
-`on_chat_start`:
+## 既存realmからの移行
 
-1. `keycloak_sub` と Chainlit `session.id` を `chainlit_oauth_tokens` に紐付ける。
-2. 保存済み access token を取り出す。期限が近ければ refresh grant。401 後のツール再試行でも同じ refresh を一度だけ使う。refresh が拒否されたときの扱いは「セッション寿命と失効時の挙動」。
-3. Registry の各 `gateways[].url` に対し `GET {url}/v1/mcp` に `Authorization: Bearer <Chainlit JWT>`。
+初回importだけでは既存realmに新clientは追加されない。Composeの`keycloak-sync`がKeycloak ready後に専用client / scopeを冪等同期し、完了後にOpen WebUIを起動する。手動同期は`make -C infra sync-auth`。
 
-Gateway の `GET /v1/mcp`:
+この処理はrealmを削除・再importせず、既存ユーザー、Gateway / MCP client、旧Chainlit client、roleを残す。旧`chainlit_oauth_tokens`も削除しない。Keycloakコンテナ自体のライフサイクルと保存領域は[インフラ](/current/infrastructure.md)を参照。
 
-1. Bearer が無ければ 401 `INVALID_TOKEN`。
-2. JWKS で Chainlit JWT を検証する。`iss`、`aud` に `mcp-gateway`、`azp=chainlit`、`sub` 必須。
-3. Registry（`infra/app/gateway-registry.yml`）の自 Gateway エントリ（`url` が `PUBLIC_BASE_URL` と一致）の `enabled: true` を走査する。
-4. 各サーバーの `authorization.required_roles` が空でなければ、JWT の `realm_access.roles` がそれをすべて含むこと。満たさないサーバーは **返さない**（404 にはしない。一覧から消す）。
-5. 下流 MCP は呼ばない。返すのは `{id, name, tools, url}`（`tools` は `allowed_tools`、`url` は `{PUBLIC_BASE_URL}/mcp/{id}`）。
+## 直結クライアント
 
-いまの knowledge エントリは `required_roles: [knowledge-mcp-reader]`。`readerless` の応答は knowledge を含まない。そのため Chainlit は knowledge 向け MCP セッションを張らず、LLM にも knowledge ツールを載せない。次の Gateway MCP を足すときは、そのサーバー用の realm role を作り Registry の `required_roles` に書く。
+Gatewayを通らないMCP Inspector等は、MCPのProtected Resource MetadataからKeycloakを発見し、匿名DCRと認可コード + PKCEで直接resource tokenを取得する（[ADR-0014](/decisions/ADR-0014-mcp-direct-three-legged-oauth.md)）。localhost / 127.0.0.1のローカルredirectに限定する。下流MCPは`azp=open-webui`には限定せず、audience・scope・roleを検証する。
 
-`required_roles` が空のサーバーは、有効な Chainlit JWT を持つ全員に出る。
-
-## フェーズ 3 — ツール schema 取得
-
-許可された各 `url` に対し `POST /mcp/{server_id}` の `tools/list`:
-
-1. 同じ Chainlit JWT を検証する。
-2. `enabled` でなければ 404 `MCP_SERVER_NOT_FOUND`。
-3. **この list は `required_roles` を再検査しない**（一覧で既に落としている）。
-4. プラグ UI の `POST /mcp` で `gateway_mcp_connect.connect_gateway_mcp` が catalog `url` へ Chainlit MCP セッション（`Authorization: Bearer <Chainlit JWT>` 注入）を張る。`on_mcp_connect` が `tools/list` を `{server_id}__{mcp_tool_name}` に接頭辞付けする。`on_chat_start` は auto-connect しない。
-
-## フェーズ 4 — ツール実行（認可の強制）
-
-LLM が `{server_id}__{name}` を選ぶと、Chainlit の Gateway MCP セッション経由で `POST /mcp/{server_id}` の `tools/call`（MCP 名は接頭辞なし）。主体は JWT `sub`。arguments 内の `user_id` は Gateway の主体にしない。
-
-Gateway:
-
-1. Bearer / JWT 検証（フェーズ 2 と同じ）。
-2. ツールが `allowed_tools` に無ければ 404 `TOOL_NOT_FOUND`。
-3. `required_roles` が空でなければ、Chainlit JWT の roles がそれをすべて含むこと。足りなければ 403 `ACCESS_DENIED`。Token Exchange の前に拒否する。
-4. Token Exchange（次節）。結果は Gateway メモリに短時間キャッシュする。
-5. 公式 `mcp>=2` で `http://mcp-server:8000/mcp` を呼ぶ。Bearer は **交換後 JWT**。クライアント `_meta` の W3C `traceparent` / baggage を下流へ転送する。
-6. ホストポートは公開しない。到達元は Chainlit コンテナ（`http://mcp-gateway:8082`）。
-
-401 なら Chainlit は refresh して Gateway MCP セッションを reconnect し、一度だけ `tools/call` を再試行する。
-
-## フェーズ 5 — Token Exchange（Keycloak 26 V2）
-
-Gateway client `mcp-gateway`（secret、`standard.token.exchange.enabled`）:
-
-| フィールド | 値 |
-|---|---|
-| `grant_type` | `urn:ietf:params:oauth:grant-type:token-exchange` |
-| `subject_token` | Chainlit access token |
-| `subject_token_type` | `urn:ietf:params:oauth:token-type:access_token` |
-| `scope` | そのサーバーの Registry `authentication.scopes`（knowledge は `mcp-tools`） |
-| `audience` | **送らない** |
-
-V2 の `audience` は「すでに付く aud の制限」であり、client id `knowledge-mcp` 向けの交換ではない。`audience=knowledge-mcp` は `Requested audience not available`（400）。Resource `aud` は `mcp-gateway` の default scope `mcp-tools` の custom audience mapper（`http://localhost:8000/mcp`）が付ける。
-
-Gateway は交換後 JWT を再検証する。`aud` にそのサーバーの Registry `authentication.resource` が無ければ 502 `TOKEN_AUDIENCE_MISMATCH`。`resource` / `scopes` / `mode` の欠落を knowledge 向け値で補完しない。
-
-## フェーズ 6 — knowledge-mcp（Resource Server）
-
-Compose では `MCP_JWKS_URI` があるので HTTP Bearer 必須。
-
-1. FastMCP `JWTVerifier`: JWKS、`iss`、`aud=http://localhost:8000/mcp`、必須 scope `mcp-tools`。
-2. PRM の `resource` も `http://localhost:8000/mcp`（JWT `aud` と同じ）。
-3. 各ツール `auth=require_mcp_reader`: 交換後 JWT の `realm_access.roles` に `knowledge-mcp-reader`。無ければツール拒否。
-4. 通れば SearchService（埋め込み + pgvector）。
-
-`MCP_JWKS_URI` 未設定の in-process テストだけ Bearer を要求しない。`token is None` のとき `require_mcp_reader` は通す。
-
-## 失敗時
-
-| 状況 | 観測 |
-|---|---|
-| 未ログインでチャット | Chainlit が Keycloak へ送る |
-| Gateway に Bearer なし | 401 `INVALID_TOKEN` |
-| `aud` に `mcp-gateway` がない / `azp` が `chainlit` でない | 403 `INVALID_AUDIENCE` |
-| 期限切れ JWT | 401 `TOKEN_EXPIRED`（Chainlit は refresh して再試行） |
-| Keycloak が refresh token を拒否 | Chainlit が保存トークンを消し、403 `Keycloak セッションが無効です。再ログインしてください` |
-| Keycloak が 5xx / 到達不可、または client 設定不備 | 保存トークンは残す。403 は同じ文言 |
-| `knowledge-mcp-reader` なしで `GET /v1/mcp` | knowledge が配列に無い（200） |
-| `knowledge-mcp-reader` なしで `POST /mcp/knowledge` tools/call | 403 `ACCESS_DENIED` |
-| 未知 / disabled の `server_id` | 404 `MCP_SERVER_NOT_FOUND` |
-| Registry に `authentication.resource` / `scopes` が無い | 500 `INVALID_REGISTRY` |
-| `authentication.mode` が `keycloak_token_exchange` でない | 500 `UNSUPPORTED_AUTH_MODE` |
-| 許可外ツール名 | 404 `TOOL_NOT_FOUND` |
-| Token Exchange が `audience=knowledge-mcp` | Keycloak 400。現行実装は送らない |
-| knowledge-mcp に Chainlit JWT または無認証 | JWT / scope / role 検証で拒否 |
-| body に `user_id` | Gateway は主体にしない（JWT `sub`） |
-
-## このシーケンスに乗らない経路
-
-**プラグ UI（MCP Servers）**
-
-Registry の enabled サーバーを `mcp-autoload.js` が一覧 seed する（`status: connecting` 必須。無いと Chainlit 2.12 が一覧から捨てる）。Gateway 名に対する `POST|DELETE /mcp` は `gateway_mcp_connect` ミドルウェアが JWT 注入 connect / disconnect として処理する（ブラウザ body に JWT は含めない）。Gateway 名の `POST /mcp` は Cookie 不整合や JWT 欠落でも **403**（401 にするとクライアントが `/login` へ飛ばしてリロードループになる）。JWT は `request.cookies` から読む（Starlette の Request は scope の Mapping なので `get_token_from_cookies(request)` だと Cookie を見ない）。websocket セッションに user が未設定なら Cookie のユーザーを載せ、既存 user に `keycloak_sub` が無ければ Cookie 側から補う。UI の `POST /mcp` がチャット開始の `bind_session` より先でも、Cookie ユーザーの `keycloak_sub` で結び直し、既に接続済みなら既存セッションを 200（`status: connected`）で返し `on_mcp_connect` 相当で tools を載せ直す。`on_chat_start` は `mcp_tools` を消さず、サーバー側 auto-connect もしない。同一 websocket・同一 Gateway 名の connect は直列化する。ゴミ箱で MCP セッションを閉じ、ツールは LLM から外れる。再接続は回転矢印、またはページ再読込の seed → `POST /mcp`。
-
-**追加 MCP（allowlist）**
-
-`.chainlit/config.toml` の `user_servers.allowed_urls`。Keycloak / Gateway / Token Exchange は使わない。origin allowlist はユーザーごとではない。
-
-**MCP Inspector / Cursor 等の直結 3LO**
-
-Chainlit を介さない。MCP は Resource Server、Keycloak は Authorization Server（[ADR-0014](/decisions/ADR-0014-mcp-direct-three-legged-oauth.md)）。
-
-1. クライアントが `http://127.0.0.1:8000/mcp`（または web-search の `:8001/mcp`）へ Bearer なしで POST する
-2. MCP は **401** と `WWW-Authenticate: Bearer resource_metadata="http://localhost:8000/.well-known/oauth-protected-resource/mcp"`（error 属性なし）
-3. クライアントが PRM を読む。`authorization_servers` は `http://localhost:8081/realms/knowledge`。`scopes_supported` は `mcp-tools`（web-search は `web-search-mcp-tools`）
-4. Keycloak の AS metadata を発見し、匿名 DCR で public クライアントを登録する（PKCE S256、redirect は localhost）。trusted hosts は `localhost` / `127.0.0.1`
-5. 認可コード + PKCE。scope に `mcp-tools`（または `web-search-mcp-tools`）を付ける。resource `aud` は既存の audience mapper が付与する
-6. ユーザーは Keycloak でログインし、consent で MCP scope を承認する（realm role は TE 経路と同じ。`dev` は knowledge + web-search）
-7. MCP は交換後 JWT と同じ検証（`aud`、scope、`knowledge-mcp-reader` / `web-search-reader`）。`azp` を `chainlit` に限定しない。DCR クライアントは PRM の scope しか持たないため、realm role は `mcp-tools` / `web-search-mcp-tools` の mapper で JWT に載る
-
-非対話フォールバックは `uv run python scripts/mcp_dev_token.py` の password grant + Token Exchange。
-
-ローカル HTTP は許容。TLS / mTLS / CIMD / ユーザー単位のサーバー allowlist はこのスライスの対象外。
+非対話検証用Bearerは`uv run python scripts/mcp_dev_token.py --target knowledge`。Web検索は`--target web-search --username dev2`。出力tokenをログやトレースへ保存しない。

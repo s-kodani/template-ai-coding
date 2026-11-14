@@ -1,44 +1,23 @@
-"""RBAC e2e: role-restricted users must not retrieve seeded knowledge."""
+"""Role denial is enforced by the host as well as the MCP Gateway."""
 
 from __future__ import annotations
 
-from conftest import login_keycloak, reply_contains_seed_knowledge, send_chat
+from conftest import login_keycloak, tools_catalog
 from playwright.sync_api import Page
-
-KNOWLEDGE_PROMPT = (
-    "search_knowledge ツールで「Architecture Overview」を検索し、"
-    "見つかった内容を1文で要約してください。"
-)
+from test_mcp_catalog_ui import KNOWLEDGE, WEB_SEARCH, tool_specs
 
 
-def test_dev2_cannot_retrieve_seeded_knowledge(
+def test_dev2_cannot_use_knowledge_connection(logged_in_dev2: Page, webui_url: str) -> None:
+    assert tool_specs(logged_in_dev2, webui_url, KNOWLEDGE).status == 404
+
+
+def test_readerless_cannot_use_either_mcp(
     page: Page,
-    chainlit_url: str,
-    e2e_dev2_username: str,
-    e2e_dev2_password: str,
-    openai_api_key: str,
-) -> None:
-    del openai_api_key
-
-    login_keycloak(page, chainlit_url, e2e_dev2_username, e2e_dev2_password)
-    reply = send_chat(page, KNOWLEDGE_PROMPT)
-    assert not reply_contains_seed_knowledge(reply)
-
-
-def test_readerless_cannot_retrieve_seeded_knowledge(
-    page: Page,
-    chainlit_url: str,
+    webui_url: str,
     e2e_readerless_username: str,
     e2e_readerless_password: str,
-    openai_api_key: str,
 ) -> None:
-    del openai_api_key
-
-    login_keycloak(
-        page,
-        chainlit_url,
-        e2e_readerless_username,
-        e2e_readerless_password,
-    )
-    reply = send_chat(page, KNOWLEDGE_PROMPT)
-    assert not reply_contains_seed_knowledge(reply)
+    login_keycloak(page, webui_url, e2e_readerless_username, e2e_readerless_password)
+    assert tools_catalog(page, webui_url) == []
+    assert tool_specs(page, webui_url, KNOWLEDGE).status == 404
+    assert tool_specs(page, webui_url, WEB_SEARCH).status == 404

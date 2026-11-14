@@ -1,5 +1,5 @@
 lockfile_version: '1'
-generated_at: '2026-09-19T00:14:35.395430+00:00'
+generated_at: '2026-11-14T12:35:32.298121+00:00'
 apm_version: 0.30.0
 dependencies:
 - repo_url: cli/cli
@@ -496,7 +496,7 @@ deployments:
   owners:
   - .
   active_owner: .
-  content_hash: sha256:3c665f08b39ba5d2236cc781dd0bfeb33836a551411a6ff30593b0884b33aa4d
+  content_hash: sha256:eb68070bc399558f993ac30b2f5e493f434ee9eb40ca922e39df638dc5f496ab
 - kind: project-relative
   target: claude
   value: .claude/skills/project-verification/references/ci-matrix.md
@@ -505,7 +505,7 @@ deployments:
   owners:
   - .
   active_owner: .
-  content_hash: sha256:20f7eabee3aa5905f2b5294a9ef35b560b44980c31528a7337e552abf5afa1d6
+  content_hash: sha256:f78897c36e7711eee6ed7fd34fd0c936f31a234a0b777ce5438a4de9a129b934
 - kind: project-relative
   target: claude
   value: .claude/skills/project-verification/references/ingest-validation.md
@@ -523,7 +523,7 @@ deployments:
   owners:
   - .
   active_owner: .
-  content_hash: sha256:d2d2f65c3741d2cfacf4448ec1cd931eb93575cf9600abc000c7021ea88321a2
+  content_hash: sha256:6948990ba8c7a5abec36b3648e122e8bd2017e70c654c377e0bbfc2534c54d5a
 - kind: project-relative
   target: claude
   value: .claude/skills/project-verification/references/trace-validation.md
@@ -532,7 +532,7 @@ deployments:
   owners:
   - .
   active_owner: .
-  content_hash: sha256:d1c64a208fd1d4093a1439a029c9bcfeb031812feab5dfd5c2ec9498094a4852
+  content_hash: sha256:5ef5080405db6288c12f024ba22da90114dfb0823b7f729d463943676d3ec119
 - kind: project-relative
   target: claude
   value: .claude/skills/test-driven-development
@@ -1009,7 +1009,7 @@ deployments:
   owners:
   - .
   active_owner: .
-  content_hash: sha256:3c665f08b39ba5d2236cc781dd0bfeb33836a551411a6ff30593b0884b33aa4d
+  content_hash: sha256:eb68070bc399558f993ac30b2f5e493f434ee9eb40ca922e39df638dc5f496ab
 - kind: project-relative
   target: legacy
   value: .agents/skills/project-verification/references/ci-matrix.md
@@ -1018,7 +1018,7 @@ deployments:
   owners:
   - .
   active_owner: .
-  content_hash: sha256:20f7eabee3aa5905f2b5294a9ef35b560b44980c31528a7337e552abf5afa1d6
+  content_hash: sha256:f78897c36e7711eee6ed7fd34fd0c936f31a234a0b777ce5438a4de9a129b934
 - kind: project-relative
   target: legacy
   value: .agents/skills/project-verification/references/ingest-validation.md
@@ -1036,7 +1036,7 @@ deployments:
   owners:
   - .
   active_owner: .
-  content_hash: sha256:d2d2f65c3741d2cfacf4448ec1cd931eb93575cf9600abc000c7021ea88321a2
+  content_hash: sha256:6948990ba8c7a5abec36b3648e122e8bd2017e70c654c377e0bbfc2534c54d5a
 - kind: project-relative
   target: legacy
   value: .agents/skills/project-verification/references/trace-validation.md
@@ -1045,7 +1045,7 @@ deployments:
   owners:
   - .
   active_owner: .
-  content_hash: sha256:d1c64a208fd1d4093a1439a029c9bcfeb031812feab5dfd5c2ec9498094a4852
+  content_hash: sha256:5ef5080405db6288c12f024ba22da90114dfb0823b7f729d463943676d3ec119
 - kind: project-relative
   target: legacy
   value: .agents/skills/test-strategy
@@ -1263,11 +1263,11 @@ local_deployed_file_hashes:
   .agents/skills/mcp-server-engineering/references/tool-design.md: sha256:3c97c8bc6b33894c0c7a295130267ff0efb349fa91fbc49f38d701fcdbfb3a5f
   .agents/skills/mcp-server-engineering/references/transport-and-state.md: sha256:c8f16b6b7b0689b7d5c510698494eb51f098010fc6a63c83515e820e8000fe61
   .agents/skills/mcp-server-engineering/references/version-and-sources.md: sha256:c51988bef125533ebbba276d93c1f1a538f49de01d44e61fac1199f96c7b0370
-  .agents/skills/project-verification/SKILL.md: sha256:3c665f08b39ba5d2236cc781dd0bfeb33836a551411a6ff30593b0884b33aa4d
-  .agents/skills/project-verification/references/ci-matrix.md: sha256:20f7eabee3aa5905f2b5294a9ef35b560b44980c31528a7337e552abf5afa1d6
+  .agents/skills/project-verification/SKILL.md: sha256:eb68070bc399558f993ac30b2f5e493f434ee9eb40ca922e39df638dc5f496ab
+  .agents/skills/project-verification/references/ci-matrix.md: sha256:f78897c36e7711eee6ed7fd34fd0c936f31a234a0b777ce5438a4de9a129b934
   .agents/skills/project-verification/references/ingest-validation.md: sha256:0973be051ac1250594e998320024703b510c6f8d34d1b52815f14a60e71e7903
-  .agents/skills/project-verification/references/local-stack.md: sha256:d2d2f65c3741d2cfacf4448ec1cd931eb93575cf9600abc000c7021ea88321a2
-  .agents/skills/project-verification/references/trace-validation.md: sha256:d1c64a208fd1d4093a1439a029c9bcfeb031812feab5dfd5c2ec9498094a4852
+  .agents/skills/project-verification/references/local-stack.md: sha256:6948990ba8c7a5abec36b3648e122e8bd2017e70c654c377e0bbfc2534c54d5a
+  .agents/skills/project-verification/references/trace-validation.md: sha256:5ef5080405db6288c12f024ba22da90114dfb0823b7f729d463943676d3ec119
   .agents/skills/test-strategy/SKILL.md: sha256:b41c91067d8b4980b4b0ff77d6b370ef41d01e9c7a2c9abe817ffbeb90f2e0f8
   .claude/agents/review.md: sha256:9cd583be36d2ca03f89b8aa856b3e0c116f8b8ea82af5dee41ed3d3c511f9cb4
   .claude/skills/commit-only/SKILL.md: sha256:29c7ec0777dd6d7fbe56649df961935168a07f4f131746337f01f127a60d1d1b
@@ -1296,11 +1296,11 @@ local_deployed_file_hashes:
   .claude/skills/mcp-server-engineering/references/tool-design.md: sha256:3c97c8bc6b33894c0c7a295130267ff0efb349fa91fbc49f38d701fcdbfb3a5f
   .claude/skills/mcp-server-engineering/references/transport-and-state.md: sha256:c8f16b6b7b0689b7d5c510698494eb51f098010fc6a63c83515e820e8000fe61
   .claude/skills/mcp-server-engineering/references/version-and-sources.md: sha256:c51988bef125533ebbba276d93c1f1a538f49de01d44e61fac1199f96c7b0370
-  .claude/skills/project-verification/SKILL.md: sha256:3c665f08b39ba5d2236cc781dd0bfeb33836a551411a6ff30593b0884b33aa4d
-  .claude/skills/project-verification/references/ci-matrix.md: sha256:20f7eabee3aa5905f2b5294a9ef35b560b44980c31528a7337e552abf5afa1d6
+  .claude/skills/project-verification/SKILL.md: sha256:eb68070bc399558f993ac30b2f5e493f434ee9eb40ca922e39df638dc5f496ab
+  .claude/skills/project-verification/references/ci-matrix.md: sha256:f78897c36e7711eee6ed7fd34fd0c936f31a234a0b777ce5438a4de9a129b934
   .claude/skills/project-verification/references/ingest-validation.md: sha256:0973be051ac1250594e998320024703b510c6f8d34d1b52815f14a60e71e7903
-  .claude/skills/project-verification/references/local-stack.md: sha256:d2d2f65c3741d2cfacf4448ec1cd931eb93575cf9600abc000c7021ea88321a2
-  .claude/skills/project-verification/references/trace-validation.md: sha256:d1c64a208fd1d4093a1439a029c9bcfeb031812feab5dfd5c2ec9498094a4852
+  .claude/skills/project-verification/references/local-stack.md: sha256:6948990ba8c7a5abec36b3648e122e8bd2017e70c654c377e0bbfc2534c54d5a
+  .claude/skills/project-verification/references/trace-validation.md: sha256:5ef5080405db6288c12f024ba22da90114dfb0823b7f729d463943676d3ec119
   .claude/skills/test-strategy/SKILL.md: sha256:b41c91067d8b4980b4b0ff77d6b370ef41d01e9c7a2c9abe817ffbeb90f2e0f8
   .codex/agents/review.toml: sha256:587b7455c0e4684ec198e6a2a4fc2093a8b154dde0fa7645f29f4e766e3fdd33
   .cursor/agents/review.md: sha256:9cd583be36d2ca03f89b8aa856b3e0c116f8b8ea82af5dee41ed3d3c511f9cb4

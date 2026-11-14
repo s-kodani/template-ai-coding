@@ -1,46 +1,31 @@
-"""ReauthRequired e2e: cleared token store blocks MCP connect until re-login."""
+"""An invalid UI session is rejected; a fresh Keycloak login restores access."""
 
 from __future__ import annotations
 
 import pytest
-from conftest import (
-    REAUTH_REQUIRED_DETAIL,
-    clear_oauth_tokens,
-    expect_mcp_post,
-    login_keycloak,
-    logout_chainlit,
-    mcp_api_request,
-    mcp_disconnect,
-)
-from playwright.sync_api import Page
+from conftest import auth_headers, goto_webui, login_keycloak, tools_catalog
+from playwright.sync_api import Page, expect
 
 pytestmark = pytest.mark.e2e_reauth
 
 
-def test_mcp_connect_requires_relogin_after_token_cleared(
-    page: Page,
-    chainlit_url: str,
-    chainlit_session_id: str,
+def test_invalid_webui_token_requires_login_and_restores_mcp_catalog(
+    logged_in_dev: Page,
+    webui_url: str,
     e2e_username: str,
     e2e_password: str,
-    openai_api_key: str,
 ) -> None:
-    del openai_api_key
+    page = logged_in_dev
+    assert any(item["id"] == "server:mcp:knowledge" for item in tools_catalog(page, webui_url))
 
-    mcp_disconnect(page, chainlit_url, chainlit_session_id, "knowledge-mcp")
-    clear_oauth_tokens(chainlit_session_id)
+    # A rejected UI credential cannot fall back to a browser cookie.
+    page.evaluate('() => localStorage.setItem("token", "invalid-session-token")')
+    page.context.clear_cookies()
+    blocked = page.request.get(f"{webui_url}/api/v1/tools/", headers=auth_headers(page))
+    assert blocked.status == 401
+    page.evaluate('() => localStorage.removeItem("token")')
+    goto_webui(page, f"{webui_url}/auth")
+    expect(page.locator("#chat-input")).not_to_be_visible()
 
-    blocked = mcp_api_request(
-        page,
-        chainlit_url,
-        "POST",
-        chainlit_session_id,
-        "knowledge-mcp",
-    )
-    assert blocked.status == 403
-    assert REAUTH_REQUIRED_DETAIL in blocked.text()
-
-    logout_chainlit(page, chainlit_url)
-    with expect_mcp_post(page, server_name="knowledge-mcp") as response_info:
-        login_keycloak(page, chainlit_url, e2e_username, e2e_password)
-    assert response_info.value.status == 200
+    login_keycloak(page, webui_url, e2e_username, e2e_password)
+    assert any(item["id"] == "server:mcp:knowledge" for item in tools_catalog(page, webui_url))

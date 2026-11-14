@@ -1,0 +1,18 @@
+FROM ghcr.io/open-webui/open-webui:v0.13.0
+
+ENV ENABLE_OTEL=false \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+COPY src/open_webui_ext /app/backend/open_webui_ext
+COPY infra/app/open-webui-otel-requirements.txt /tmp/open-webui-otel-requirements.txt
+
+# Upgrade only the explicitly pinned OTel security-fix family; freeze the rest.
+RUN python -m pip freeze | sed '/^opentelemetry-/Id' > /tmp/open-webui-constraints.txt \
+    && python -m pip install --no-cache-dir --constraint /tmp/open-webui-constraints.txt \
+        --requirement /tmp/open-webui-otel-requirements.txt langfuse==4.15.1 \
+    && python -m pip check \
+    && python -m open_webui_ext.patch /app/backend/open_webui \
+    && rm /tmp/open-webui-constraints.txt /tmp/open-webui-otel-requirements.txt
+
+CMD ["python", "-m", "open_webui_ext.startup"]

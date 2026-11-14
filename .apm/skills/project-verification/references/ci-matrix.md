@@ -6,8 +6,8 @@
 
 | Job | 内容 | ローカル相当 |
 |---|---|---|
-| quality | ruff, pytest（`e2e/` は ruff のみ。Playwright は実行しない） | `uv run ruff check src tests scripts gateway e2e` / `uv run pytest` |
-| security | bandit, uv audit, gitleaks | `uv run bandit -r src scripts -c pyproject.toml` |
+| quality | Node 22でApp test/build後にruff, pytest（`e2e/` は ruff のみ。Playwright は実行しない） | `make -C infra app-ui` / `npm --prefix apps/knowledge-search test` / `uv run ruff check src tests scripts gateway e2e` / `uv run pytest` / `uv run --directory gateway pytest` |
+| security | bandit, uv audit, gitleaks | App build後に `uv run bandit -r src scripts gateway/src -c pyproject.toml` / `uv audit --preview-features audit-command` |
 | build-and-scan | docker compose build, Trivy CRITICAL/HIGH | `docker compose -f infra/app/compose.yml build` |
 
 ## `.github/workflows/okf.yml`

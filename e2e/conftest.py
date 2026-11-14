@@ -1,265 +1,162 @@
-"""Playwright e2e fixtures. Collected only when pytest is pointed at e2e/."""
-
+"""Real Open WebUI / Keycloak browser fixtures; run explicitly with pytest e2e/."""
 from __future__ import annotations
 
-import asyncio
-import json
 import os
 import re
 import shutil
 import time
 import urllib.request
 from collections.abc import Callable
-from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-import asyncpg
 import pytest
-from playwright.sync_api import APIResponse, Error, Locator, Page, Response, expect
+from playwright.sync_api import Error, Locator, Page, expect
+from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_BASE_URL = "http://localhost:8080"
 CHAT_TIMEOUT_MS = 120_000
-MCP_STORAGE_KEY = "mcp_storage_key"
-REAUTH_REQUIRED_DETAIL = "Keycloak セッションが無効です。再ログインしてください"
-_KEYCLOAK_PROVIDER = re.compile(r"keycloak", re.IGNORECASE)
 _TRANSIENT_GOTO = (
-    "ERR_SOCKET_NOT_CONNECTED",
-    "ERR_CONNECTION_REFUSED",
-    "ERR_CONNECTION_RESET",
-    "ERR_CONNECTION_CLOSED",
-    "ERR_EMPTY_RESPONSE",
-    "ERR_ABORTED",
+    "ERR_SOCKET_NOT_CONNECTED", "ERR_CONNECTION_REFUSED", "ERR_CONNECTION_RESET",
+    "ERR_CONNECTION_CLOSED", "ERR_EMPTY_RESPONSE", "ERR_ABORTED",
 )
 
 
 def _load_repo_env() -> None:
     path = REPO_ROOT / ".env"
-    if not path.is_file():
-        return
-    for raw in path.read_text(encoding="utf-8").splitlines():
-        line = raw.strip()
-        if not line or line.startswith("#") or "=" not in line:
-            continue
-        key, _, value = line.partition("=")
-        key = key.strip()
-        value = value.strip().strip("'").strip('"')
-        os.environ.setdefault(key, value)
+    if path.is_file():
+        for raw in path.read_text().splitlines():
+            if raw.strip() and not raw.lstrip().startswith("#") and "=" in raw:
+                key, _, value = raw.partition("=")
+                os.environ.setdefault(key.strip(), value.strip().strip("\"'"))
 
 
 _load_repo_env()
 
 
-def _browser_channel() -> str | None:
-    override = os.environ.get("E2E_BROWSER_CHANNEL")
-    if override is not None:
-        return override or None
-    if shutil.which("google-chrome") or shutil.which("google-chrome-stable"):
-        return "chrome"
-    return None
-
-
-def wait_for_http(
-    url: str,
-    *,
-    timeout_s: float = 60,
-    sleep: Callable[[float], None] = time.sleep,
-) -> None:
+def wait_for_http(url: str, *, timeout_s: float = 60, sleep: Callable = time.sleep) -> None:
     deadline = time.monotonic() + timeout_s
-    last_error: Exception | None = None
     while time.monotonic() < deadline:
         try:
             with urllib.request.urlopen(url, timeout=3):
                 return
-        except OSError as exc:
-            last_error = exc
-            sleep(0.25)
-    message = f"Timed out waiting for HTTP {url}"
-    raise RuntimeError(message) from last_error
+        except OSError:
+            sleep(.25)
+    raise RuntimeError(f"Timed out waiting for HTTP {url}")
 
 
-def goto_chainlit(
-    page: Page,
-    url: str,
-    *,
-    timeout_s: float = 30,
-    sleep: Callable[[float], None] = time.sleep,
-) -> None:
+def goto_webui(page: Page, url: str, *, timeout_s: float = 30) -> None:
     deadline = time.monotonic() + timeout_s
-    last_error: Exception | None = None
-    while time.monotonic() < deadline:
+    while True:
         try:
             page.goto(url, wait_until="domcontentloaded")
             return
         except Error as exc:
-            if not any(code in str(exc) for code in _TRANSIENT_GOTO):
+            if time.monotonic() >= deadline or not any(code in str(exc) for code in _TRANSIENT_GOTO):
                 raise
-            last_error = exc
-            sleep(0.25)
-    assert last_error is not None
-    raise last_error
+            time.sleep(.25)
 
 
-def login_keycloak(page: Page, chainlit_url: str, username: str, password: str) -> None:
-    goto_chainlit(page, f"{chainlit_url}/login")
-    page.get_by_role("button", name=_KEYCLOAK_PROVIDER).click()
+def login_keycloak(page: Page, webui_url: str, username: str, password: str) -> None:
+    goto_webui(page, f"{webui_url}/auth")
+    chat = page.locator("#chat-input")
+    provider = page.get_by_role("button", name=re.compile("Keycloak", re.IGNORECASE)).or_(
+        page.get_by_role("link", name=re.compile("Keycloak", re.IGNORECASE))
+    )
+    welcome = page.get_by_role("button", name=re.compile(r"^(Get started|はじめる|始める)$", re.IGNORECASE))
+    expect(welcome.or_(provider).or_(chat)).to_be_visible(timeout=30_000)
+    if welcome.is_visible():
+        welcome.click()
+    expect(provider.or_(chat)).to_be_visible(timeout=30_000)
+    if chat.is_visible():
+        return
+    provider.click()
     username_field = page.locator("#username")
-    chat_input = page.locator("#chat-input")
-    # Locator.is_visible(timeout=...) is ignored and returns immediately, so wait
-    # for the Keycloak form or an already-authenticated chat before filling.
-    expect(username_field.or_(chat_input)).to_be_visible(timeout=30_000)
+    expect(username_field.or_(chat)).to_be_visible(timeout=30_000)
     if username_field.is_visible():
         username_field.fill(username)
         page.locator("#password").fill(password)
         page.locator("#kc-login").click()
-    expect(chat_input).to_be_visible(timeout=60_000)
+    expect(chat).to_be_visible(timeout=60_000)
+    changelog = page.get_by_role("dialog", name=re.compile("新機能|What.s New", re.IGNORECASE))
+    try:
+        changelog.wait_for(state="visible", timeout=1500)
+    except PlaywrightTimeoutError:
+        pass
+    else:
+        changelog.get_by_role("button", name=re.compile(r"^(Close|閉じる)$")).click()
+        expect(changelog).not_to_be_visible()
+
+
+def auth_headers(page: Page) -> dict[str, str]:
+    token = page.evaluate('() => localStorage.getItem("token")')
+    assert token, "Authenticated Open WebUI session required"
+    return {"Authorization": f"Bearer {token}"}
+
+
+def tools_catalog(page: Page, webui_url: str) -> list[dict]:
+    response = page.request.get(f"{webui_url}/api/v1/tools/", headers=auth_headers(page))
+    assert response.ok, "Cannot read the authenticated tool catalog"
+    return response.json()
 
 
 def send_chat(page: Page, prompt: str, *, timeout_ms: int = CHAT_TIMEOUT_MS) -> Locator:
-    assistant_messages = page.locator('[data-step-type="assistant_message"]')
-    existing = assistant_messages.count()
-    chat_input = page.locator("#chat-input")
-    chat_input.fill(prompt)
-    page.locator("#chat-submit").click()
-    expect(assistant_messages).to_have_count(existing + 1, timeout=timeout_ms)
-    return assistant_messages.last
-
-
-def expect_mcp_post(
-    page: Page,
-    *,
-    server_name: str | None = None,
-    timeout_ms: int = 60_000,
-):
-    def _matches(response: Response) -> bool:
-        if "/mcp" not in response.url or response.request.method != "POST":
-            return False
-        return not server_name or server_name in (response.request.post_data or "")
-
-    return page.expect_response(_matches, timeout=timeout_ms)
+    expect(page.get_by_role("button", name=re.compile(r"^(Select a model|モデルを選択)\s*$"))).not_to_be_visible(timeout=10_000)
+    replies = page.locator(".chat-assistant")
+    before = replies.count()
+    page.locator("#chat-input").fill(prompt)
+    update_notice = page.locator(".absolute.bottom-8.right-8.z-50").filter(
+        has=page.locator('a[href="https://github.com/open-webui/open-webui/releases"]')
+    )
+    if update_notice.is_visible():
+        update_notice.get_by_role("button", name=re.compile(r"^(Close|閉じる)$")).click()
+    page.locator("#send-message-button").click()
+    expect(replies).to_have_count(before + 1, timeout=timeout_ms)
+    reply = replies.last
+    expect(reply.locator("#response-content-container")).to_contain_text(re.compile(r"\S"), timeout=timeout_ms)
+    expect(page.get_by_role("button", name=re.compile(r"^(Stop|停止)$"))).not_to_be_visible(timeout=timeout_ms)
+    return reply
 
 
 def reply_contains_any(reply: Locator, *needles: str) -> bool:
-    text = reply.inner_text()
-    return any(needle in text for needle in needles)
+    return any(value in reply.inner_text() for value in needles)
 
 
 def reply_contains_seed_knowledge(reply: Locator) -> bool:
-    return reply_contains_any(reply, "FastMCP", "pgvector", "Chainlit", "Langfuse")
+    return reply_contains_any(reply, "FastMCP", "pgvector", "Open WebUI", "Langfuse")
 
 
 def reply_contains_url(reply: Locator) -> bool:
-    text = reply.inner_text()
-    return "http://" in text or "https://" in text
+    return bool(re.search(r"https?://", reply.inner_text()))
 
 
-def parse_session_id(post_data: str | None) -> str:
-    payload = json.loads(post_data or "{}")
-    session_id = payload.get("sessionId")
-    if not session_id:
-        msg = "sessionId was not found in POST /mcp body"
-        raise AssertionError(msg)
-    return str(session_id)
-
-
-def capture_session_id_from_response(response: Response) -> str:
-    return parse_session_id(response.request.post_data)
-
-
-def mcp_api_request(
-    page: Page,
-    chainlit_url: str,
-    method: str,
-    session_id: str,
-    server_name: str,
-) -> APIResponse:
-    url = f"{chainlit_url.rstrip('/')}/mcp"
-    body = json.dumps({"sessionId": session_id, "name": server_name})
-    headers = {"Content-Type": "application/json"}
-    if method == "POST":
-        return page.request.post(url, data=body, headers=headers)
-    return page.request.delete(url, data=body, headers=headers)
-
-
-def mcp_connect(
-    page: Page,
-    chainlit_url: str,
-    session_id: str,
-    server_name: str,
-) -> APIResponse:
-    response = mcp_api_request(page, chainlit_url, "POST", session_id, server_name)
-    assert response.ok, response.text()
-    return response
-
-
-def mcp_disconnect(
-    page: Page,
-    chainlit_url: str,
-    session_id: str,
-    server_name: str,
-) -> APIResponse:
-    response = mcp_api_request(page, chainlit_url, "DELETE", session_id, server_name)
-    assert response.ok, response.text()
-    return response
-
-
-def logout_chainlit(page: Page, chainlit_url: str) -> None:
-    response = page.request.post(f"{chainlit_url.rstrip('/')}/logout")
-    assert response.ok, response.text()
-
-
-def read_mcp_storage_names(page: Page) -> list[str]:
-    raw = page.evaluate(
-        f"() => localStorage.getItem({json.dumps(MCP_STORAGE_KEY)}) || '[]'"
-    )
-    entries = json.loads(raw)
-    return [str(item.get("name")) for item in entries if item.get("name")]
-
-
-async def _clear_oauth_tokens_async(session_id: str) -> None:
-    url = os.environ.get(
-        "TOKEN_STORE_DATABASE_URL",
-        "postgresql://knowledge:change-me@localhost:5433/knowledge",
-    )
-    conn = await asyncpg.connect(url)
-    try:
-        await conn.execute(
-            "DELETE FROM chainlit_oauth_tokens WHERE session_id = $1",
-            session_id,
-        )
-    finally:
-        await conn.close()
-
-
-def clear_oauth_tokens(session_id: str) -> None:
-    with ThreadPoolExecutor(max_workers=1) as executor:
-        future = executor.submit(asyncio.run, _clear_oauth_tokens_async(session_id))
-        future.result()
+def logout_webui(page: Page, webui_url: str) -> None:
+    response = page.request.post(f"{webui_url}/api/v1/auths/signout", headers=auth_headers(page))
+    assert response.ok, "Open WebUI signout failed"
+    page.evaluate('() => localStorage.removeItem("token")')
+    page.context.clear_cookies()
+    goto_webui(page, f"{webui_url}/auth")
 
 
 def pytest_configure(config: pytest.Config) -> None:
-    current = getattr(config.option, "base_url", None)
-    if not current:
+    if not getattr(config.option, "base_url", None):
         config.option.base_url = os.environ.get("E2E_BASE_URL") or DEFAULT_BASE_URL
-    config.addinivalue_line("markers", "e2e_smoke: minimal Playwright smoke subset")
-    config.addinivalue_line("markers", "e2e_brave: requires or validates BRAVE_SEARCH_API_KEY")
-    config.addinivalue_line("markers", "e2e_reauth: manipulates OAuth token store")
 
 
 @pytest.fixture(scope="session")
-def chainlit_url() -> str:
+def webui_url() -> str:
     url = (os.environ.get("E2E_BASE_URL") or DEFAULT_BASE_URL).rstrip("/")
-    wait_for_http(url)
+    wait_for_http(f"{url}/ready")
     return url
 
 
 @pytest.fixture(scope="session")
 def browser_type_launch_args(browser_type_launch_args: dict) -> dict:
     args = dict(browser_type_launch_args)
-    extra = list(args.get("args") or [])
-    extra.extend(["--no-sandbox", "--disable-dev-shm-usage"])
-    args["args"] = extra
-    channel = _browser_channel()
+    args["args"] = [*args.get("args", []), "--no-sandbox", "--disable-dev-shm-usage"]
+    channel = os.environ.get("E2E_BROWSER_CHANNEL")
+    if channel is None and (shutil.which("google-chrome") or Path("/Applications/Google Chrome.app").exists()):
+        channel = "chrome"
     if channel:
         args["channel"] = channel
     return args
@@ -297,80 +194,33 @@ def e2e_readerless_password() -> str:
 
 @pytest.fixture(scope="session")
 def openai_api_key() -> str:
-    key = os.environ.get("OPENAI_API_KEY", "").strip()
-    if not key:
-        pytest.skip("OPENAI_API_KEY is not set")
-    return key
+    value = os.environ.get("OPENAI_API_KEY", "")
+    if not value:
+        pytest.skip("OPENAI_API_KEY is not configured")
+    return value
 
 
 @pytest.fixture(scope="session")
 def brave_search_api_key() -> str:
-    key = os.environ.get("BRAVE_SEARCH_API_KEY", "").strip()
-    if not key:
-        pytest.skip("BRAVE_SEARCH_API_KEY is not set")
-    return key
+    value = os.environ.get("BRAVE_SEARCH_API_KEY", "")
+    if not value:
+        pytest.skip("BRAVE_SEARCH_API_KEY is not configured")
+    return value
 
 
 @pytest.fixture(scope="session")
 def require_empty_brave_search_api_key() -> None:
-    if os.environ.get("BRAVE_SEARCH_API_KEY", "").strip():
-        pytest.skip("BRAVE_SEARCH_API_KEY is set; run without it to verify the error path")
+    if os.environ.get("BRAVE_SEARCH_API_KEY"):
+        pytest.skip("Requires empty BRAVE_SEARCH_API_KEY")
 
 
 @pytest.fixture
-def page(page: Page) -> Page:
-    page.set_default_timeout(60_000)
-    page.set_default_navigation_timeout(60_000)
+def logged_in_dev(page: Page, webui_url: str, e2e_username: str, e2e_password: str) -> Page:
+    login_keycloak(page, webui_url, e2e_username, e2e_password)
     return page
 
 
 @pytest.fixture
-def logged_in_dev(
-    page: Page,
-    chainlit_url: str,
-    e2e_username: str,
-    e2e_password: str,
-) -> Page:
-    with expect_mcp_post(page, server_name="knowledge-mcp") as response_info:
-        login_keycloak(page, chainlit_url, e2e_username, e2e_password)
-    assert response_info.value.status == 200
+def logged_in_dev2(page: Page, webui_url: str, e2e_dev2_username: str, e2e_dev2_password: str) -> Page:
+    login_keycloak(page, webui_url, e2e_dev2_username, e2e_dev2_password)
     return page
-
-
-@pytest.fixture
-def logged_in_dev2(
-    page: Page,
-    chainlit_url: str,
-    e2e_dev2_username: str,
-    e2e_dev2_password: str,
-) -> Page:
-    with expect_mcp_post(page, server_name="web-search-mcp") as response_info:
-        login_keycloak(page, chainlit_url, e2e_dev2_username, e2e_dev2_password)
-    assert response_info.value.status == 200
-    return page
-
-
-@pytest.fixture
-def chainlit_session_id(
-    page: Page,
-    chainlit_url: str,
-    e2e_username: str,
-    e2e_password: str,
-) -> str:
-    with expect_mcp_post(page, server_name="knowledge-mcp") as response_info:
-        login_keycloak(page, chainlit_url, e2e_username, e2e_password)
-    assert response_info.value.status == 200
-    return capture_session_id_from_response(response_info.value)
-
-
-@pytest.fixture
-def chainlit_session_id_dev2(
-    page: Page,
-    chainlit_url: str,
-    e2e_dev2_username: str,
-    e2e_dev2_password: str,
-) -> str:
-    with expect_mcp_post(page, server_name="web-search-mcp") as response_info:
-        login_keycloak(page, chainlit_url, e2e_dev2_username, e2e_dev2_password)
-    assert response_info.value.status == 200
-    return capture_session_id_from_response(response_info.value)

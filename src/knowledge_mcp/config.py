@@ -23,8 +23,6 @@ class Settings(BaseSettings):
     mcp_authorization_server: str = "http://localhost:8081/realms/knowledge"
     mcp_resource_base_url: str = "http://localhost:8000"
     mcp_gateway_registry_path: str = "infra/app/gateway-registry.yml"
-    token_store_database_url: str = ""
-    token_store_key: str = "chainlit-token-store-key-change-me"
 
     langfuse_public_key: str = ""
     langfuse_secret_key: str = ""

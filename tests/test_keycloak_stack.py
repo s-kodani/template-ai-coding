@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import tomllib
 from pathlib import Path
 
 import yaml
@@ -10,7 +9,6 @@ ROOT = Path(__file__).resolve().parents[1]
 COMPOSE_PATH = ROOT / "infra" / "app" / "compose.yml"
 REALM_PATH = ROOT / "infra" / "app" / "keycloak" / "knowledge-realm.json"
 ENV_EXAMPLE = ROOT / ".env.example"
-CHAINLIT_CONFIG = ROOT / ".chainlit" / "config.toml"
 MAKEFILE = ROOT / "infra" / "Makefile"
 
 
@@ -41,47 +39,37 @@ def test_app_compose_assigns_distinct_otel_service_names() -> None:
     compose = _compose()
     service_names = {
         name: compose["services"][name]["environment"]["OTEL_SERVICE_NAME"]
-        for name in ("mcp-server", "web-search-mcp", "chainlit")
+        for name in ("mcp-server", "web-search-mcp", "open-webui")
     }
 
     assert service_names == {
         "mcp-server": "knowledge-mcp",
         "web-search-mcp": "web-search-mcp",
-        "chainlit": "chainlit",
+        "open-webui": "open-webui",
     }
     assert len(set(service_names.values())) == len(service_names)
     assert "unknown_service" not in service_names.values()
 
 
-def test_chainlit_waits_for_keycloak_and_splits_browser_and_backchannel_urls() -> None:
-    compose = _compose()
-    chainlit = compose["services"]["chainlit"]
-
-    assert "extra_hosts" not in chainlit
-    assert chainlit["depends_on"]["keycloak"]["condition"] == "service_healthy"
-    env = chainlit["environment"]
-    assert env["CHAINLIT_URL"] == "http://localhost:8080"
-    assert env["DATABASE_URL"] == ""
-    assert "CHAINLIT_AUTH_SECRET" in env
-    assert env["OAUTH_GENERIC_NAME"] == "keycloak"
-    assert env["OAUTH_KEYCLOAK_NAME"] == "unused"
-    assert env["OAUTH_GENERIC_CLIENT_ID"] == "${OAUTH_GENERIC_CLIENT_ID:-chainlit}"
-    assert "localhost:8081" in env["OAUTH_GENERIC_AUTH_URL"]
-    assert "keycloak:8080" in env["OAUTH_GENERIC_TOKEN_URL"]
-    assert "keycloak:8080" in env["OAUTH_GENERIC_USER_INFO_URL"]
+def test_openwebui_waits_for_auth_sync_and_splits_browser_and_backchannel_urls() -> None:
+    ui = _compose()["services"]["open-webui"]
+    assert "extra_hosts" not in ui
+    assert ui["depends_on"]["keycloak-sync"]["condition"] == "service_completed_successfully"
+    env = ui["environment"]
+    assert env["WEBUI_URL"] == "http://localhost:8080"
+    assert env["OAUTH_CLIENT_ID"] == "open-webui"
+    assert "localhost:8080" in env["OPENID_REDIRECT_URI"]
+    assert "keycloak:8080" in env["OPENID_PROVIDER_URL"]
 
 
-def test_chainlit_http_healthcheck_and_app_up_waits_until_ready() -> None:
-    compose = _compose()
+def test_openwebui_http_healthcheck_and_app_up_waits_until_ready() -> None:
     makefile = MAKEFILE.read_text(encoding="utf-8")
-    chainlit = compose["services"]["chainlit"]
-    check = " ".join(chainlit["healthcheck"]["test"])
-
+    ui = _compose()["services"]["open-webui"]
+    check = " ".join(ui["healthcheck"]["test"])
     assert "127.0.0.1" in check
-    assert "8080/login" in check
+    assert "8080/ready" in check
     assert "urlopen" in check
     assert "--wait" in makefile
-    assert "--wait-timeout 180" in makefile
 
 
 def test_realm_defines_chainlit_client_and_dev_user() -> None:
@@ -278,39 +266,15 @@ def test_realm_defines_dev2_web_search_only_user() -> None:
 
 def test_env_example_documents_keycloak_oauth() -> None:
     text = ENV_EXAMPLE.read_text(encoding="utf-8")
-
     for name in (
-        "CHAINLIT_AUTH_SECRET",
-        "CHAINLIT_URL",
-        "OAUTH_GENERIC_CLIENT_ID",
-        "OAUTH_GENERIC_CLIENT_SECRET",
-        "OAUTH_GENERIC_AUTH_URL",
-        "OAUTH_GENERIC_TOKEN_URL",
-        "OAUTH_GENERIC_USER_INFO_URL",
-        "OAUTH_GENERIC_SCOPES",
-        "OAUTH_GENERIC_NAME",
-        "OAUTH_KEYCLOAK_NAME",
-        "KC_BOOTSTRAP_ADMIN_USERNAME",
-        "KC_BOOTSTRAP_ADMIN_PASSWORD",
-        "MCP_GATEWAY_REGISTRY_PATH",
-        "TOKEN_STORE_DATABASE_URL",
-        "TOKEN_STORE_KEY",
-        "MCP_JWKS_URI",
-        "MCP_AUDIENCE",
-        "GATEWAY_CLIENT_SECRET",
-        "BRAVE_SEARCH_API_KEY",
+        "OPEN_WEBUI_SECRET_KEY", "OPEN_WEBUI_OAUTH_CLIENT_SECRET",
+        "KC_BOOTSTRAP_ADMIN_USERNAME", "KC_BOOTSTRAP_ADMIN_PASSWORD",
+        "MCP_GATEWAY_REGISTRY_PATH", "MCP_JWKS_URI", "MCP_AUDIENCE",
+        "GATEWAY_CLIENT_SECRET", "BRAVE_SEARCH_API_KEY",
     ):
         assert f"{name}=" in text
-    assert "OAUTH_GENERIC_NAME=keycloak" in text
-    assert "OAUTH_KEYCLOAK_NAME=unused" in text
-    assert "OAUTH_GENERIC_CLIENT_SECRET=chainlit-local-secret" in text
-    assert "localhost:8081" in text
-    assert "MCP_GATEWAY_URL=" not in text
-    assert "MCP_SERVER_URL=" not in text
-    assert "MCP_BEARER_TOKEN=" not in text
-    assert "CHAINLIT_HOST=" not in text
-    assert "CHAINLIT_PORT=" not in text
-    assert "TOKEN_STORE_DATABASE_URL=" in text
+    assert "TOKEN_STORE_DATABASE_URL=" not in text
+    assert "CHAINLIT_AUTH_SECRET=" not in text
     assert "MCP_AUDIENCE=http://localhost:8000/mcp" in text
 
 
@@ -326,23 +290,17 @@ def test_default_up_includes_app_stack_that_now_has_keycloak() -> None:
 def test_compose_defines_internal_mcp_gateway() -> None:
     compose = _compose()
     gateway = compose["services"]["mcp-gateway"]
-    chainlit = compose["services"]["chainlit"]
+    ui = compose["services"]["open-webui"]
     mcp_server = compose["services"]["mcp-server"]
-
     assert "ports" not in gateway
     assert gateway["build"]["dockerfile"] == "infra/app/Dockerfile.gateway"
     assert gateway["environment"]["PUBLIC_BASE_URL"] == "http://mcp-gateway:8082"
-    assert "MCP_GATEWAY_URL" not in chainlit["environment"]
-    assert "MCP_SERVER_URL" not in chainlit["environment"]
-    registry = yaml.safe_load(
-        (ROOT / "infra" / "app" / "gateway-registry.yml").read_text(encoding="utf-8")
-    )
+    registry = yaml.safe_load((ROOT / "infra/app/gateway-registry.yml").read_text())
     assert registry["gateways"][0]["url"] == "http://mcp-gateway:8082"
-    assert chainlit["environment"]["DATABASE_URL"] == ""
-    assert "TOKEN_STORE_DATABASE_URL" in chainlit["environment"]
+    assert "WEBUI_SECRET_KEY" in ui["environment"]
     assert mcp_server["environment"]["MCP_JWKS_URI"].startswith("http://keycloak:8080/")
     assert mcp_server["environment"]["MCP_AUDIENCE"] == "http://localhost:8000/mcp"
-    assert chainlit["depends_on"]["mcp-gateway"]["condition"] == "service_healthy"
+    assert ui["depends_on"]["mcp-gateway"]["condition"] == "service_healthy"
 
 
 def test_mcp_dev_token_script_omits_keycloak_v2_audience() -> None:
@@ -372,8 +330,7 @@ def test_realm_pins_sso_session_lifetimes() -> None:
     assert realm["accessTokenLifespan"] == 300
 
 
-def test_chainlit_cookie_does_not_outlive_the_keycloak_session() -> None:
-    config = tomllib.loads(CHAINLIT_CONFIG.read_text(encoding="utf-8"))
-    realm = _realm()
-
-    assert config["project"]["user_session_timeout"] <= realm["ssoSessionMaxLifespan"]
+def test_openwebui_cookie_does_not_outlive_the_keycloak_session() -> None:
+    lifetime = _compose()["services"]["open-webui"]["environment"]["JWT_EXPIRES_IN"]
+    assert lifetime.endswith("h")
+    assert int(lifetime[:-1]) * 3600 <= _realm()["ssoSessionMaxLifespan"]

@@ -30,3 +30,31 @@ async def test_search_knowledge_tool_validation_message() -> None:
     result = await server.search_knowledge(query="", top_k=5)
 
     assert result["error"] == "query must not be empty"
+
+
+@pytest.mark.asyncio
+async def test_search_tool_declares_app_and_pagination_schema() -> None:
+    from unittest.mock import AsyncMock, patch
+
+    from fastmcp import Client
+
+    server = importlib.import_module("knowledge_mcp.server")
+    with (
+        patch.object(server.repository, "connect", AsyncMock()),
+        patch.object(server.repository, "close", AsyncMock()),
+        patch.object(server.embedding_client, "aclose", AsyncMock()),
+    ):
+        async with Client(server.mcp) as client:
+            tools = {tool.name: tool for tool in await client.list_tools()}
+            search = tools["search_knowledge"]
+            assert search.meta["ui"]["resourceUri"] == "ui://knowledge/search-results.html"
+            assert search.inputSchema["properties"]["offset"]["default"] == 0
+            resources = await client.list_resources()
+            resource = next(r for r in resources if str(r.uri) == "ui://knowledge/search-results.html")
+            assert resource.mimeType == "text/html;profile=mcp-app"
+            content = await client.read_resource("ui://knowledge/search-results.html")
+
+    assert content[0].mimeType == "text/html;profile=mcp-app"
+    assert "ナレッジ検索" in content[0].text
+    assert "<script" in content[0].text
+    assert content[0].meta["ui"]["csp"]["connectDomains"] == []

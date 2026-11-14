@@ -9,15 +9,17 @@ from fastapi.responses import JSONResponse
 from mcp_gateway.cache import TokenCache
 from mcp_gateway.config import Settings
 from mcp_gateway.errors import ErrorBody, GatewayError
-from mcp_gateway.jwt_auth import verify_chainlit_token, verify_exchanged_token
+from mcp_gateway.jwt_auth import verify_chat_token, verify_exchanged_token
 from mcp_gateway.mcp_client import (
     attach_trace_from_headers,
     call_mcp_tool,
     detach_trace,
+    list_mcp_resources,
     list_mcp_tools,
+    read_mcp_resource,
 )
 from mcp_gateway.mcp_http import dispatch_mcp_method
-from mcp_gateway.policy import authorize_tool
+from mcp_gateway.policy import authorize_resource, authorize_server, authorize_tool
 from mcp_gateway.registry import get_server, list_enabled_servers, load_registry
 from mcp_gateway.token_exchange import exchange_token
 
@@ -88,13 +90,17 @@ def create_app(
     *,
     jwt_signing_key: Any | None = None,
     tool_caller: Callable[..., Awaitable[dict[str, Any]]] | None = None,
-    tool_lister: Callable[..., Awaitable[list[dict[str, Any]]]] | None = None,
+    tool_lister: Callable[..., Awaitable[dict[str, Any]]] | None = None,
+    resource_lister: Callable[..., Awaitable[dict[str, Any]]] | None = None,
+    resource_reader: Callable[..., Awaitable[dict[str, Any]]] | None = None,
 ) -> FastAPI:
     settings = settings or Settings()
     registry = load_registry(settings.registry_path, public_base_url=settings.public_base_url)
     cache = TokenCache(settings.token_cache_ttl_seconds)
     caller = tool_caller or call_mcp_tool
     lister = tool_lister or list_mcp_tools
+    resource_list = resource_lister or list_mcp_resources
+    resource_read = resource_reader or read_mcp_resource
     app = FastAPI(title="mcp-gateway")
 
     @app.exception_handler(GatewayError)
@@ -113,7 +119,7 @@ def create_app(
         authorization: str | None = Header(default=None),
     ) -> dict[str, Any]:
         token = _bearer(authorization)
-        principal = verify_chainlit_token(
+        principal = verify_chat_token(
             token,
             issuer=settings.keycloak_issuer,
             jwks_uri=settings.keycloak_jwks_uri,
@@ -134,7 +140,7 @@ def create_app(
         token = _bearer(authorization)
         trace_token = attach_trace_from_headers(dict(request.headers))
         try:
-            principal = verify_chainlit_token(
+            principal = verify_chat_token(
                 token,
                 issuer=settings.keycloak_issuer,
                 jwks_uri=settings.keycloak_jwks_uri,
@@ -149,9 +155,16 @@ def create_app(
             params = payload.get("params") if isinstance(payload.get("params"), dict) else {}
             rpc_id = payload.get("id")
             server = get_server(registry, server_id)
+            if method in {"tools/list", "tools/call", "resources/list", "resources/read"}:
+                authorize_server(principal, server)
             if method == "tools/call":
                 authorize_tool(principal, server, str((params or {}).get("name") or ""))
-            needs_downstream = method in {"tools/list", "tools/call"}
+            if method == "resources/read":
+                authorize_resource(principal, server, str(params.get("uri") or ""))
+            needs_downstream = method in {"tools/list", "tools/call", "resources/read"} or (
+                method == "resources/list"
+                and bool(server.get("authorization", {}).get("allowed_resources"))
+            )
             exchanged = None
             if needs_downstream:
                 exchanged = await _mcp_token(
@@ -171,6 +184,8 @@ def create_app(
                 mcp_token=exchanged,
                 lister=lister,
                 caller=caller,
+                resource_lister=resource_list,
+                resource_reader=resource_read,
                 timeout_seconds=float(
                     server.get("timeout_seconds") or settings.mcp_call_timeout_seconds
                 ),

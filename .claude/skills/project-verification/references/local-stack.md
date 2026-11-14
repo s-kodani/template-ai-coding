@@ -17,7 +17,7 @@ make -C infra seed
 
 | サービス | URL / ポート |
 |---|---|
-| Chainlit | http://localhost:8080 |
+| Open WebUI | http://localhost:8080 |
 | FastMCP | http://127.0.0.1:8000/mcp |
 | Langfuse | http://localhost:3000 |
 | App Postgres | localhost:5433 |

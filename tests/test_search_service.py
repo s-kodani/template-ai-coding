@@ -30,10 +30,12 @@ class FakeRepository:
         self.document = document
         self.error = error
 
-    async def search(self, embedding: list[float], top_k: int) -> list[SearchHit]:
+    async def search(
+        self, embedding: list[float], top_k: int, offset: int = 0
+    ) -> list[SearchHit]:
         if self.error:
             raise self.error
-        return self.hits[:top_k]
+        return self.hits[offset : offset + top_k]
 
     async def get_document(self, document_id: str) -> DocumentDetail | None:
         if self.error:

@@ -2,15 +2,16 @@
 
 - [ADR-0001: FastMCP Streamable HTTP](/decisions/ADR-0001-fastmcp-streamable-http.md)
 - [ADR-0002: アプリデータに PostgreSQL pgvector](/decisions/ADR-0002-postgres-pgvector.md)
-- [ADR-0003: traced MCP クライアント UI として Chainlit](/decisions/ADR-0003-chainlit-traced-client.md) — 既定 FastMCP 接続と追加 MCP 接続 UI
+- [ADR-0003: traced MCP クライアント UI として Chainlit](/decisions/ADR-0003-chainlit-traced-client.md) — 既定 FastMCP 接続と追加 MCP 接続 UI（ADR-0015により置換）
 - [ADR-0004: MCP _meta 伝播による Langfuse トレース](/decisions/ADR-0004-langfuse-mcp-meta-tracing.md) — FastMCP / asyncpg の export と `_meta` baggage 伝播
 - [ADR-0005: Langflow を Ingest 用サイドカーにする](/decisions/ADR-0005-langflow-ingest-sidecar.md) — Retrieval は Chainlit + FastMCP、システムインデックスは `documents`
 - [ADR-0006: documents を Chunk 行として進化させる](/decisions/ADR-0006-documents-chunk-schema.md) — 1 行 = 1 chunk、親 ID は `uuid5(source)`
 - [ADR-0007: document_id / content_hash による冪等な再 Ingest](/decisions/ADR-0007-document-lifecycle.md) — 未変更は Skip、変更時は親 ID 配下を削除して再投入
 - [ADR-0008: 原本はホスト、Langflow Files API は一時転送](/decisions/ADR-0008-host-originals-langflow-api.md) — My Files に依存せず API で Ingest Flow を実行する
-- [ADR-0009: Chainlit 2.12 の MCP user_servers allowlist](/decisions/ADR-0009-chainlit-mcp-user-servers-allowlist.md) — 追加 MCP の静的 URL allowlist と stdio 無効
+- [ADR-0009: Chainlit 2.12 の MCP user_servers allowlist](/decisions/ADR-0009-chainlit-mcp-user-servers-allowlist.md) — 追加 MCP の静的 URL allowlist と stdio 無効（ADR-0015により置換）
 - [ADR-0010: DevSecOps パターンA（OSS Shift Left）](/decisions/ADR-0010-devsecops-pattern-a.md) — Ruff/Bandit/uv audit/gitleaks/Trivy と pre-commit
-- [ADR-0011: Keycloak を Chainlit のローカル IdP にする](/decisions/ADR-0011-keycloak-chainlit-oauth.md) — Chainlit OAuth / OIDC
+- [ADR-0011: Keycloak を Chainlit のローカル IdP にする](/decisions/ADR-0011-keycloak-chainlit-oauth.md) — Chainlit OAuth / OIDC（ADR-0015により置換）
 - [ADR-0012: MCP Gateway と knowledge-mcp Resource Server](/decisions/ADR-0012-mcp-gateway-resource-server.md) — Token Exchange、パススルー禁止、既定ツールは Gateway 経由。現行シーケンスは [認証認可](/current/features/authentication.md)
 - [ADR-0013: MCP Gateway をサーバー単位の Streamable HTTP にする](/decisions/ADR-0013-mcp-gateway-per-server-streamable-http.md) — 案 A。`/mcp/{server_id}`。カタログは `GET /v1/mcp`
 - [ADR-0014: 直結 MCP クライアントの 3LO は Keycloak AS + MCP RS](/decisions/ADR-0014-mcp-direct-three-legged-oauth.md) — 認可コード + PKCE + DCR。Gateway Token Exchange は残す
+- [ADR-0015: Open WebUIとMCP Appsによる検索UI](/decisions/ADR-0015-open-webui-mcp-apps.md) — SSOとToken Exchangeを維持するHost移行、Apps Resource、exactページ検索、限定した観測hook

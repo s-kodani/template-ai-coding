@@ -1,4 +1,4 @@
-.PHONY: network langfuse-up langfuse-down app-up app-down langflow-up langflow-down up down migrate import-langflow ingest-langflow seed delete-document test e2e e2e-smoke
+.PHONY: network langfuse-up langfuse-down app-up app-down langflow-up langflow-down up down migrate import-langflow ingest-langflow seed delete-document test app-ui sync-auth preserve-keycloak e2e e2e-smoke
 
 # make -C infra から呼ばれる前提。パスは Makefile 基準で解決する。
 INFRA_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
@@ -13,7 +13,7 @@ langfuse-up: network
 langfuse-down:
 	docker compose -f $(INFRA_DIR)langfuse/docker-compose.yml -f $(INFRA_DIR)langfuse/network.yml down
 
-app-up: network
+app-up: network preserve-keycloak
 	docker compose -f $(INFRA_DIR)app/compose.yml --env-file $(ROOT)/.env up -d --build --wait --wait-timeout 180
 
 app-down:
@@ -44,7 +44,19 @@ seed: migrate
 delete-document: migrate
 	cd $(ROOT) && uv run python scripts/delete_document.py $(DOCUMENT_ID)
 
-test:
+# Host-side Python installs include the generated App HTML, including on a clean checkout.
+migrate import-langflow ingest-langflow sync-auth preserve-keycloak e2e e2e-smoke: app-ui
+
+app-ui:
+	cd $(ROOT)/apps/knowledge-search && npm ci && npm run build
+
+sync-auth:
+	cd $(ROOT) && uv run python scripts/sync_keycloak_openwebui.py --url http://localhost:8081 --realm knowledge --realm-file infra/app/keycloak/knowledge-realm.json
+
+preserve-keycloak:
+	cd $(ROOT) && uv run python scripts/persist_keycloak_data.py --compose infra/app/compose.yml --env-file .env
+
+test: app-ui
 	cd $(ROOT) && uv run pytest
 
 e2e:
