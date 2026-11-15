@@ -1,8 +1,8 @@
-"""Multi-turn chat session without MCP tools."""
+"""Native Open WebUI multi-turn conversation context."""
 
 from __future__ import annotations
 
-from conftest import login_keycloak, reply_contains_any, send_chat
+from conftest import reply_contains_any, send_chat
 from playwright.sync_api import Page
 
 SESSION_NAME = "E2E-W2"
@@ -11,15 +11,11 @@ TURN_TWO = "私の名前を答えてください。ツールは不要です。"
 
 
 def test_multi_turn_remembers_session_context(
-    page: Page,
-    chainlit_url: str,
-    e2e_username: str,
-    e2e_password: str,
+    logged_in_dev: Page,
     openai_api_key: str,
 ) -> None:
     del openai_api_key
 
-    login_keycloak(page, chainlit_url, e2e_username, e2e_password)
-    send_chat(page, TURN_ONE)
-    reply = send_chat(page, TURN_TWO)
+    send_chat(logged_in_dev, TURN_ONE)
+    reply = send_chat(logged_in_dev, TURN_TWO)
     assert reply_contains_any(reply, SESSION_NAME)

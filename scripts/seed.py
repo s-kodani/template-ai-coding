@@ -14,7 +14,7 @@ FIXTURES: list[dict[str, str]] = [
         "source": "docs/current/architecture.md",
         "content": (
             "The system uses FastMCP over Streamable HTTP for vector search, "
-            "PostgreSQL with pgvector for embeddings, Chainlit as the chat UI, "
+            "PostgreSQL with pgvector for embeddings, Open WebUI as the chat UI, "
             "and Langfuse for distributed tracing."
         ),
     },
@@ -31,7 +31,7 @@ FIXTURES: list[dict[str, str]] = [
         "source": "docs/current/infrastructure.md",
         "content": (
             "Trace context propagates through MCP _meta using FastMCP native telemetry. "
-            "Chainlit creates the root chat.turn span and MCP server spans attach as children."
+            "Open WebUI creates the root chat.turn span and MCP server spans attach as children."
         ),
     },
 ]

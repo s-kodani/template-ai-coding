@@ -164,9 +164,10 @@ Issue を Close する前に、次をすべて満たす。
 
 1. Phase 8（Review & Compliance）が `pass` または `pass-with-nits`
 2. **Issue 本文の Acceptance Criteria 節を読み直し、タスクリスト項目がすべて `[x]` であることを確認した**（必須ゲート。`[ ]` が 1 件でも残っていれば Close しない）
-3. **その Issue に紐づく作業 PR がすべて closed**（`merged` または `closed`。open が残っていない）
+3. **Issue本文Work PRsに必要PRが1件以上登録され、すべてmerged済み**。closed未mergedは完了と数えない
+4. `delivery.md`の読み取り専用Close validatorで最終HEADのCI・人間レビュー・ACを実状態から確認した
 
-1 Issue に複数 PR がある場合、**最後の PR が closed になるまで Issue を Close しない**。
+1 Issueに複数PRがある場合も必要集合をすべて検証する。通常の納品範囲、PR提出とIssue完了の区別、具体的なvalidator手順は `delivery.md` を正本とする。
 
 #### AC 全チェック確認（Close 直前・必須）
 
@@ -174,7 +175,7 @@ Close 操作の直前に、Issue 本文の Acceptance Criteria 節を再読す�
 
 - `[ ]` が 1 件でも残っていれば Close しない。Phase 4 に戻るか、AC を満たす作業・検証を完了してから本文を更新する
 - 例外は **明示的撤回** のみ。Scope / Requirement Change コメントで理由を残し、該当 AC 行を本文から削除する。`[ ]` のまま残した AC がある状態では Close しない
-- Phase 8 Review コメント（PR 存在時は PR 側）に `AC body verified: all [x]` または `blocked: unchecked items remain` を記載する。PR コメントの遵守チェックリストに「紐づく作業 PR がすべて closed」は載せない（Issue Close ゲート。`references/review-and-compliance.md`）
+- Phase8 Reviewコメントに`AC body verified: all [x]`または`blocked: unchecked items remain`を記載する。全mergeの確認はIssue Close時のゲートであり、OpenのPRレビューを失敗扱いする条件ではない。
 
 Close 判定手順の例:
 
@@ -184,18 +185,18 @@ gh issue view <issue-number> --json body --jq .body > /tmp/issue-body.md
 grep -n '\- \[ \]' /tmp/issue-body.md  # AC 節内にヒットしたら Close 不可
 ```
 
-作業 PR の確認例:
+作業PRの一覧確認は補助であり、検索0件を成功と扱わない:
 
 ```bash
-gh pr list --state all --search "refs:#<issue-number>" --json number,state,title,url
+gh pr list --state all --search "refs:#<issue-number>" --json number,state,mergedAt,headRefOid,title,url
 ```
 
-Issue 本文の `Related Issue / PR:` と進捗コメントの `Related PR` も照合する。確認できない PR は `not checked` とし、Issue Close を進めない。
+Issue本文の`Work PRs`と進捗コメントも照合する。未登録・取得不能・確認できないPRがあればCloseを進めない。最終判定は `delivery.md` のvalidatorを使う。
 
 ### 例外
 
-- 作業に PR が存在しない変更（Skill / docs のみで PR を作らない運用など）では、PR Close 条件は該当しない
-- 誤って起票した PR を `closed`（未 merge）にした場合も「closed」として数える。残作業があるなら新しい PR を起票し、すべて closed になるまで Issue は open のまま
+- Skill/docs更新も通常はPR提出まで進める。ユーザー明示のローカル限定作業でもIssueはOpenのまま維持し、PR0件を正常完了の例外にしない。
+- 誤作成PRの除外や作業撤回はユーザーの明示指示と理由を記録する。未merged PR自体を納品の証拠にしない。
 
 ---
 
@@ -222,7 +223,7 @@ Issue は作業契約と Pre-PR 履歴、PR は Post-PR の実装・レビュー
 
 ### PR 作成時（Issue へ・最小通知）
 
-PR 作成時は Issue へ詳細を書かず、事実通知のみ残す。
+PR作成時はIssueへ事実通知を残し、本文の`Work PRs`へそのPRを登録する。実装の詳細はPR側へ記録する。
 
 ```markdown
 <!-- agent-pr-opened:v1 -->

@@ -27,6 +27,9 @@ Checkpoint 作成と Resume Protocol。
 - HEAD: `<commit-sha>`
 - Working tree: `<clean | modified>`
 - Related PR: `<PR or none>`
+- Delivery state: `<PR提出前 | PR提出済み/CI待ち | レビュー待ち | merge後最終確認待ち>`
+- Registered Work PRs: `<Issue本文の全PR番号。0件を完了扱いしない>`
+- Delivery validation: `<phase / HEAD SHA / 実状態validator結果、または未実施理由>`
 
 ### Goal
 - 現在取り組んでいる Goal

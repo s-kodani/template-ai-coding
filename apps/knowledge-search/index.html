@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ナレッジ検索</title>
+<style>/* APP_STYLE */</style>
+</head>
+<body>
+<main id="knowledge-search" aria-label="ナレッジ検索">
+  <header class="header">
+    <div class="eyebrow">KNOWLEDGE</div>
+    <h1>ナレッジ検索</h1>
+    <p class="query" id="query">検索結果を待っています</p>
+  </header>
+  <div class="content">
+    <div class="toolbar">
+      <span id="range" class="range" aria-live="polite">検索中…</span>
+      <label>表示件数 <select id="page-size" aria-label="1ページの表示件数"><option value="5">5件</option><option value="10">10件</option><option value="20">20件</option></select></label>
+    </div>
+    <div id="error" class="error" role="alert" hidden></div>
+    <div class="columns">
+      <section class="results" aria-label="類似度順の検索結果">
+        <ol id="results" class="list"></ol>
+        <p id="empty" class="empty" hidden>検索結果がありません。</p>
+        <nav class="pagination" aria-label="検索結果のページ切替">
+          <button id="previous" type="button">‹ 前へ</button>
+          <span id="page-label" aria-live="polite">1ページ目</span>
+          <button id="next" type="button" class="next">次へ ›</button>
+        </nav>
+      </section>
+      <aside id="detail" class="detail" aria-label="文書の本文詳細" aria-live="polite"></aside>
+    </div>
+  </div>
+</main>
+<script type="module">/* APP_SCRIPT */</script>
+</body>
+</html>

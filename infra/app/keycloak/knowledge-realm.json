@@ -29,9 +29,16 @@
         "subType": "anonymous",
         "subComponents": {},
         "config": {
-          "host-sending-registration-request-must-match": ["false"],
-          "client-uris-must-match": ["true"],
-          "trusted-hosts": ["localhost", "127.0.0.1"]
+          "host-sending-registration-request-must-match": [
+            "false"
+          ],
+          "client-uris-must-match": [
+            "true"
+          ],
+          "trusted-hosts": [
+            "localhost",
+            "127.0.0.1"
+          ]
         }
       },
       {
@@ -47,7 +54,9 @@
         "subType": "anonymous",
         "subComponents": {},
         "config": {
-          "max-clients": ["200"]
+          "max-clients": [
+            "200"
+          ]
         }
       },
       {
@@ -56,7 +65,9 @@
         "subType": "anonymous",
         "subComponents": {},
         "config": {
-          "allow-default-scopes": ["true"],
+          "allow-default-scopes": [
+            "true"
+          ],
           "allowed-client-scopes": [
             "openid",
             "profile",
@@ -378,6 +389,42 @@
           }
         }
       ]
+    },
+    {
+      "name": "open-webui-mcp-gateway",
+      "description": "Gateway audience and Open WebUI role groups",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "false"
+      },
+      "protocolMappers": [
+        {
+          "name": "mcp-gateway-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "mcp-gateway",
+            "id.token.claim": "false",
+            "access.token.claim": "true"
+          }
+        },
+        {
+          "name": "mcp roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "claim.name": "mcp_roles",
+            "jsonType.label": "String",
+            "multivalued": "true",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        }
+      ]
     }
   ],
   "clients": [
@@ -492,6 +539,41 @@
         "web-search-mcp-tools"
       ],
       "optionalClientScopes": []
+    },
+    {
+      "clientId": "open-webui",
+      "name": "Open WebUI",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "open-webui-local-secret",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": false,
+      "redirectUris": [
+        "http://localhost:8080/oauth/oidc/callback",
+        "http://127.0.0.1:8080/oauth/oidc/callback"
+      ],
+      "webOrigins": [
+        "http://localhost:8080",
+        "http://127.0.0.1:8080"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      },
+      "defaultClientScopes": [
+        "web-origins",
+        "acr",
+        "basic",
+        "profile",
+        "roles",
+        "email",
+        "open-webui-mcp-gateway"
+      ],
+      "optionalClientScopes": [
+        "address",
+        "phone"
+      ]
     }
   ],
   "users": [
@@ -509,7 +591,11 @@
           "temporary": false
         }
       ],
-      "realmRoles": ["knowledge-mcp-reader", "web-search-reader", "default-roles-knowledge"]
+      "realmRoles": [
+        "knowledge-mcp-reader",
+        "web-search-reader",
+        "default-roles-knowledge"
+      ]
     },
     {
       "username": "dev2",
@@ -525,7 +611,10 @@
           "temporary": false
         }
       ],
-      "realmRoles": ["web-search-reader", "default-roles-knowledge"]
+      "realmRoles": [
+        "web-search-reader",
+        "default-roles-knowledge"
+      ]
     },
     {
       "username": "readerless",
@@ -541,7 +630,9 @@
           "temporary": false
         }
       ],
-      "realmRoles": ["default-roles-knowledge"]
+      "realmRoles": [
+        "default-roles-knowledge"
+      ]
     }
   ]
 }

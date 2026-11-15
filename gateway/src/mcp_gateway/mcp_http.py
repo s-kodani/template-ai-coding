@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-import json
 from typing import Any
 
 from fastapi.responses import JSONResponse, Response
 
 from mcp_gateway.errors import GatewayError
 from mcp_gateway.mcp_client import _trace_meta
-from mcp_gateway.policy import authorize_tool
+from mcp_gateway.policy import authorize_resource, authorize_server, authorize_tool
 
 
 def jsonrpc_result(rpc_id: object, result: dict[str, Any]) -> JSONResponse:
@@ -17,24 +16,21 @@ def jsonrpc_result(rpc_id: object, result: dict[str, Any]) -> JSONResponse:
     )
 
 
-def initialize_result(params: dict[str, Any] | None) -> dict[str, Any]:
-    version = "2025-11-25"
-    if isinstance(params, dict) and params.get("protocolVersion"):
-        version = str(params["protocolVersion"])
+def initialize_result(_params: dict[str, Any] | None) -> dict[str, Any]:
     return {
-        "protocolVersion": version,
-        "capabilities": {"tools": {"listChanged": False}},
+        "protocolVersion": "2025-11-25",
+        "capabilities": {
+            "tools": {"listChanged": False},
+            "resources": {"listChanged": False, "subscribe": False},
+            "extensions": {"io.modelcontextprotocol/ui": {}},
+        },
         "serverInfo": {"name": "mcp-gateway", "version": "0.1.0"},
     }
 
 
-def forwarded_meta(params: dict[str, Any] | None) -> dict[str, str] | None:
-    incoming: dict[str, str] = {}
-    if isinstance(params, dict):
-        meta = params.get("_meta")
-        if isinstance(meta, dict):
-            incoming = {str(key): str(value) for key, value in meta.items()}
-    merged = {**_trace_meta(), **incoming}
+def forwarded_meta(params: dict[str, Any] | None) -> dict[str, Any] | None:
+    incoming = params.get("_meta") if isinstance(params, dict) else None
+    merged = {**_trace_meta(), **(incoming if isinstance(incoming, dict) else {})}
     return merged or None
 
 
@@ -48,6 +44,8 @@ async def dispatch_mcp_method(
     mcp_token: str | None,
     lister: Any,
     caller: Any,
+    resource_lister: Any,
+    resource_reader: Any,
     timeout_seconds: float,
 ) -> JSONResponse | Response:
     if method == "initialize":
@@ -56,32 +54,39 @@ async def dispatch_mcp_method(
         return Response(status_code=202)
     if method == "ping":
         return jsonrpc_result(rpc_id, {})
+    payload = params or {}
+    upstream = {
+        "url": server["transport"]["url"],
+        "token": mcp_token,
+        "timeout_seconds": timeout_seconds,
+        "meta": forwarded_meta(payload),
+    }
     if method == "tools/list":
-        tools = await lister(
-            url=server["transport"]["url"],
-            token=mcp_token,
-            timeout_seconds=timeout_seconds,
-        )
+        authorize_server(principal, server)
+        page = await lister(**upstream, cursor=payload.get("cursor"))
         allowed = set(server.get("authorization", {}).get("allowed_tools") or [])
         return jsonrpc_result(
             rpc_id,
-            {"tools": [tool for tool in tools if tool.get("name") in allowed]},
+            {**page, "tools": [tool for tool in page["tools"] if tool.get("name") in allowed]},
         )
     if method == "tools/call":
-        payload = params or {}
         tool_name = str(payload.get("name") or "")
         arguments = payload.get("arguments") if isinstance(payload.get("arguments"), dict) else {}
         authorize_tool(principal, server, tool_name)
-        output = await caller(
-            url=server["transport"]["url"],
-            token=mcp_token,
-            tool_name=tool_name,
-            arguments=arguments,
-            timeout_seconds=timeout_seconds,
-            meta=forwarded_meta(payload),
-        )
-        return jsonrpc_result(
-            rpc_id,
-            {"content": [{"type": "text", "text": json.dumps(output)}], "isError": False},
-        )
+        output = await caller(**upstream, tool_name=tool_name, arguments=arguments)
+        return jsonrpc_result(rpc_id, output)
+    if method == "resources/list":
+        authorize_server(principal, server)
+        allowed = set(server.get("authorization", {}).get("allowed_resources") or [])
+        if not allowed:
+            return jsonrpc_result(rpc_id, {"resources": []})
+        page = await resource_lister(**upstream, cursor=payload.get("cursor"))
+        return jsonrpc_result(rpc_id, {
+            **page,
+            "resources": [resource for resource in page["resources"] if resource.get("uri") in allowed],
+        })
+    if method == "resources/read":
+        uri = str(payload.get("uri") or "")
+        authorize_resource(principal, server, uri)
+        return jsonrpc_result(rpc_id, await resource_reader(**upstream, uri=uri))
     raise GatewayError(400, "METHOD_NOT_FOUND", f"Unsupported MCP method: {method}")

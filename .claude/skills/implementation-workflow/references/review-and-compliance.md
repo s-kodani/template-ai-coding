@@ -2,7 +2,7 @@
 
 Phase 8 の詳細。Phase 7 Completion Report のあと、Issue を Close する前に実施する。
 
-Issue と PR は **1:N**。Issue Close は、紐づく**作業 PR がすべて closed**（merged または closed）になったあと、Phase 8 が pass したときに**手動**で行う。PR 本文の `Closes #<issue>` による自動 Close は使わない。詳細は `references/github-issue-workflow.md`。
+IssueとPRは1:N。通常納品とmerge後のIssue完了は`delivery.md`に従い分離する。必要PR1件以上・全件merged・最終SHAのCI/人間レビュー/ACの実状態確認後だけ手動Closeする。PR本文の自動Closeキーワードは使わない。
 
 ## 目的
 
@@ -17,7 +17,7 @@ Issue と PR は **1:N**。Issue Close は、紐づく**作業 PR がすべて c
 
 1. Phase 5〜7 まで完了したあと
 2. ユーザーへ「完了」と報告する前
-3. Issue を Close する前（**Issue 本文 AC がすべて `[x]` であることを必ず確認する**。**紐づく作業 PR がすべて closed であることも確認する**）
+3. Issue Close前（`delivery.md`のCloseゲートが成功し、merge後の最終確認ができたとき）
 
 計画のみ・質問のみでコードも Skill も変えていない場合は Phase 8 不要。
 
@@ -56,13 +56,14 @@ Phase 8 レビューコメント（投稿先が PR でも Issue でも）に載�
 - [ ] Phase 6 で恒久ドキュメント / Release Log を最終実装へ合わせた
 - [ ] Phase 7 Completion Report を投稿した（Post-PR 時は PR、否则 Issue）
 - [ ] PR 作成・マージ時に Issue へ最小通知を残した（該当時）
+- [ ] 通常納品をcommit/push/PR提出まで進め、Work PRs登録とsubmitted validatorの結果を確認した（CI待ち等は区別して報告）
 - [ ] 本レビュー結果を投稿した（Post-PR 時は PR、否则 Issue）
 ```
 
 **投稿先が PR のとき、次は載せない。** Issue Close ゲートであり、当該 PR が open なのは正常。
 
 ```markdown
-- [ ] 紐づく作業 PR がすべて closed（merged または closed）。open が残っている場合は Issue を Close しない
+- [ ] 必要PR1件以上・全件merged・最終SHAのCI/人間レビュー/ACをClose validatorで確認した
 ```
 
 この項目は Issue Close 直前にだけ確認する。PR なしで Phase 8 を Issue へ投稿する場合も、Close する時点まで `[x]` にしない。
@@ -73,15 +74,15 @@ Phase 8 レビューコメント（投稿先が PR でも Issue でも）に載�
 
 | 判定 | 意味 | 次の行動 |
 |---|---|---|
-| `pass` | must-fix なし。Issue 本文 AC がすべて `[x]` | レビュー完了。Issue Close は作業 PR がすべて closed になってから |
-| `pass-with-nits` | 任意改善のみ。Issue 本文 AC がすべて `[x]` | nits を残課題としてコメント。Issue Close は作業 PR がすべて closed になってから |
+| `pass` | must-fix なし。Issue 本文 AC がすべて `[x]` | PRレビュー完了。Issue Closeは`delivery.md`のmerge後ゲート成功後だけ |
+| `pass-with-nits` | 任意改善のみ。Issue 本文 AC がすべて `[x]` | nitsを記録。Issue Closeは同じmerge後ゲート成功後だけ |
 | `must-fix` | 欠陥、ワークフロー欠落、Issue 本文 AC に未チェック | Phase 4 に戻る、AC を満たして本文を更新してから Phase 8 をやり直す |
 
 open の作業 PR は Phase 8 の must-fix にしない。Issue Close を止める条件である。
 
-must-fix の無限ループを避ける。再レビューは修正範囲に限定する。任意改善は残課題に回し、**open PR が無い**場合は Close を止めない。
+must-fixの無限ループを避け、再レビューは修正範囲に限定する。任意改善は残課題に回すが、Issue Close条件の不足をnitsとして免除しない。
 
-Issue Close の条件は `references/completion-report.md` も満たすこと。作業 PR が存在しない変更では PR Close 条件は該当しない。
+PRなし・closed未merged・取得不能の状態でIssue Closeは不可。ユーザー明示のローカル限定作業はその事実を報告し、IssueはOpenのまま維持する。
 
 ## Review コメント Format
 

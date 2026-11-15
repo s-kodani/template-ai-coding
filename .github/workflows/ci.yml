@@ -15,6 +15,16 @@ jobs:
         with:
           enable-cache: true
 
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/knowledge-search/package-lock.json
+
+      - name: Build and test MCP App
+        working-directory: apps/knowledge-search
+        run: npm ci && npm test && npm run build
+
       - name: Install dependencies
         run: uv sync --frozen --extra dev
 
@@ -43,6 +53,16 @@ jobs:
       - uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/knowledge-search/package-lock.json
+
+      - name: Build and test MCP App
+        working-directory: apps/knowledge-search
+        run: npm ci && npm test && npm run build
 
       - name: Install dependencies
         run: uv sync --frozen --extra dev
@@ -77,11 +97,11 @@ jobs:
           ignore-unfixed: true
           exit-code: 1
 
-      - name: Trivy scan chainlit image
+      - name: Trivy scan open-webui image
         uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: image
-          image-ref: knowledge-app-chainlit
+          image-ref: knowledge-app-open-webui
           scanners: vuln
           format: table
           severity: CRITICAL,HIGH

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from knowledge_mcp.embedding import EmbeddingClient
-from knowledge_mcp.models import DocumentDetail, SearchResult
+from knowledge_mcp.models import DocumentDetail, SearchPagination, SearchResult
 from knowledge_mcp.repository import VectorRepository
 from knowledge_mcp.tracing import (
     embedding_observation,
@@ -19,12 +19,14 @@ class SearchService:
         self._embedding_client = embedding_client
         self._repository = repository
 
-    async def search_knowledge(self, query: str, top_k: int) -> SearchResult:
+    async def search_knowledge(self, query: str, top_k: int = 5, offset: int = 0) -> SearchResult:
         query = query.strip()
         if not query:
             raise ValueError("query must not be empty")
         if top_k < 1 or top_k > 20:
             raise ValueError("top_k must be between 1 and 20")
+        if offset < 0:
+            raise ValueError("offset must be non-negative")
 
         with search_span("search.embed") as span:
             if hasattr(span, "update"):
@@ -40,7 +42,9 @@ class SearchService:
                 record_embedding_usage(embed_observation, usage)
 
         with search_span("search.query") as span:
-            hits = await self._repository.search(embedding, top_k)
+            candidates = await self._repository.search(embedding, top_k + 1, offset=offset)
+            hits = candidates[:top_k]
+            has_more = len(candidates) > top_k
             if hasattr(span, "update"):
                 metadata: dict[str, float | int] = {"search.result_count": len(hits)}
                 if hits:
@@ -51,7 +55,16 @@ class SearchService:
                 if hits:
                     span.set_attribute("search.top_similarity", hits[0].similarity)
 
-        return SearchResult(query=query, hits=hits)
+        return SearchResult(
+            query=query,
+            hits=hits,
+            pagination=SearchPagination(
+                offset=offset,
+                page_size=top_k,
+                has_more=has_more,
+                next_offset=offset + top_k if has_more else None,
+            ),
+        )
 
     async def get_document(self, document_id: str) -> DocumentDetail | None:
         document_id = document_id.strip()

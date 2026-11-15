@@ -5,7 +5,7 @@ description: ホスト原本を Langflow Files / Flow API で Ingest し、adapt
 tags: [langflow, ingest]
 status: stable
 generated:
-  at: "2026-09-06T09:55:10Z"
+  at: "2026-11-14T11:36:15Z"
   by: process:codex-agent
 ---
 
@@ -38,7 +38,7 @@ generated:
 - PGVector の接続先は Langflow 専用 DB の `langflow_vectors`（collection `knowledge_documents_v1`）
 - Langflow コンテナはアプリ Postgres に接続しない
 - `scripts/import_langflow.py` が Collection を読み、アプリの `documents` へ [ライフサイクル](/decisions/ADR-0007-document-lifecycle.md) で載せる
-- SearchService / FastMCP / Chainlit は `documents` だけを検索する。Collection は直読みしない
+- SearchService / FastMCP / Open WebUI は `documents` だけを検索する。Collection は直読みしない
 - 確認済み Flow は UI から Export した次の 2 本。API キーと DB URL は空（環境変数 / UI Credential を使う）
   - `infra/langflow/flows/Ingest.json`（name `Ingest`）— 書き込み。PGVector は `ext:pgvector:PGVectorStoreComponent@official-mB2mI` 1 つ
   - `infra/langflow/flows/QueryPgVector.json`（name `QueryPgVector`）— Collection の類似検索確認。Embedding Model → PGVector（`official-JGTq0`）。アプリの SearchService は使わない

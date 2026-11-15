@@ -157,9 +157,8 @@ async def test_tool_call_spans_share_single_trace_id(span_exporter: InMemorySpan
 
 
 @pytest.mark.asyncio
-async def test_mcp_bridge_call_tool_preserves_root_trace(span_exporter: InMemorySpanExporter) -> None:
+async def test_explicit_meta_tool_call_preserves_root_trace(span_exporter: InMemorySpanExporter) -> None:
     from knowledge_mcp import server
-    from knowledge_mcp.config import Settings
     from knowledge_mcp.models import SearchHit
 
     hits = [
@@ -176,16 +175,16 @@ async def test_mcp_bridge_call_tool_preserves_root_trace(span_exporter: InMemory
     ), patch.object(server.embedding_client, "aclose", AsyncMock()), patch.object(
         server.embedding_client, "embed", AsyncMock(return_value=([0.1] * 1536, {"total": 1}))
     ), patch.object(server.repository, "search", AsyncMock(return_value=hits)):
-        settings = Settings()
-        from chat_ui.mcp_bridge import MCPBridge
-
-        bridge = MCPBridge(settings)
-        bridge._client = Client(server.mcp)
+        from knowledge_mcp.tracing import inject_langfuse_propagated_meta
 
         tracer = trace.get_tracer("test")
         with tracer.start_as_current_span("chat.turn") as root:
             root_trace_id = root.get_span_context().trace_id
-            await bridge.call_tool("search_knowledge", {"query": "architecture", "top_k": 5})
+            async with Client(server.mcp) as client:
+                await client.call_tool(
+                    "search_knowledge", {"query": "architecture", "top_k": 5},
+                    meta=inject_langfuse_propagated_meta(),
+                )
 
     spans = span_exporter.get_finished_spans()
     client_span = _span_by_name(spans, "tools/call search_knowledge", kind="CLIENT")

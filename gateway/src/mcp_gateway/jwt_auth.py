@@ -34,7 +34,7 @@ def _as_list(value: Any) -> list[str]:
     return [str(item) for item in value]
 
 
-def verify_chainlit_token(
+def verify_chat_token(
     token: str,
     *,
     issuer: str,
@@ -65,7 +65,7 @@ def verify_chainlit_token(
     if audience not in audiences:
         raise GatewayError(403, "INVALID_AUDIENCE", "Token is not for mcp-gateway")
     if claims.get("azp") != azp:
-        raise GatewayError(403, "INVALID_AUDIENCE", "Token authorized party is not chainlit")
+        raise GatewayError(403, "INVALID_AUDIENCE", "Token authorized party is not permitted")
     subject = claims.get("sub")
     if not subject:
         raise GatewayError(401, "INVALID_TOKEN", "Access token is missing subject")

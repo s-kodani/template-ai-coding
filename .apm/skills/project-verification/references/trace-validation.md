@@ -4,7 +4,7 @@
 
 正本: [Langfuse OTEL トレーシング](/current/features/tracing.md)
 
-1. Langfuse SDK は **FastMCP import 前** に初期化（`src/knowledge_mcp/server.py`, `src/chat_ui/app.py`）
+1. MCP サーバーの Langfuse SDK は **FastMCP import 前** に初期化（`src/knowledge_mcp/server.py`）。Open WebUI は `src/open_webui_ext/tracing.py` の限定 hook で初期化
 2. `should_export_langfuse_span` で `fastmcp` / `asyncpg` のみ追加 export
 3. MCP `_meta` に W3C `traceparent` + Langfuse `baggage`（`langfuse_trace_id` および `propagate_attributes` の `as_baggage`）
 4. `chat.turn` で `user.id` / `session.id` / tags / metadata を伝播

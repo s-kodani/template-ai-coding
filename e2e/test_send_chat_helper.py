@@ -1,58 +1,42 @@
-"""send_chat must wait for a new assistant message, not a pre-existing one."""
+"""Exercise native send behavior without accepting unrelated dialogs."""
 
 from __future__ import annotations
-
-from collections.abc import Iterator
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from threading import Thread
 
 from conftest import send_chat
 from playwright.sync_api import Page, expect
 
-CHAT_WITH_WELCOME_HTML = """<!doctype html>
-<div data-step-type="assistant_message">welcome</div>
-<textarea id="chat-input"></textarea>
-<button id="chat-submit">send</button>
-<script>
-document.querySelector("#chat-submit").onclick = () => {
-  setTimeout(() => {
-    const node = document.createElement("div");
-    node.setAttribute("data-step-type", "assistant_message");
-    node.textContent = "https://docs.pytest.org/en/stable/";
-    document.body.appendChild(node);
-  }, 400);
-};
-</script>
-"""
 
+def test_send_chat_closes_only_the_native_update_notice(page: Page) -> None:
+    page.set_default_timeout(1000)
+    page.set_content('''
+        <textarea id="chat-input" aria-label="Message"></textarea>
+        <button id="send-message-button" onclick="send()">Send message</button>
+        <div class="absolute bottom-8 right-8 z-50"
+             style="position:fixed;inset:0;background:lightblue">
+          A new version is now available.
+          <a href="https://github.com/open-webui/open-webui/releases">Update for the latest features.</a>
+          <button aria-label="Close" onclick="this.parentElement.remove()">Close</button>
+        </div>
+        <section role="dialog" aria-label="Tool call confirmation">
+          <button aria-label="Close" onclick="this.parentElement.remove()">Close</button>
+          <button onclick="window.permissionAccepted = true">Confirm</button>
+        </section>
+        <script>
+          function send() {
+            const reply = document.createElement('div');
+            reply.className = 'chat-assistant';
+            const content = document.createElement('div');
+            content.id = 'response-content-container';
+            content.textContent = document.getElementById('chat-input').value;
+            reply.append(content);
+            document.body.append(reply);
+          }
+        </script>
+    ''')
 
-def _serve(html: str) -> Iterator[str]:
-    class Handler(BaseHTTPRequestHandler):
-        def log_message(self, format: str, *args: object) -> None:
-            del format, args
+    reply = send_chat(page, "second turn", timeout_ms=1000)
 
-        def do_GET(self) -> None:
-            data = html.encode()
-            self.send_response(200)
-            self.send_header("Content-Type", "text/html; charset=utf-8")
-            self.send_header("Content-Length", str(len(data)))
-            self.end_headers()
-            self.wfile.write(data)
-
-    server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
-    thread = Thread(target=server.serve_forever, daemon=True)
-    thread.start()
-    host, port = server.server_address
-    try:
-        yield f"http://{host}:{port}"
-    finally:
-        server.shutdown()
-
-
-def test_send_chat_waits_for_new_assistant_message(page: Page) -> None:
-    for origin in _serve(CHAT_WITH_WELCOME_HTML):
-        page.goto(origin, wait_until="domcontentloaded")
-        expect(page.locator('[data-step-type="assistant_message"]')).to_have_count(1)
-        reply = send_chat(page, "search_web で pytest を検索して")
-        assert reply.inner_text() == "https://docs.pytest.org/en/stable/"
-        expect(page.locator('[data-step-type="assistant_message"]')).to_have_count(2)
+    expect(reply).to_contain_text("second turn")
+    expect(page.get_by_role("dialog", name="Tool call confirmation")).to_be_visible()
+    assert not page.evaluate("Boolean(window.permissionAccepted)")
+    expect(page.locator('a[href="https://github.com/open-webui/open-webui/releases"]')).to_have_count(0)

@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import os
 from collections.abc import AsyncIterator
+from importlib.resources import files
+from typing import Annotated
 
 from knowledge_mcp.tracing import (
     configure_langfuse_tracing,
@@ -15,7 +17,9 @@ _langfuse = configure_langfuse_tracing()
 instrument_asyncpg()
 
 from fastmcp import FastMCP
+from fastmcp.apps import AppConfig, ResourceCSP
 from fastmcp.server.lifespan import lifespan
+from pydantic import Field
 
 from knowledge_mcp.auth import build_mcp_auth, require_mcp_reader
 from knowledge_mcp.config import get_settings
@@ -51,12 +55,19 @@ mcp = FastMCP(
 )
 
 
-@mcp.tool(auth=require_mcp_reader)
-async def search_knowledge(query: str, top_k: int = 5) -> dict:
-    """Search the knowledge base for passages similar to the query."""
-    record_tool_input({"query": query, "top_k": top_k})
+@mcp.tool(
+    auth=require_mcp_reader,
+    app=AppConfig(resource_uri="ui://knowledge/search-results.html"),
+)
+async def search_knowledge(
+    query: Annotated[str, Field(description="Text to find similar knowledge-base passages for.")],
+    top_k: Annotated[int, Field(ge=1, le=20, description="Results per page (1–20).")] = 5,
+    offset: Annotated[int, Field(ge=0, description="Zero-based result offset; use next_offset.")] = 0,
+) -> dict:
+    """Search knowledge passages by similarity. Page with pagination.next_offset until has_more is false."""
+    record_tool_input({"query": query, "top_k": top_k, "offset": offset})
     try:
-        result = await search_service.search_knowledge(query=query, top_k=top_k)
+        result = await search_service.search_knowledge(query=query, top_k=top_k, offset=offset)
     except ValueError as exc:
         output = {"error": str(exc)}
         record_tool_output(output)
@@ -68,6 +79,19 @@ async def search_knowledge(query: str, top_k: int = 5) -> dict:
     output = result.model_dump()
     record_tool_output(output)
     return output
+
+
+@mcp.resource(
+    "ui://knowledge/search-results.html",
+    mime_type="text/html;profile=mcp-app",
+    auth=require_mcp_reader,
+    app=AppConfig(
+        csp=ResourceCSP(connect_domains=[], resource_domains=[], frame_domains=[], base_uri_domains=[]),
+    ),
+)
+def search_results_app() -> str:
+    """Self-contained knowledge search results and document detail interface."""
+    return files("knowledge_mcp").joinpath("static/search-results.html").read_text(encoding="utf-8")
 
 
 @mcp.tool(auth=require_mcp_reader)

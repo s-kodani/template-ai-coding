@@ -47,16 +47,16 @@ def main() -> int:
     parser.add_argument(
         "--token-url",
         default=os.environ.get(
-            "OAUTH_GENERIC_TOKEN_URL",
+            "KEYCLOAK_TOKEN_URL",
             "http://localhost:8081/realms/knowledge/protocol/openid-connect/token",
         ),
     )
     parser.add_argument("--username", default="dev")
     parser.add_argument("--password", default="dev")
-    parser.add_argument("--chainlit-client-id", default="chainlit")
+    parser.add_argument("--client-id", "--chainlit-client-id", dest="client_id", default="open-webui")
     parser.add_argument(
-        "--chainlit-client-secret",
-        default=os.environ.get("OAUTH_GENERIC_CLIENT_SECRET", "chainlit-local-secret"),
+        "--client-secret", "--chainlit-client-secret", dest="client_secret",
+        default=os.environ.get("OPEN_WEBUI_OAUTH_CLIENT_SECRET", "open-webui-local-secret"),
     )
     parser.add_argument("--gateway-client-id", default="mcp-gateway")
     parser.add_argument(
@@ -71,8 +71,8 @@ def main() -> int:
             args.token_url,
             data={
                 "grant_type": "password",
-                "client_id": args.chainlit_client_id,
-                "client_secret": args.chainlit_client_secret,
+                "client_id": args.client_id,
+                "client_secret": args.client_secret,
                 "username": args.username,
                 "password": args.password,
                 "scope": "openid",

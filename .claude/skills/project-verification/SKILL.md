@@ -36,6 +36,8 @@ description: >
 
 ## 変更種別ごとの必須検証
 
+Pythonパッケージには生成済みMCP App HTMLを同梱するため、clean checkoutでは先に `make -C infra app-ui`（Node.js 22+）を実行する。生成HTMLはgit管理しない。
+
 | 変更 | 必須 |
 |---|---|
 | `src/` / `tests/` / `scripts/` / `e2e/`（Python） | `uv run ruff check src tests scripts gateway e2e`、`uv run pytest` |
@@ -57,7 +59,7 @@ description: >
 以下は Cloud Agent で Secrets または Docker 起動が必要。
 
 - `make -C infra up && make -C infra seed`
-- Chainlit 実チャット応答、または `make -C infra e2e`（Playwright スモーク。PR quality では走らない）
+- Open WebUI 実チャット応答、または `make -C infra e2e`（Playwright スモーク。PR quality では走らない）
 - Langfuse UI で 1 ターン = 1 trace の目視確認
 
 実行できない場合は理由と代替（自動テスト結果）を記録する。

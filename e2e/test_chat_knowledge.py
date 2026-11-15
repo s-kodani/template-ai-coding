@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 from conftest import (
-    expect_mcp_post,
+    auth_headers,
     login_keycloak,
     reply_contains_any,
     reply_contains_seed_knowledge,
@@ -26,16 +26,19 @@ GET_DOCUMENT_PROMPT = (
 @pytest.mark.e2e_smoke
 def test_knowledge_mcp_connects_after_login(
     page: Page,
-    chainlit_url: str,
+    webui_url: str,
     e2e_username: str,
     e2e_password: str,
     openai_api_key: str,
 ) -> None:
     del openai_api_key
 
-    with expect_mcp_post(page, server_name="knowledge-mcp") as response_info:
-        login_keycloak(page, chainlit_url, e2e_username, e2e_password)
-    assert response_info.value.status == 200
+    login_keycloak(page, webui_url, e2e_username, e2e_password)
+    response = page.request.get(
+        f"{webui_url}/api/v1/tools/id/server:mcp:knowledge/specs", headers=auth_headers(page)
+    )
+    assert response.ok, "Authenticated knowledge MCP discovery failed"
+    assert "search_knowledge" in response.text()
 
 
 def test_search_knowledge_returns_seeded_content(

@@ -6,7 +6,7 @@ Phase 7 と一時成果物ルール。
 
 Changes、Verification、Documentation 更新を Completion Report として残す。**この時点では Issue を Close しない。** Close は Phase 8（`references/review-and-compliance.md`）で must-fix が無いことを確認し、Issue 本文 AC がすべて `[x]` であることを確認したあと。
 
-**投稿先**: open PR がある場合は該当 PR のコメント。PR がない場合は Issue コメント。
+**投稿先**: open PR がある場合は該当 PR のコメント。PR提出前の記録やユーザー明示のローカル限定作業は Issue コメント。通常納品は `delivery.md` に従いcommit/push/PR提出まで進める。提出前の報告をIssue完了と扱わない。
 
 ### Changes
 
@@ -31,7 +31,7 @@ GitHub Issue を使用している場合は、Completion Report として以下�
 - 残課題がある場合はその Issue への分離状況
 - 関連 PR / commit
 
-Phase 8 の Review で must-fix が無く、**Issue 本文 Acceptance Criteria タスクリストがすべて `[x]`** であることを Close 直前に必ず確認し、必要な恒久知識への昇格が完了し、**紐づく作業 PR がすべて closed**（merged または closed）であることを確認してから Issue を**手動** Close する。open の作業 PR が 1 件でも残っている場合、または本文 AC に `[ ]` が残っている場合は Close しない。Issue と PR は 1:N。詳細は `references/github-issue-workflow.md`。
+PR提出とIssue完了は別の状態とする。Phase8、恒久知識への反映、`delivery.md` の実状態ゲートを満たしたときだけIssueを手動Closeする。必要PRは1件以上で全件merged、最終SHAのCI/人間レビューとAC充足が必要。PRなし・closed未merged・情報取得不能はClose不可。詳細は `github-issue-workflow.md`。
 
 例:
 

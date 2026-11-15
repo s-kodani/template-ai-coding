@@ -35,6 +35,8 @@ def test_main_exchanges_with_web_search_scope(mock_client_cls: MagicMock) -> Non
         exit_code = main()
 
     assert exit_code == 0
+    password_call = mock_client.post.call_args_list[0]
+    assert password_call.kwargs["data"]["client_id"] == "open-webui"
     exchange_call = mock_client.post.call_args_list[1]
     assert exchange_call.kwargs["data"]["scope"] == TARGET_SCOPES["web-search"]
     assert "audience" not in exchange_call.kwargs["data"]

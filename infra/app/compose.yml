@@ -114,6 +114,8 @@ services:
       KEYCLOAK_TOKEN_URL: http://keycloak:8080/realms/knowledge/protocol/openid-connect/token
       GATEWAY_CLIENT_ID: mcp-gateway
       GATEWAY_CLIENT_SECRET: ${GATEWAY_CLIENT_SECRET:-mcp-gateway-local-secret}
+      GATEWAY_AZP: open-webui
+      GATEWAY_AUDIENCE: mcp-gateway
       REGISTRY_PATH: /app/infra/app/gateway-registry.yml
       PUBLIC_BASE_URL: http://mcp-gateway:8082
       HOST: 0.0.0.0
@@ -155,6 +157,7 @@ services:
       - "8081:8080"
     volumes:
       - ./keycloak/knowledge-realm.json:/opt/keycloak/data/import/knowledge-realm.json:ro
+      - keycloak_data:/opt/keycloak/data
     healthcheck:
       test:
         [
@@ -168,31 +171,61 @@ services:
     networks:
       - observability
 
-  chainlit:
+  keycloak-sync:
     build:
       context: ../..
-      dockerfile: infra/app/Dockerfile.chainlit
+      dockerfile: infra/app/Dockerfile.mcp
+    command: ["python", "scripts/sync_keycloak_openwebui.py", "--url", "http://keycloak:8080", "--realm", "knowledge", "--realm-file", "infra/app/keycloak/knowledge-realm.json"]
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KC_BOOTSTRAP_ADMIN_USERNAME:-admin}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KC_BOOTSTRAP_ADMIN_PASSWORD:-admin}
+      OPEN_WEBUI_OAUTH_CLIENT_SECRET: ${OPEN_WEBUI_OAUTH_CLIENT_SECRET:-open-webui-local-secret}
+    depends_on:
+      keycloak:
+        condition: service_healthy
+    networks:
+      - observability
+
+  open-webui:
+    build:
+      context: ../..
+      dockerfile: infra/app/Dockerfile.open-webui
     env_file:
       - ../../.env
     environment:
+      WEBUI_URL: http://localhost:8080
+      DATABASE_URL: sqlite:////app/backend/data/webui.db
+      WEBUI_SECRET_KEY: ${OPEN_WEBUI_SECRET_KEY:-open-webui-local-secret-change-me}
+      ENABLE_PERSISTENT_CONFIG: "false"
+      ENABLE_OAUTH_PERSISTENT_CONFIG: "false"
+      ENABLE_LOGIN_FORM: "false"
+      ENABLE_SIGNUP: "false"
+      ENABLE_OAUTH_SIGNUP: "true"
+      DEFAULT_USER_ROLE: user
+      JWT_EXPIRES_IN: 10h
+      OAUTH_PROVIDER_NAME: Keycloak
+      OAUTH_CLIENT_ID: open-webui
+      OAUTH_CLIENT_SECRET: ${OPEN_WEBUI_OAUTH_CLIENT_SECRET:-open-webui-local-secret}
+      OAUTH_SCOPES: openid email profile
+      OAUTH_CODE_CHALLENGE_METHOD: S256
+      OPENID_PROVIDER_URL: http://keycloak:8080/realms/knowledge/.well-known/openid-configuration
+      OPENID_REDIRECT_URI: http://localhost:8080/oauth/oidc/callback
+      ENABLE_OAUTH_GROUP_MANAGEMENT: "true"
+      ENABLE_OAUTH_GROUP_CREATION: "false"
+      OAUTH_GROUPS_CLAIM: mcp_roles
+      BYPASS_ADMIN_ACCESS_CONTROL: "false"
+      ENABLE_OPENAI_API: "true"
+      ENABLE_OLLAMA_API: "false"
+      OPENAI_API_BASE_URL: ${OPENAI_BASE_URL:-https://api.openai.com/v1}
+      OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://api.openai.com/v1}
+      CHAT_MODEL: ${CHAT_MODEL:-gpt-4o-mini}
       MCP_GATEWAY_REGISTRY_PATH: /app/infra/app/gateway-registry.yml
-      FASTMCP_TELEMETRY_MODE: native
+      ENABLE_OTEL: "false"
       LANGFUSE_HOST: http://langfuse-web:3000
-      OTEL_SERVICE_NAME: chainlit
-      DATABASE_URL: ""
-      TOKEN_STORE_DATABASE_URL: postgresql://${POSTGRES_USER:-knowledge}:${POSTGRES_PASSWORD:-change-me}@app-postgres:5432/${POSTGRES_DB:-knowledge}
-      TOKEN_STORE_KEY: ${TOKEN_STORE_KEY:-chainlit-token-store-key-change-me}
-      CHAINLIT_URL: http://localhost:8080
-      CHAINLIT_AUTH_SECRET: ${CHAINLIT_AUTH_SECRET:-chainlit-local-auth-secret-change-me}
-      OAUTH_GENERIC_CLIENT_ID: ${OAUTH_GENERIC_CLIENT_ID:-chainlit}
-      OAUTH_GENERIC_CLIENT_SECRET: ${OAUTH_GENERIC_CLIENT_SECRET:-chainlit-local-secret}
-      OAUTH_GENERIC_AUTH_URL: http://localhost:8081/realms/knowledge/protocol/openid-connect/auth
-      OAUTH_GENERIC_TOKEN_URL: http://keycloak:8080/realms/knowledge/protocol/openid-connect/token
-      OAUTH_GENERIC_USER_INFO_URL: http://keycloak:8080/realms/knowledge/protocol/openid-connect/userinfo
-      OAUTH_GENERIC_SCOPES: openid profile email
-      OAUTH_GENERIC_NAME: keycloak
-      OAUTH_GENERIC_USER_IDENTIFIER: email
-      OAUTH_KEYCLOAK_NAME: unused
+      OTEL_SERVICE_NAME: open-webui
+    volumes:
+      - open_webui_data:/app/backend/data
+      - ./gateway-registry.yml:/app/infra/app/gateway-registry.yml:ro
     ports:
       - "8080:8080"
     depends_on:
@@ -202,12 +235,13 @@ services:
         condition: service_healthy
       keycloak:
         condition: service_healthy
+      keycloak-sync:
+        condition: service_completed_successfully
     healthcheck:
-      # `up --wait` returns at Started without this. /login is the unauthenticated entry.
       test:
         [
           "CMD-SHELL",
-          "python -c \"from urllib.request import urlopen; urlopen('http://127.0.0.1:8080/login', timeout=3)\"",
+          "python -c \"from urllib.request import urlopen; urlopen('http://127.0.0.1:8080/ready', timeout=3)\"",
         ]
       interval: 5s
       timeout: 5s
@@ -219,3 +253,5 @@ services:
 
 volumes:
   postgres_data:
+  open_webui_data:
+  keycloak_data:

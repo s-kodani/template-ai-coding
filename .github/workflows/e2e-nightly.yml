@@ -20,6 +20,16 @@ jobs:
         with:
           enable-cache: true
 
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/knowledge-search/package-lock.json
+
+      - name: Build and test MCP App
+        working-directory: apps/knowledge-search
+        run: npm ci && npm test && npm run build
+
       - name: Install dependencies
         run: |
           uv sync --frozen --extra dev --extra e2e
@@ -52,7 +62,7 @@ jobs:
         if: failure()
         run: >
           docker compose -f infra/app/compose.yml logs --tail=200
-          chainlit mcp-gateway web-search-mcp mcp-server
+          open-webui mcp-gateway web-search-mcp mcp-server
 
   e2e-brave-empty:
     runs-on: ubuntu-latest
@@ -63,6 +73,16 @@ jobs:
       - uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/knowledge-search/package-lock.json
+
+      - name: Build and test MCP App
+        working-directory: apps/knowledge-search
+        run: npm ci && npm test && npm run build
 
       - name: Install dependencies
         run: |
@@ -96,4 +116,4 @@ jobs:
         if: failure()
         run: >
           docker compose -f infra/app/compose.yml logs --tail=200
-          chainlit mcp-gateway web-search-mcp mcp-server
+          open-webui mcp-gateway web-search-mcp mcp-server

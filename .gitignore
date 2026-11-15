@@ -24,9 +24,8 @@ blob-report/
 .env
 .env.local
 
-# Chainlit (track config.toml so MCP UI settings ship with the repo)
-.chainlit/*
-!.chainlit/config.toml
+# Retired Chainlit local state
+.chainlit/
 .files/
 
 # IDE
@@ -42,3 +41,12 @@ public/mcp-autoload.js
 # Host originals for Langflow API ingest
 data/ingest/*
 !data/ingest/.gitkeep
+
+# MCP App bundle (built by npm / Docker)
+apps/knowledge-search/node_modules/
+src/knowledge_mcp/static/search-results.html
+
+# Browser verification artifacts
+test-results/
+output/
+.playwright-cli/

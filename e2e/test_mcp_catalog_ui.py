@@ -1,72 +1,28 @@
-"""MCP catalog and reconnect behavior in the browser."""
+"""The Open WebUI MCP catalog follows the logged-in user's Keycloak roles."""
 
 from __future__ import annotations
 
-from conftest import (
-    expect_mcp_post,
-    mcp_api_request,
-    mcp_connect,
-    mcp_disconnect,
-    reply_contains_seed_knowledge,
-    send_chat,
-)
-from playwright.sync_api import Page, expect
+from conftest import auth_headers, tools_catalog
+from playwright.sync_api import Page
 
-KNOWLEDGE_PROMPT = (
-    "search_knowledge ツールで「Architecture Overview」を検索し、"
-    "結果に含まれる技術名を1文で要約してください。"
-)
+KNOWLEDGE = "server:mcp:knowledge"
+WEB_SEARCH = "server:mcp:web-search"
 
 
-def test_dev2_cannot_connect_knowledge_mcp(
-    page: Page,
-    chainlit_url: str,
-    chainlit_session_id_dev2: str,
-    openai_api_key: str,
-) -> None:
-    del openai_api_key
-
-    response = mcp_api_request(
-        page,
-        chainlit_url,
-        "POST",
-        chainlit_session_id_dev2,
-        "knowledge-mcp",
+def tool_specs(page: Page, webui_url: str, server_id: str):
+    """Discover through the authenticated host, including Gateway Token Exchange."""
+    return page.request.get(
+        f"{webui_url}/api/v1/tools/id/{server_id}/specs",
+        headers=auth_headers(page),
     )
-    assert response.status == 403
 
 
-def test_dev2_can_connect_web_search_mcp(
-    page: Page,
-    chainlit_url: str,
-    chainlit_session_id_dev2: str,
-    openai_api_key: str,
-) -> None:
-    del openai_api_key
+def test_dev2_catalog_only_contains_web_search(logged_in_dev2: Page, webui_url: str) -> None:
+    ids = {tool["id"] for tool in tools_catalog(logged_in_dev2, webui_url)}
+    assert ids == {WEB_SEARCH}
 
-    response = mcp_connect(
-        page,
-        chainlit_url,
-        chainlit_session_id_dev2,
-        "web-search-mcp",
-    )
+
+def test_dev2_can_discover_web_search_tools(logged_in_dev2: Page, webui_url: str) -> None:
+    response = tool_specs(logged_in_dev2, webui_url, WEB_SEARCH)
     assert response.status == 200
-
-
-def test_reload_reconnects_gateway_mcp_after_disconnect(
-    page: Page,
-    chainlit_url: str,
-    chainlit_session_id: str,
-    openai_api_key: str,
-) -> None:
-    del openai_api_key
-
-    mcp_disconnect(page, chainlit_url, chainlit_session_id, "knowledge-mcp")
-
-    with expect_mcp_post(page, server_name="knowledge-mcp") as response_info:
-        page.reload(wait_until="domcontentloaded")
-        expect(page.locator("#chat-input")).to_be_visible(timeout=60_000)
-    assert response_info.value.status == 200
-
-    reply = send_chat(page, KNOWLEDGE_PROMPT)
-    assert reply_contains_seed_knowledge(reply)
+    assert {tool["name"] for tool in response.json()["specs"]} == {"search_web"}

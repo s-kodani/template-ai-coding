@@ -40,23 +40,36 @@ class VectorRepository:
             await self._pool.close()
             self._pool = None
 
-    async def search(self, embedding: list[float], top_k: int) -> list[SearchHit]:
+    async def search(
+        self, embedding: list[float], top_k: int, offset: int = 0
+    ) -> list[SearchHit]:
         pool = self._require_pool()
         try:
+            # ponytail: exact O(N) distances prevent HNSW's scan cap truncating deep pages.
+            # Revisit indexed candidate paging when the local knowledge base outgrows this path.
             rows = await pool.fetch(
                 """
-                SELECT id::text,
-                       title,
-                       content,
-                       source,
-                       1 - (embedding <=> $1::vector) AS similarity
-                FROM documents
-                WHERE embedding IS NOT NULL
-                ORDER BY embedding <=> $1::vector
-                LIMIT $2
+                WITH distances AS MATERIALIZED (
+                    SELECT id, embedding <=> $1::vector AS distance
+                    FROM documents
+                    WHERE embedding IS NOT NULL
+                ), page AS (
+                    SELECT id, distance
+                    FROM distances
+                    ORDER BY distance, id
+                    LIMIT $2 OFFSET $3
+                )
+                SELECT documents.id::text,
+                       documents.title,
+                       documents.content,
+                       documents.source,
+                       1 - page.distance AS similarity
+                FROM page JOIN documents ON documents.id = page.id
+                ORDER BY page.distance, page.id
                 """,
                 embedding,
                 top_k,
+                offset,
             )
         except asyncpg.PostgresError as exc:
             raise DatabaseError(
