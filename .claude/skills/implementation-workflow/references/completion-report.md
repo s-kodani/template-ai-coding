@@ -31,7 +31,7 @@ GitHub Issue を使用している場合は、Completion Report として以下�
 - 残課題がある場合はその Issue への分離状況
 - 関連 PR / commit
 
-PR提出とIssue完了は別の状態とする。Phase8、恒久知識への反映、`delivery.md` の実状態ゲートを満たしたときだけIssueを手動Closeする。必要PRは1件以上で全件merged、最終SHAのCI/人間レビューとAC充足が必要。PRなし・closed未merged・情報取得不能はClose不可。詳細は `github-issue-workflow.md`。
+PR提出とIssue完了は別の状態とする。Phase8、恒久知識への反映、`delivery.md` の実状態ゲートを満たしたときだけIssueを手動Closeする。必要PRは1件以上で全件merged、最終SHAのCI/人間承認とAC充足が必要。PRなし・closed未merged・情報取得不能はClose不可。詳細は `github-issue-workflow.md`。
 
 例:
 

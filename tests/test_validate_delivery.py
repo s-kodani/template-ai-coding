@@ -149,6 +149,83 @@ def test_merged_delivery_with_current_ci_review_and_complete_ac_passes():
     assert validate(state(merged=True)).ok
 
 
+@pytest.mark.parametrize("login", ["author", "maintainer"])
+def test_human_merge_is_approval_even_without_a_formal_review(login):
+    data = state(merged=True)
+    data[f"{PREFIX}/pulls/142"]["merged_by"] = {"type": "User", "login": login}
+    data[f"{PREFIX}/pulls/142/reviews?per_page=100"] = []
+    assert validate(data).ok
+
+
+@pytest.mark.parametrize("merger", [
+    None, {}, {"type": "Bot", "login": "automation[bot]"},
+    {"type": "unknown", "login": "maintainer"},
+    {"type": "User", "login": ""}, {"type": "User", "login": " "},
+    {"type": "User", "login": 123},
+])
+def test_bot_or_unknown_merge_without_human_approval_is_rejected(merger):
+    data = state(merged=True)
+    data[f"{PREFIX}/pulls/142"]["merged_by"] = merger
+    data[f"{PREFIX}/pulls/142/reviews?per_page=100"] = []
+    result = validate(data)
+    assert not result.ok
+    assert any("REVIEW_REQUIRED" in error for error in result.errors)
+
+
+def test_bot_merge_can_use_current_human_review_approval():
+    data = state(merged=True)
+    data[f"{PREFIX}/pulls/142"]["merged_by"] = {"type": "Bot", "login": "automation[bot]"}
+    assert validate(data).ok
+
+
+def test_human_merge_does_not_override_unresolved_changes_requested():
+    data = state(merged=True)
+    data[f"{PREFIX}/pulls/142"]["merged_by"] = {"type": "User", "login": "author"}
+    data[f"{PREFIX}/pulls/142/reviews?per_page=100"][0]["state"] = "CHANGES_REQUESTED"
+    result = validate(data)
+    assert not result.ok
+    assert any("REVIEW_REQUIRED" in error for error in result.errors)
+
+
+@pytest.mark.parametrize("defect, error", [
+    ("ci-failure", "CI_NOT_SUCCESSFUL"), ("ci-stale", "CI_NOT_SUCCESSFUL"),
+    ("ac", "AC_INCOMPLETE"), ("unmerged", "PR_NOT_MERGED"),
+    ("api", "API_UNAVAILABLE"), ("reviews-api", "API_UNAVAILABLE"),
+])
+def test_human_merge_still_requires_all_other_close_conditions(defect, error):
+    data = state(merged=True)
+    data[f"{PREFIX}/pulls/142"]["merged_by"] = {"type": "User", "login": "author"}
+    data[f"{PREFIX}/pulls/142/reviews?per_page=100"] = []
+    checks_path = f"{PREFIX}/commits/{SHA}/check-runs?filter=latest&per_page=100"
+    if defect == "ci-failure":
+        data[checks_path]["check_runs"][0]["conclusion"] = "failure"
+    elif defect == "ci-stale":
+        data[checks_path]["check_runs"][0]["head_sha"] = "b" * 40
+    elif defect == "ac":
+        data[f"{PREFIX}/issues/139"]["body"] = data[f"{PREFIX}/issues/139"]["body"].replace(
+            "[x]", "[ ]"
+        )
+    elif defect == "unmerged":
+        data[f"{PREFIX}/pulls/142"].update(state="open", merged=False, merged_at=None)
+    elif defect == "api":
+        del data[checks_path]
+    else:
+        del data[f"{PREFIX}/pulls/142/reviews?per_page=100"]
+    result = validate(data)
+    assert not result.ok
+    assert any(error in message for message in result.errors)
+
+
+@pytest.mark.parametrize("reviews", [{}, "", None])
+def test_human_merge_does_not_accept_malformed_review_api_responses(reviews):
+    data = state(merged=True)
+    data[f"{PREFIX}/pulls/142"]["merged_by"] = {"type": "User", "login": "author"}
+    data[f"{PREFIX}/pulls/142/reviews?per_page=100"] = reviews
+    result = validate(data)
+    assert not result.ok
+    assert any("API_UNAVAILABLE" in message for message in result.errors)
+
+
 def test_github_failure_cannot_be_treated_as_no_remaining_work():
     from scripts.validate_delivery import validate_delivery
 

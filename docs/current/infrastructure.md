@@ -148,7 +148,7 @@ make -C infra e2e-smoke
 
 [ADR-0010](/decisions/ADR-0010-devsecops-pattern-a.md) に従い、パターンA（OSS Shift Left）で PR / `main` push 時に自動検証する。
 
-実装の通常納品はcommit/push/PR提出まで進め、Issueはmerge後の最終確認までOpenを維持する。`scripts/validate_delivery.py`はGitHub CLIの読み取りAPIを使い、提出時はcleanなローカルHEADと登録済みPRのHEADを照合する。Close判定はIssue本文`Work PRs`の全件merged、最終SHAの必須CI・人間レビュー、AC充足を確認する。PR0件・未mergeclosed・取得不能は拒否する。これは読み取り専用の運用ゲートであり、汎用MCP/APIのClose権限自体は制限しない。手順の正本はimplementation-workflow Skillの`references/delivery.md`。
+実装の通常納品はcommit/push/PR提出まで進め、Issueはmerge後の最終確認までOpenを維持する。`scripts/validate_delivery.py`はGitHub CLIの読み取りAPIを使い、提出時はcleanなローカルHEADと登録済みPRのHEADを照合する。Close判定はIssue本文`Work PRs`の全件merged、最終SHAの必須CI・人間承認、AC充足を確認する。PR APIのUserアカウントによるマージ（作成者本人を含む）、または有効な同SHAの人間APPROVEDレビューを承認の証拠とし、未解消CHANGES_REQUESTEDは拒否する。PR0件・未mergeclosed・取得不能は拒否する。これは読み取り専用の運用ゲートであり、汎用MCP/APIのClose権限自体は制限しない。Userという種別は実操作主体を証明せず、エージェントへのmerge許可とブランチ保護のレビュー要件も変更しない。手順の正本はimplementation-workflow Skillの`references/delivery.md`。
 
 Python依存の正本は`uv.lock`と`gateway/uv.lock`。ルートはdnspython 2.9.2、OpenTelemetry API / SDK 1.45.2とinstrumentation / asyncpg / semantic-conventions 0.66b2を使用し、GatewayのOpenTelemetry APIも1.45.2に固定する。dnspythonの過大なメモリ・CPU消費（[GHSA-vvf4-9x63-8xvv](https://github.com/advisories/GHSA-vvf4-9x63-8xvv)）とOpenTelemetryのtraceparent解析によるDoS（[GHSA-mf5v-w3w3-f6cg](https://github.com/advisories/GHSA-mf5v-w3w3-f6cg)）の修正版を含む。
 

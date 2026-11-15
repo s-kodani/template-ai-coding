@@ -97,7 +97,7 @@ Phase 8: Review & Compliance（Post-PR 時は PR）
         ↓
 必要な作業PRが1件以上あり全件merged（merge承認は別）
         ↓
-最新SHAのCI・人間レビュー・Issue AC全[x]を実状態validatorで確認
+最新SHAのCI・人間承認・Issue AC全[x]を実状態validatorで確認
         ↓
 Issue Close（手動。PR 本文の `Closes` による自動 Close は使わない）
 ```
