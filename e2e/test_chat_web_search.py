@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import json
+from urllib.parse import urlsplit
+
 import pytest
-from conftest import reply_contains_any, reply_contains_url, send_chat
-from playwright.sync_api import Page
+from conftest import reply_contains_url, send_chat
+from playwright.sync_api import Locator, Page
 
 pytestmark = pytest.mark.e2e_brave
 
@@ -22,6 +25,8 @@ def test_dev2_search_web_returns_url(
     del openai_api_key, brave_search_api_key
 
     reply = send_chat(logged_in_dev2, SEARCH_WEB_PROMPT)
+    results = _search_web_results(logged_in_dev2, reply)
+    assert any(result.get("results") for result in results), "search_web returned no web results"
     text = reply.inner_text()
     assert reply_contains_url(reply), f"assistant reply had no URL: {text!r}"
 
@@ -34,11 +39,42 @@ def test_search_web_without_api_key_reports_error(
     del openai_api_key, require_empty_brave_search_api_key
 
     reply = send_chat(logged_in_dev2, SEARCH_WEB_PROMPT)
-    text = reply.inner_text()
-    assert reply_contains_any(
-        reply,
-        "API key",
-        "BRAVE_SEARCH_API_KEY",
-        "error",
-        "利用",
-    ), f"assistant reply missed Brave error keywords: {text!r}"
+    results = _search_web_results(logged_in_dev2, reply)
+    assert all(result.get("error") == "BRAVE_SEARCH_API_KEY is not configured" for result in results), (
+        "unexpected search_web error: expected missing BRAVE_SEARCH_API_KEY"
+    )
+
+
+def _search_web_results(page: Page, reply: Locator) -> list[dict]:
+    chat_id = urlsplit(page.url).path.removeprefix("/c/")
+    message_id = reply.evaluate(
+        '''element => element.closest('[id^="message-"]').id.slice('message-'.length)'''
+    )
+    # Stop disappearing precedes persistence. Poll this exact reply's saved output,
+    # not the model's paraphrase or an earlier message's successful tool call.
+    output = page.evaluate('''async ({chatId, messageId}) => {
+        const signal = AbortSignal.timeout(10000);
+        while (!signal.aborted) {
+            const response = await fetch(`/api/v1/chats/${encodeURIComponent(chatId)}`, {
+                headers: {Authorization: `Bearer ${localStorage.token}`}, signal
+            });
+            if (!response.ok) throw new Error(`Cannot read saved chat (${response.status})`);
+            const data = await response.json();
+            const message = data.chat?.history?.messages?.[messageId];
+            if (message?.done) return message.output ?? [];
+            await new Promise(resolve => setTimeout(resolve, 100));
+        }
+        throw new Error('This reply was not persisted');
+    }''', {"chatId": chat_id, "messageId": message_id})
+    call_ids = {
+        item["call_id"] for item in output
+        if item.get("type") == "function_call" and item.get("name") == "web-search_search_web"
+    }
+    assert call_ids, "search_web was not called in this reply"
+    results = [
+        json.loads("".join(part.get("text", "") for part in item.get("output", [])))
+        for item in output
+        if item.get("type") == "function_call_output" and item.get("call_id") in call_ids
+    ]
+    assert len(results) == len(call_ids), "search_web results missing from this reply"
+    return results
