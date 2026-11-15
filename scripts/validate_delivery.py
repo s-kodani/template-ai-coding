@@ -162,6 +162,8 @@ def validate_delivery(
             ):
                 result.add(f"CI_NOT_SUCCESSFUL: #{number} final HEAD checks are incomplete")
             reviews = read_json(f"{prefix}/pulls/{number}/reviews?per_page=100")
+            if not isinstance(reviews, list):
+                raise TypeError("Unknown review response")
             if not _approved(reviews, sha, pull["user"]["login"], pull.get("merged_by")):
                 result.add(f"REVIEW_REQUIRED: #{number} needs human merge/review approval with no unresolved changes")
     except Exception:  # noqa: BLE001 - unknown/failed reads must fail closed without leaking responses

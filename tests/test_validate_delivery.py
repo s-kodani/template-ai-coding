@@ -216,6 +216,16 @@ def test_human_merge_still_requires_all_other_close_conditions(defect, error):
     assert any(error in message for message in result.errors)
 
 
+@pytest.mark.parametrize("reviews", [{}, "", None])
+def test_human_merge_does_not_accept_malformed_review_api_responses(reviews):
+    data = state(merged=True)
+    data[f"{PREFIX}/pulls/142"]["merged_by"] = {"type": "User", "login": "author"}
+    data[f"{PREFIX}/pulls/142/reviews?per_page=100"] = reviews
+    result = validate(data)
+    assert not result.ok
+    assert any("API_UNAVAILABLE" in message for message in result.errors)
+
+
 def test_github_failure_cannot_be_treated_as_no_remaining_work():
     from scripts.validate_delivery import validate_delivery
 
