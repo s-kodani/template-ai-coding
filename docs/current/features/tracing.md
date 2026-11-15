@@ -5,7 +5,7 @@ description: Open WebUIの限定hookとFastMCPによる1ターン1trace、MCP _m
 tags: [langfuse, tracing, otel, mcp, mcp-apps, open-webui]
 status: stable
 generated:
-  at: "2026-11-14T11:36:15Z"
+  at: "2026-11-15T02:58:58Z"
   by: process:codex-agent
 ---
 
@@ -41,7 +41,7 @@ Langfuseキーが未設定、または`LANGFUSE_TRACING_ENABLED=false`なら観�
 
 ## Open WebUIの限定hook
 
-標準Host実装を変更せず、固定v0.13.0の次の4点へ`src/open_webui_ext/patch.py`でhookを追加する。対象ファイルのhashと一意なanchorが一致しなければimage buildを失敗させる。
+トレーシングは固定v0.13.0の次の4点へ`src/open_webui_ext/patch.py`でhookを追加する。対象ファイルのhashと一意なanchorが一致しなければimage buildを失敗させる。
 
 | 対象 | hookの責務 |
 |---|---|
