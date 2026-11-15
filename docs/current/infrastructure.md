@@ -5,7 +5,7 @@ description: Open WebUI、MCP Apps、Keycloak、Gateway、FastMCP、pgvector、L
 tags: [docker, open-webui, mcp-apps, langfuse, langflow, postgres, keycloak, gateway, ci, devsecops]
 status: stable
 generated:
-  at: "2026-11-15T03:44:00Z"
+  at: "2026-11-15T05:08:38Z"
   by: process:codex-agent
 ---
 
@@ -41,7 +41,7 @@ make -C infra seed
 
 `app-up`は`docker compose up --build --wait`で各サービスのhealthcheckを待つ。Open WebUIのready判定は`/ready`。Keycloak ready後に`keycloak-sync`が専用client / scopeを同期し、完了してからUIを起動する。
 
-Open WebUIは`ghcr.io/open-webui/open-webui:v0.13.0`ベースの派生イメージ。OS修正パッケージを更新し、Pythonは`open-webui-security-requirements.txt`と`open-webui-otel-requirements.txt`で指定した修正版・互換性に必要な依存だけを更新する。他の上流依存はconstraintsで保持し、Langfuse 4.15.1を導入する。PyTorchは公式CPU indexからtorch / torchaudio 2.10.0、torchvision 0.25.0を揃え、CUDA依存を追加しない。`pip check`と4ファイルのhash検査付き観測パッチをbuild gateにする。native OTELは無効。上流更新時は同じgateと回帰テストを再検証する。
+Open WebUIは`ghcr.io/open-webui/open-webui:v0.13.1`ベースの派生イメージ。OS修正パッケージを更新し、Pythonは`open-webui-security-requirements.txt`と`open-webui-otel-requirements.txt`で指定した修正版・互換性に必要な依存だけを更新する。他の上流依存はconstraintsで保持し、Langfuse 4.15.1を導入する。PyTorchは公式CPU indexからtorch / torchaudio 2.10.0、torchvision 0.25.0を揃え、CUDA依存を追加しない。`pip check`と5ファイルのhash検査付きOAuth・観測パッチをbuild gateにする。native OTELは無効。上流更新時は同じgateと回帰テストを再検証する。
 
 MCP AppはNode 22 build stageでplain JavaScriptと公式Apps SDKをbundleし、`src/knowledge_mcp/static/search-results.html`をPython runtimeへ含める。ソース変更後のローカル生成は次を実行する。
 
@@ -76,6 +76,10 @@ make -C infra sync-auth
 ```
 
 `.env`は`.env.example`を参照。通常のチャットとembeddingには`OPENAI_API_KEY`、必要時は`OPENAI_BASE_URL`と`CHAT_MODEL`。Web検索には`BRAVE_SEARCH_API_KEY`を設定する。Gateway secretとOpen WebUI secretはコンテナ再作成時も揃える。
+
+### Open WebUIの更新
+
+v0.13.1には認証セッション、チャット表示状態、検索用indexの上流DB migrationが含まれる。更新前に旧image IDを記録し、Open WebUIのみ停止した状態で`/app/backend/data`全体をアクセス制限したホストディレクトリへbackupする。`.env`の固定secretを維持し、新imageでUIのみ再作成して`/ready`とmigrationの成功、既存会話・SSO・権限を確認する。復旧時は新UIを停止し、旧imageと更新前backupの組合せへ戻す。新schemaのDBを旧imageへ渡すだけでは復旧扱いにしない。
 
 ## 認証とMCP接続の設定
 

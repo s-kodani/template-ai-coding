@@ -1,4 +1,4 @@
-"""Apply audited tracing and SSO fixes only to the audited Open WebUI v0.13.0 source."""
+"""Apply audited tracing and SSO fixes only to the audited Open WebUI v0.13.1 source."""
 
 from __future__ import annotations
 
@@ -8,8 +8,8 @@ import hashlib
 from pathlib import Path
 
 SOURCE_HASHES = {
-    "utils/oauth.py": "5682c9539d222031c9c36d3d6c5c2219e3e46a0132e9e126a65b4bcb36127372",
-    "main.py": "3d36935b716d396156d026d7d97e0f1c8e34351883721e08389ab207803e757b",
+    "utils/oauth.py": "b94dea418e7f8cf2407635010cc09e1c83cdd772edf54df94da92a011fccc8b8",
+    "main.py": "774a9f9edfd7c2101bbfbbce5f4dd18ad389136a232b399d329caaea322a1785",
     "utils/chat.py": "c897d17e9fd1dd15682268a1577bd7297a1c0ae0ea2d2ea77ecae71c245636ac",
     "utils/mcp/client.py": "ce99c883a9226a1a48adf427bd3dca2c8925711cf89be3de78beac56e7cc8af9",
     "routers/tools.py": "424af44005793e76276f304132150a48abb774c35f2ed2657ac7be62542e89fa",
@@ -120,7 +120,7 @@ def main() -> None:
     parser.add_argument("root", type=Path)
     args = parser.parse_args()
     patch_tree(args.root)
-    print("Applied tracing hooks and SSO fixes to Open WebUI v0.13.0")
+    print("Applied tracing hooks and SSO fixes to Open WebUI v0.13.1")
 
 
 if __name__ == "__main__":

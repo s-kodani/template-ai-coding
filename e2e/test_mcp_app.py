@@ -1,11 +1,64 @@
 """Real Host smoke: server pagination and chunk details through Open WebUI MCP Apps."""
 from __future__ import annotations
 
+import hashlib
 import re
+from collections import Counter
 from collections.abc import Callable
 
 from conftest import send_chat
 from playwright.sync_api import Page, expect
+
+
+def test_streaming_text_does_not_repeatedly_reload_the_same_mcp_app(
+    logged_in_dev: Page,
+    openai_api_key: str,
+) -> None:
+    del openai_api_key
+    page = logged_in_dev
+    # Establish a saved chat before observing Apps, avoiding the initial route transition.
+    send_chat(page, "ツールは使わず、「準備完了」とだけ回答してください。")
+    resource_requests = Counter()
+
+    def record_resource(request) -> None:
+        if "/mcp/app/rpc" in request.url and request.method == "POST":
+            body = request.post_data_json
+            if body.get("method") == "ui/resource":
+                # Earlier messages can also load Apps; count each binding independently.
+                binding = hashlib.sha256(body["binding"].encode()).hexdigest()
+                resource_requests[binding] += 1
+
+    page.on("request", record_resource)
+    replies = page.locator(".chat-assistant")
+    before = replies.count()
+    page.locator("#chat-input").fill(
+        "search_knowledge を query='Architecture Overview', top_k=1, offset=0 で1回だけ実行し、"
+        "検索結果を表示してください。他のツールは使わないでください。"
+        "検索後に、取得した結果をもとにシステムの構成を日本語の長い文章で30文説明してください。"
+    )
+    page.locator("#send-message-button").click()
+    expect(replies).to_have_count(before + 1, timeout=120_000)
+    reply = replies.last
+    frame = reply.locator('iframe[title="search_knowledge"]')
+    expect(frame).to_have_count(1, timeout=60_000)
+    expect(frame).to_be_visible(timeout=60_000)
+    app = page.frame_locator('iframe[title="search_knowledge"]').last
+    expect(app.locator("#results > li")).to_have_count(1, timeout=60_000)
+    original = frame.element_handle()
+    assert original is not None
+    initial_requests = resource_requests.copy()
+    stop = page.get_by_role("button", name=re.compile(r"^(Stop|停止)$"))
+    expect(stop).to_be_visible()
+    # Require text updates after the App appears; a completed reply cannot cover this regression.
+    for _ in range(3):
+        initial_text = reply.inner_text()
+        expect(reply).not_to_have_text(initial_text, timeout=30_000)
+        expect(stop).to_be_visible()
+        assert original.evaluate("element => element.isConnected"), "Text update remounted the App"
+        assert resource_requests == initial_requests, "Text update re-fetched the App resource"
+    expect(stop).not_to_be_visible(timeout=120_000)
+    assert original.evaluate("element => element.isConnected"), "Reply completion remounted the App"
+    assert resource_requests == initial_requests, "Streaming re-fetched the App resource"
 
 
 def _app_call(page: Page, action: Callable[[], object], tool_name: str) -> dict:

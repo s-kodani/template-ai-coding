@@ -5,7 +5,7 @@ description: Keycloak SSO、role別MCP接続、検索結果一覧・チャンク
 tags: [open-webui, ui, mcp, mcp-apps, oauth, keycloak, gateway]
 status: stable
 generated:
-  at: "2026-11-14T12:06:12Z"
+  at: "2026-11-15T05:08:38Z"
   by: process:codex-agent
 ---
 
@@ -14,7 +14,7 @@ generated:
 ## エントリポイント
 
 - URL: http://localhost:8080
-- Host: Open WebUI v0.13.0。起動設定は`src/open_webui_ext/startup.py`、観測拡張は`src/open_webui_ext/tracing.py`。
+- Host: Open WebUI v0.13.1。起動設定は`src/open_webui_ext/startup.py`、観測拡張は`src/open_webui_ext/tracing.py`。
 - 認証: Keycloak SSOのみ。通常のメール・パスワード登録画面は無効。専用clientは`open-webui`。
 - 採用判断は[ADR-0015](/decisions/ADR-0015-open-webui-mcp-apps.md)、認証フローは[認証認可](/current/features/authentication.md)。
 
@@ -30,7 +30,7 @@ generated:
 
 ## ナレッジ検索App
 
-`search_knowledge`の結果に関連付いた`ui://knowledge/search-results.html`を、Hostが認証付きで読み取り、sandboxed iframeに表示する。
+`search_knowledge`の結果に関連付いた`ui://knowledge/search-results.html`を、Hostが認証付きで読み取り、sandboxed iframeに表示する。周囲の応答テキストがストリーミング更新されても、同じAppのiframeと表示状態を維持し、UI Resourceを繰り返し再取得しない。新規チャットを保存済みチャットの画面へ切り替える際には、Appを一度読み直す場合がある。
 
 - 類似度順の順位、タイトル、抜粋、出典、類似度を一覧表示する。類似度は確率や正解率ではない。
 - タイトル選択で既存の`get_document`をHost経由で呼び、同じApp内にチャンク本文を表示する。原本全体を結合しない。

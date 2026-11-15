@@ -1,4 +1,4 @@
-# Trivy HIGH/CRITICAL fixes and compatibility-required companions for v0.13.0.
+# Trivy HIGH/CRITICAL fixes and compatibility-required companions for v0.13.1.
 Authlib==1.9.1
 PyJWT==2.15.1
 backoff==2.2.1
