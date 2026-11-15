@@ -204,7 +204,7 @@ Source of Truth は git 上の `docs/` bundle（ポータブル層）。組織�
 
 ```text
 Frontend:
-- Chat UI: Open WebUI v0.13.0 (`src/open_webui_ext/` の限定的な観測・起動拡張)
+- Chat UI: Open WebUI v0.13.1 (`src/open_webui_ext/` の限定的な観測・起動拡張)
 - MCP Apps: `apps/knowledge-search/`（Node.js 22+、plain JS、公式 ext-apps SDK）
 - Package manager: uv（Python）、npm（MCP App build）
 

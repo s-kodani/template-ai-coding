@@ -2,6 +2,9 @@
 useDefault = true
 
 [allowlist]
-description = "Public Open WebUI v0.13.0 utils/oauth.py SHA-256, not an API key"
+description = "Public Open WebUI v0.13.0/v0.13.1 utils/oauth.py SHA-256 values, not API keys"
 regexTarget = "secret"
-regexes = ['''^5682c9539d222031c9c36d3d6c5c2219e3e46a0132e9e126a65b4bcb36127372$''']
+regexes = [
+    '''^5682c9539d222031c9c36d3d6c5c2219e3e46a0132e9e126a65b4bcb36127372$''',
+    '''^b94dea418e7f8cf2407635010cc09e1c83cdd772edf54df94da92a011fccc8b8$''',
+]

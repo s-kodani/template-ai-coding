@@ -1,5 +1,5 @@
-# Excerpt from Open WebUI v0.13.0 utils/oauth.py (upstream license applies).
-# https://github.com/open-webui/open-webui/blob/v0.13.0/backend/open_webui/utils/oauth.py
+# Excerpt from Open WebUI v0.13.1 utils/oauth.py (upstream license applies).
+# https://github.com/open-webui/open-webui/blob/v0.13.1/backend/open_webui/utils/oauth.py
 class OAuthManager:
     async def get_oauth_token(self, user_id: str, session_id: str, force_refresh: bool = False):
         """
