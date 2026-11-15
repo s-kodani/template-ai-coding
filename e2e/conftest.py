@@ -127,7 +127,10 @@ def reply_contains_seed_knowledge(reply: Locator) -> bool:
 
 
 def reply_contains_url(reply: Locator) -> bool:
-    return bool(re.search(r"https?://", reply.inner_text()))
+    return bool(
+        re.search(r"https?://", reply.inner_text())
+        or reply.locator('a[href^="https://"], a[href^="http://"]').count()
+    )
 
 
 def logout_webui(page: Page, webui_url: str) -> None:
