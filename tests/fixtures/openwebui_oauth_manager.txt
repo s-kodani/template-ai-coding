@@ -1,0 +1,110 @@
+# Excerpt from Open WebUI v0.13.0 utils/oauth.py (upstream license applies).
+# https://github.com/open-webui/open-webui/blob/v0.13.0/backend/open_webui/utils/oauth.py
+class OAuthManager:
+    async def get_oauth_token(self, user_id: str, session_id: str, force_refresh: bool = False):
+        """
+        Get a valid OAuth token for the user, automatically refreshing if needed.
+
+        Args:
+            user_id: The user ID
+            provider: Optional provider name. If None, gets the most recent session.
+            force_refresh: Force token refresh even if current token appears valid
+
+        Returns:
+            dict: OAuth token data with access_token, or None if no valid token available
+        """
+        try:
+            # Get the OAuth session
+            session = await OAuthSessions.get_session_by_id_and_user_id(session_id, user_id)
+            if not session:
+                log.warning(f'No OAuth session found for user {user_id}, session {session_id}')
+                return None
+
+            # Guard: MCP-provider sessions must be refreshed by
+            # oauth_client_manager, not the SSO OAuthManager.  If one
+            # reaches here (e.g. via a stale cookie), bail out early
+            # instead of attempting a refresh that will fail and delete
+            # the session (#24618).
+            if (session.provider or '').startswith('mcp:'):
+                log.debug(
+                    'Skipping MCP session %s (provider=%s) in SSO OAuthManager — handled by oauth_client_manager',
+                    session.id,
+                    session.provider,
+                )
+                return None
+
+            # SSO integrations may consume the ID token as well as the access token.
+            expires_at = session.expires_at
+            id_token = session.token.get('id_token')
+            if id_token and expires_at is not None:
+                try:
+                    exp = jwt.decode(id_token, options={'verify_signature': False}).get('exp')
+                    if exp is not None:
+                        expires_at = min(expires_at, int(exp))
+                except Exception as e:
+                    log.debug('Could not read exp from id_token: %s', e)
+
+            if (
+                force_refresh
+                or expires_at is None
+                or datetime.now() + timedelta(minutes=5) >= datetime.fromtimestamp(expires_at)
+            ):
+                log.debug('Token refresh needed for user %s, provider %s', user_id, session.provider)
+                refreshed_token = await self._refresh_token(session)
+                if refreshed_token:
+                    return refreshed_token
+                else:
+                    log.warning(
+                        f'Token refresh failed for user {user_id}, provider {session.provider}, deleting session {session.id}'
+                    )
+                    await OAuthSessions.delete_session_by_id(session.id)
+
+                    return None
+            return session.token
+
+        except Exception as e:
+            log.error(f'Error getting OAuth token for user {user_id}: {e}')
+            return None
+
+
+    async def _refresh_token(self, session) -> dict:
+        """
+        Refresh an OAuth token if needed, with concurrency protection.
+
+        Args:
+            session: The OAuth session object
+
+        Returns:
+            dict: Refreshed token data, or None if refresh failed
+        """
+        redis = self.app.state.redis
+        if redis:
+            # Shared across workers and replicas
+            refresh_lock = redis.lock(f'{REDIS_KEY_PREFIX}:oauth:refresh_lock:{session.id}', timeout=60)
+        else:
+            refresh_lock = self._refresh_locks.setdefault(session.id, asyncio.Lock())
+
+        async with refresh_lock:
+            # Another request may have refreshed while we waited; its refresh token is now spent
+            current_session = await OAuthSessions.get_session_by_id(session.id)
+            if current_session and current_session.token != session.token:
+                return current_session.token
+
+            try:
+                # Perform the actual refresh
+                refreshed_token = await self._perform_token_refresh(session)
+
+                if refreshed_token:
+                    # Update the session with new token data
+                    session = await OAuthSessions.update_session_by_id(session.id, refreshed_token)
+                    log.info('Successfully refreshed token for session %s', session.id)
+                    return session.token
+                else:
+                    log.error(f'Failed to refresh token for session {session.id}')
+                    return None
+
+            except Exception as e:
+                log.error(f'Error refreshing token for session {session.id}: {e}')
+                return None
+
+

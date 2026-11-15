@@ -5,7 +5,7 @@ description: Keycloak SSO、Open WebUIグループ、Gateway Token Exchange、Ap
 tags: [authentication, keycloak, open-webui, gateway, mcp, mcp-apps]
 status: stable
 generated:
-  at: "2026-11-14T12:25:36Z"
+  at: "2026-11-15T02:55:16Z"
   by: process:codex-agent
 ---
 
@@ -85,7 +85,11 @@ Gatewayは`tools/list`・`tools/call`・`resources/list`・`resources/read`のro
 - Open WebUIがSSO tokenの更新を管理する。利用者の認証が失効した場合は再ログインする。Gatewayへの401再試行で期限切れtokenを匿名接続へ置き換えない。
 - 会話・OAuth状態は`open_webui_data`へ保存し、固定`WEBUI_SECRET_KEY`を維持する。旧Chainlit Cookieは新UIの認証に使わない。
 
-Open WebUI v0.13.0の標準SSO処理は、refreshが失敗すると保存済みOAuthセッションを破棄する。失効したrefresh tokenの拒否に加え、一時的な5xxや通信失敗もこの扱いになる。cookieに対応するセッションが使えない場合は、同じ利用者の別の保存済みSSOセッションを探す。有効なセッションを取得できなければ、MCPを再利用するにはKeycloakでSSOログインをやり直す。Open WebUIのユーザーと保存済み会話は維持される（[固定版のOAuth実装](https://github.com/open-webui/open-webui/blob/v0.13.0/backend/open_webui/utils/oauth.py)）。
+Open WebUI v0.13.0のSSO更新には、`src/open_webui_ext/patch.py`でソースhashを検証した限定パッチを適用する。更新猶予を上流の5分から30秒へ短縮し、300秒寿命のKeycloak tokenが各MCP HTTP要求で更新され続けることを防ぐ。access tokenとID tokenの早い方の期限を使い、明示的な強制更新と既存のセッション単位の排他処理は維持する。
+
+providerのrefresh成功後、保存処理が`None`を返した場合は、同じ更新結果の保存のみ最大3回試す（再試行前に0.1秒、0.2秒待機）。外部providerへのrefreshは繰り返さない。上流のSQLite busy timeoutは各保存処理にも適用される。保存できなければ認証失敗として扱い、未保存tokenを返さず、`None`参照の二次例外を起こさず、既存セッションを削除しない。refresh tokenが既にローテーションされた場合は再ログインが必要となる。SQLiteの単一writer制約は残るため、全ての長時間ロックを解消するものではない。
+
+provider側のrefresh失敗では上流の動作を維持し、保存済みOAuthセッションを破棄する。失効したrefresh tokenの拒否に加え、一時的な5xxや通信失敗もこの扱いになる。cookieに対応するセッションが使えない場合は、同じ利用者の別の保存済みSSOセッションを探す。有効なセッションを取得できなければ、MCPを再利用するにはKeycloakでSSOログインをやり直す。Open WebUIのユーザーと保存済み会話は維持される（[固定版のOAuth実装](https://github.com/open-webui/open-webui/blob/v0.13.0/backend/open_webui/utils/oauth.py)）。
 
 ## 既存realmからの移行
 

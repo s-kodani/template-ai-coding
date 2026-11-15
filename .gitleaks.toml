@@ -1,0 +1,7 @@
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Public Open WebUI v0.13.0 utils/oauth.py SHA-256, not an API key"
+regexTarget = "secret"
+regexes = ['''^5682c9539d222031c9c36d3d6c5c2219e3e46a0132e9e126a65b4bcb36127372$''']
