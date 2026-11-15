@@ -63,7 +63,7 @@ def _complete_ac(body: str) -> bool:
     return bool(tasks) and all(status.lower() == "x" and label.strip() for status, label in tasks)
 
 
-def _approved(reviews: list[dict], sha: str, author: str) -> bool:
+def _approved(reviews: list[dict], sha: str, author: str, merged_by: dict | None) -> bool:
     decisions = {}
     for review in reviews:  # GitHub returns reviews chronologically, across every fetched page.
         user = review["user"]
@@ -75,7 +75,11 @@ def _approved(reviews: list[dict], sha: str, author: str) -> bool:
             decisions[user["login"]] = review
     if any(review["state"] == "CHANGES_REQUESTED" for review in decisions.values()):
         return False
-    return any(
+    human_merge = (
+        isinstance(merged_by, dict) and merged_by.get("type") == "User"
+        and isinstance(merged_by.get("login"), str) and bool(merged_by["login"].strip())
+    )
+    return human_merge or any(
         review["state"] == "APPROVED" and review["commit_id"] == sha
         for review in decisions.values()
     )
@@ -158,8 +162,8 @@ def validate_delivery(
             ):
                 result.add(f"CI_NOT_SUCCESSFUL: #{number} final HEAD checks are incomplete")
             reviews = read_json(f"{prefix}/pulls/{number}/reviews?per_page=100")
-            if not _approved(reviews, sha, pull["user"]["login"]):
-                result.add(f"REVIEW_REQUIRED: #{number} needs current human approval")
+            if not _approved(reviews, sha, pull["user"]["login"], pull.get("merged_by")):
+                result.add(f"REVIEW_REQUIRED: #{number} needs human merge/review approval with no unresolved changes")
     except Exception:  # noqa: BLE001 - unknown/failed reads must fail closed without leaking responses
         result.add("API_UNAVAILABLE: GitHub state could not be fully verified")
     return result

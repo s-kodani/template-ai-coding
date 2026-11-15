@@ -165,7 +165,7 @@ Issue を Close する前に、次をすべて満たす。
 1. Phase 8（Review & Compliance）が `pass` または `pass-with-nits`
 2. **Issue 本文の Acceptance Criteria 節を読み直し、タスクリスト項目がすべて `[x]` であることを確認した**（必須ゲート。`[ ]` が 1 件でも残っていれば Close しない）
 3. **Issue本文Work PRsに必要PRが1件以上登録され、すべてmerged済み**。closed未mergedは完了と数えない
-4. `delivery.md`の読み取り専用Close validatorで最終HEADのCI・人間レビュー・ACを実状態から確認した
+4. `delivery.md`の読み取り専用Close validatorで最終HEADのCI・人間承認・ACを実状態から確認した
 
 1 Issueに複数PRがある場合も必要集合をすべて検証する。通常の納品範囲、PR提出とIssue完了の区別、具体的なvalidator手順は `delivery.md` を正本とする。
 

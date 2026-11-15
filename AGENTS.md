@@ -94,7 +94,7 @@ Issue 本文・起票前確認・進捗コメント・Checkpoint・Resume・Clos
 - 新規 Issue 起票前に、ユーザーへ既存 Issue の有無を確認する（詳細は `references/github-issue-workflow.md`）
 - PR は **`Refs #<issue>`** を明示（`src/` `tests/` `scripts/` `infra/` `e2e/` `gateway/` `.apm/` 変更時 CI は `Refs` を検証。`Closes` は使わない）
 - 通常の実装・修正・Skill更新の納品は検証・commit・push・PR作成/更新まで。ローカル限定やPR不要はユーザーの明示指示だけを例外とし、エージェントがPlanへ書いた対象外を根拠にしない。mergeは別の承認に従う
-- Issue と PR は **1:N**。本文の`Work PRs`へ必要PRを全件登録する。必要PRが1件以上あり全件merged後、最終SHAの必須CI・人間レビュー・AC充足を`uv run python -m scripts.validate_delivery --phase close ...`で確認するまでIssueをCloseしない。PRなし・closed未merged・取得不能は拒否する（正本: `implementation-workflow/references/delivery.md`）
+- Issue と PR は **1:N**。本文の`Work PRs`へ必要PRを全件登録する。必要PRが1件以上あり全件merged後、最終SHAの必須CI・人間承認・AC充足を`uv run python -m scripts.validate_delivery --phase close ...`で確認するまでIssueをCloseしない。人間承認はUserアカウントによるマージ（作成者本人を含む）、または有効な同SHAの人間APPROVEDレビューを証拠とし、未解消CHANGES_REQUESTEDは拒否する。PRなし・closed未merged・取得不能は拒否する（正本: `implementation-workflow/references/delivery.md`）
 - Plan 承認後、Issue へ **Work Start コメント**（冒頭に Coverage: full / partial、作業ブランチ、Implementation Plan）を残してから実装に入る
 - **Pre-PR**（PR 作成まで）の進捗は Issue コメント、**Post-PR**（PR 作成後）の進捗・Review・Completion Report は PR コメント。PR 作成・マージ時は Issue へ最小通知のみ。当初スコープ外の対応は Issue コメント + 本文更新
 - 主要イベント（PR 作成前の一区切り、Phase 5 検証完了、レビュー修正完了）で進捗コメントを残し、本文の Acceptance Criteria タスクリストを再評価する（`[x]` 更新は Issue 本文）。Cursor Cloud で `gh` が read-only のときは書ける側（Issue または PR）へ同内容を投稿し、偽報告しない

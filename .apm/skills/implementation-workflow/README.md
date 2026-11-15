@@ -130,7 +130,7 @@ ScopeやAcceptance Criteriaの**文言**が変わった場合は、Issue本文�
 
 実装の主要イベント（PR 作成前の一区切り、Phase 5 検証完了、レビュー修正完了）で、進捗コメント（`<!-- agent-progress:v1 -->`）を残し、本文の Acceptance Criteria タスクリストを再評価します。Pre-PR は Issue、Post-PR は PR へ投稿します。Plan 承認後は Issue へ Work Start コメントを残します。同一 Issue の 2 本目以降は `Coverage: partial` 必須で、Covered AC の重複は禁止です。投稿できたことを確認するまで、その区切りを完了としません。詳細は `references/github-issue-workflow.md` です。
 
-通常の実装納品はcommit/push/PR提出まで進め、IssueはOpenを維持します。Phase8のレビュー後も、必要PR1件以上・全件merged・最終SHAのCI/人間レビュー/ACの確認が済むまでCloseしません。納品とCloseの実状態validatorは`references/delivery.md`、レビュー手順は`references/review-and-compliance.md`を参照してください。
+通常の実装納品はcommit/push/PR提出まで進め、IssueはOpenを維持します。Phase8のレビュー後も、必要PR1件以上・全件merged・最終SHAのCI/人間承認/ACの確認が済むまでCloseしません。納品とCloseの実状態validatorは`references/delivery.md`、レビュー手順は`references/review-and-compliance.md`を参照してください。
 
 ---
 
@@ -187,7 +187,7 @@ Review & Compliance（Post-PR 時は PR。must-fix なら Implement に戻る）
         ↓
 必要な作業PR1件以上・全件merged
         ↓
-実状態validatorで最終SHAのCI・人間レビュー・ACを確認
+実状態validatorで最終SHAのCI・人間承認・ACを確認
         ↓
 Issue Close（手動。PR の `Closes` による自動 Close は使わない）
 

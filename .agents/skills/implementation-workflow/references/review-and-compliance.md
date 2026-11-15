@@ -2,7 +2,7 @@
 
 Phase 8 の詳細。Phase 7 Completion Report のあと、Issue を Close する前に実施する。
 
-IssueとPRは1:N。通常納品とmerge後のIssue完了は`delivery.md`に従い分離する。必要PR1件以上・全件merged・最終SHAのCI/人間レビュー/ACの実状態確認後だけ手動Closeする。PR本文の自動Closeキーワードは使わない。
+IssueとPRは1:N。通常納品とmerge後のIssue完了は`delivery.md`に従い分離する。必要PR1件以上・全件merged・最終SHAのCI/人間承認/ACの実状態確認後だけ手動Closeする。PR本文の自動Closeキーワードは使わない。
 
 ## 目的
 
@@ -63,7 +63,7 @@ Phase 8 レビューコメント（投稿先が PR でも Issue でも）に載�
 **投稿先が PR のとき、次は載せない。** Issue Close ゲートであり、当該 PR が open なのは正常。
 
 ```markdown
-- [ ] 必要PR1件以上・全件merged・最終SHAのCI/人間レビュー/ACをClose validatorで確認した
+- [ ] 必要PR1件以上・全件merged・最終SHAのCI/人間承認/ACをClose validatorで確認した
 ```
 
 この項目は Issue Close 直前にだけ確認する。PR なしで Phase 8 を Issue へ投稿する場合も、Close する時点まで `[x]` にしない。
