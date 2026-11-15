@@ -20,6 +20,8 @@ class Settings(BaseSettings):
     registry_path: str = "infra/app/gateway-registry.yml"
     host: str = "127.0.0.1"
     port: int = 8082
+    mcp_allowed_hosts: list[str] = ["mcp-gateway:8082", "localhost:*", "127.0.0.1:*"]
+    mcp_allowed_origins: list[str] = ["http://localhost:8080"]
     token_cache_ttl_seconds: int = 300
     mcp_call_timeout_seconds: float = 30.0
     token_exchange_timeout_seconds: float = 5.0

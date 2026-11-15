@@ -5,7 +5,7 @@ description: Open WebUI、MCP Apps、FastMCP、MCP Gateway、Keycloak、pgvector
 tags: [architecture, mcp, mcp-apps, open-webui, tracing, langflow, keycloak, gateway]
 status: stable
 generated:
-  at: "2026-11-14T12:06:12Z"
+  at: "2026-11-15T03:44:00Z"
   by: process:codex-agent
 ---
 
@@ -61,7 +61,7 @@ GatewayはDocker内部のみ公開する。ブラウザのAppはGatewayやMCPへ
 
 ## MCPと検索
 
-輸送は既存のStreamable HTTP。Gatewayはcore `2025-11-25`のhandshake互換経路、Appsはstable `2026-01-26`を対象にする。最新coreへの全面移行はこの構成に含めない。
+輸送は既存のStreamable HTTP。Gateway公開側は公式Python SDK 2.3.0のServerでcore `2026-07-28`と従来`2025-11-25`を受ける。下流FastMCPへはlegacyで接続し、新coreの予約metadataを終端する。Appsはstable `2026-01-26`を維持する（[ADR-0016](/decisions/ADR-0016-gateway-sdk-dual-protocol.md)）。
 
 FastMCP側のMCP SDK 1.30とGatewayの公式SDK 2.3は別のlock・実行環境に置く。これは各adapterが検証したSDK契約を固定するためで、退役したChainlitへの依存ではない。両Python imageはlockをコピーし、`uv sync --frozen --no-dev --no-editable`で構築する。
 

@@ -15,3 +15,4 @@
 - [ADR-0013: MCP Gateway をサーバー単位の Streamable HTTP にする](/decisions/ADR-0013-mcp-gateway-per-server-streamable-http.md) — 案 A。`/mcp/{server_id}`。カタログは `GET /v1/mcp`
 - [ADR-0014: 直結 MCP クライアントの 3LO は Keycloak AS + MCP RS](/decisions/ADR-0014-mcp-direct-three-legged-oauth.md) — 認可コード + PKCE + DCR。Gateway Token Exchange は残す
 - [ADR-0015: Open WebUIとMCP Appsによる検索UI](/decisions/ADR-0015-open-webui-mcp-apps.md) — SSOとToken Exchangeを維持するHost移行、Apps Resource、exactページ検索、限定した観測hook
+- [ADR-0016: Gateway公開側を公式SDKで新旧MCPに対応させる](/decisions/ADR-0016-gateway-sdk-dual-protocol.md) — core2026-07-28/2025-11-25と下流legacyの境界

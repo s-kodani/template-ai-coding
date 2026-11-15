@@ -5,7 +5,7 @@ description: Open WebUI、MCP Apps、Keycloak、Gateway、FastMCP、pgvector、L
 tags: [docker, open-webui, mcp-apps, langfuse, langflow, postgres, keycloak, gateway, ci, devsecops]
 status: stable
 generated:
-  at: "2026-11-14T12:31:53Z"
+  at: "2026-11-15T03:44:00Z"
   by: process:codex-agent
 ---
 
@@ -215,3 +215,10 @@ Repository rulesets で以下を要求する。
 ```
 
 GitHub UI から設定する場合: **Settings → Rules → Rulesets → New branch ruleset** で `refs/heads/main` を対象に、上記 5 チェックと pull request レビューを必須化する。
+
+
+## Gateway SDK transport設定
+
+Gatewayは公式SDK2.3.0のServerをRegistryの有効接続ごとに起動し、FastAPI lifespanでまとめて停止する。公開endpointは同じパスで新旧coreを受け、末尾slashへのredirectや新たなhost port公開は追加しない。
+
+`MCP_ALLOWED_HOSTS`は既定で`mcp-gateway:8082`、`localhost:*`、`127.0.0.1:*`、`MCP_ALLOWED_ORIGINS`は`http://localhost:8080`。変更時はJSON配列を環境変数へ設定する。Originなしのバックエンド要求は許可し、不正Originは拒否する。ホスト名やポートを変更する場合はallowlistも合わせる。新しい共有storeやDB migrationは不要。

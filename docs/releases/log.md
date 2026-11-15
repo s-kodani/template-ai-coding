@@ -2,6 +2,8 @@
 
 ## v?.?.? (未確定)
 
+- **Changed**: Gateway公開側を公式Python MCP SDKへ移し、core2026-07-28と従来2025-11-25に対応。下流FastMCP・Token Exchange・MCP Appsを維持し、MCPエラーをSDKのJSON-RPC形式へ移した（[API](/current/features/api.md)、[ADR-0016](/decisions/ADR-0016-gateway-sdk-dual-protocol.md)）。
+
 - **Fixed**: Open WebUIのSSO更新猶予を30秒へ調整し、300秒tokenの連続更新を抑制。SQLite競合などの保存失敗では同じ更新結果の保存を最大3回試し、失敗時の`None`参照とMCP認証エラーの連鎖を修正（[認証認可](/current/features/authentication.md)）
 
 - **Fixed**: Open WebUI imageのTrivy HIGH/CRITICAL失敗を修正するため、OSと認証・文書処理・ML系の修正版を明示的に固定した。CPU版PyTorchの互換構成と`pip check`を維持し、setuptools同梱の古いライブラリも更新した（[インフラ](/current/infrastructure.md)）。

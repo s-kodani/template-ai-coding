@@ -5,7 +5,7 @@ description: Open WebUIの限定hookとFastMCPによる1ターン1trace、MCP _m
 tags: [langfuse, tracing, otel, mcp, mcp-apps, open-webui]
 status: stable
 generated:
-  at: "2026-11-15T02:58:58Z"
+  at: "2026-11-15T03:44:00Z"
   by: process:codex-agent
 ---
 
@@ -83,3 +83,8 @@ MCP `_meta`には`traceparent`、存在時の`tracestate`、`baggage`を注入�
 自動検証は`tests/test_openwebui_ext.py`、`tests/test_openwebui_ext_patch.py`と既存の`test_trace_propagation.py`、`test_langfuse_span_export.py`、`test_tracing_metadata.py`、`test_tool_trace_output.py`。並行ユーザーの分離、stream / cancellation、model / usage、sanitize、Appとチャットの観測単位を対象にする。
 
 実環境では、1ターン1ルート、ToolとMCPの親子関係、embedding / DB、user / chat識別、後続App操作の独立ルートを確認する。手順は[インフラ](/current/infrastructure.md)。一般のMCP伝播の判断は[ADR-0004](/decisions/ADR-0004-langfuse-mcp-meta-tracing.md)、UI移行は[ADR-0015](/decisions/ADR-0015-open-webui-mcp-apps.md)を参照。
+
+
+## Gatewayの公式SDK境界
+
+GatewayのASGI要求境界でHTTP trace contextを取り込み、SDKの標準SERVER spanを経由して下流へ渡す。protocolVersion/clientInfo/clientCapabilitiesの予約_metaは終端するが、traceparent/tracestate/baggageとApp用metadataは維持する。要求終了・例外・キャンセル時もcontextを解放し、並列利用者間で共有しない。server/discoverは新coreの正常要求として処理する。
