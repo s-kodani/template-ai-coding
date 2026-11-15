@@ -6,7 +6,7 @@ tags: [decision, architecture, mcp, gateway, transport]
 status: stable
 decision_status: accepted
 generated:
-  at: "2026-09-06T02:40:00Z"
+  at: "2026-11-15T03:44:00Z"
   by: process:cursor-agent
 ---
 
@@ -47,3 +47,5 @@ Chainlit 2.12 は `mcp<2`、Gateway は公式 `mcp>=2` のため同一 Python �
 ## 改訂
 
 Chainlit は単一の `MCP_GATEWAY_URL` を持たない。発見先は Registry `gateways[].url`（複数可）。Gateway プロセスは `PUBLIC_BASE_URL` と一致するエントリの `servers` だけを読む。カタログ `url` の作り方と Streamable HTTP 経路はこの ADR のまま。
+
+公開側を独自JSON-RPC adapterとする部分は[ADR-0016](/decisions/ADR-0016-gateway-sdk-dual-protocol.md)で改訂した。サーバー単位endpoint・Registry・内部公開の判断は維持する。

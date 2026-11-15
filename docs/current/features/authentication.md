@@ -5,7 +5,7 @@ description: Keycloak SSO、Open WebUIグループ、Gateway Token Exchange、Ap
 tags: [authentication, keycloak, open-webui, gateway, mcp, mcp-apps]
 status: stable
 generated:
-  at: "2026-11-15T02:55:16Z"
+  at: "2026-11-15T03:51:08Z"
   by: process:codex-agent
 ---
 
@@ -75,7 +75,7 @@ sequenceDiagram
 
 Open WebUIの`system_oauth`は各HTTPリクエストで現在の利用者のSSO access tokenを解決する。App RPCもログイン中viewerの認証、server / tool binding、接続先へのアクセス権、App-visible Toolを再検査する。過去のAppを別ユーザーで開いても元の利用者のtokenを流用しない。
 
-Gatewayは`tools/list`・`tools/call`・`resources/list`・`resources/read`のroleをToken Exchange前に検証する。knowledgeのResource allowlistは`ui://knowledge/search-results.html`のみ。未登録URIは404、role不足は403。Web検索のResource一覧は空で、Resource readを許可しない。詳細なAPIは[契約](/current/features/api.md)を参照。
+Gatewayは`tools/list`・`tools/call`・`resources/list`・`resources/read`のroleをToken Exchange前に検証する。knowledgeのResource allowlistは`ui://knowledge/search-results.html`のみ。未登録URIはerror.data.status=404、role不足はerror.data.status=403（SDK JSON-RPC error、HTTP200）。Web検索のResource一覧は空で、Resource readを許可しない。詳細なAPIは[契約](/current/features/api.md)を参照。
 
 ## OIDCとセッション
 
@@ -102,3 +102,8 @@ provider側のrefresh失敗では上流の動作を維持し、保存済みOAuth
 Gatewayを通らないMCP Inspector等は、MCPのProtected Resource MetadataからKeycloakを発見し、匿名DCRと認可コード + PKCEで直接resource tokenを取得する（[ADR-0014](/decisions/ADR-0014-mcp-direct-three-legged-oauth.md)）。localhost / 127.0.0.1のローカルredirectに限定する。下流MCPは`azp=open-webui`には限定せず、audience・scope・roleを検証する。
 
 非対話検証用Bearerは`uv run python scripts/mcp_dev_token.py --target knowledge`。Web検索は`--target web-search --username dev2`。出力tokenをログやトレースへ保存しない。
+
+
+## GatewayのSDK要求境界
+
+新旧coreともHTTP要求ごとにJWTを検証し、principalをrequest stateに保持する。共有Server instanceへ利用者tokenを持たせない。tools/callの権限は実行時に検査し、SDKが引数schemaを調べるためtools/listを内部取得する場合も、元のcallの認可をToken Exchangeより先に行う。予約protocol metadataはGatewayで終端し、下流には交換済みtokenだけを送る。
