@@ -11,6 +11,7 @@ from mcp.server.lowlevel import Server
 from mcp.server.transport_security import (
     DEFAULT_MAX_REQUEST_BODY_SIZE,
     RequestBodyLimitMiddleware,
+    TransportSecurityMiddleware,
     TransportSecuritySettings,
 )
 from mcp.shared.exceptions import MCPError
@@ -139,11 +140,15 @@ def create_mcp_app(
 class EnvelopeGuard:
     """Close SDK 2.3's header-only era-routing gap using its own validator."""
 
-    def __init__(self, app):
+    def __init__(self, app, security):
         self.app = app
+        self.security = TransportSecurityMiddleware(security)
 
     async def __call__(self, scope, receive, send):
         request = Request(scope, receive)
+        rejection = await self.security.validate_request(request, is_post=request.method == "POST")
+        if rejection is not None:
+            return await rejection(scope, receive, send)
         if request.method != "POST" or request.headers.get("mcp-protocol-version") == "2026-07-28":
             return await self.app(scope, receive, send)
         raw = await request.body()
@@ -183,5 +188,8 @@ class EnvelopeGuard:
         await self.app(scope, replay, send)
 
 
-def guarded_app(app):
-    return RequestBodyLimitMiddleware(EnvelopeGuard(app), DEFAULT_MAX_REQUEST_BODY_SIZE)
+def guarded_app(app, settings):
+    security = TransportSecuritySettings(
+        allowed_hosts=settings.mcp_allowed_hosts, allowed_origins=settings.mcp_allowed_origins,
+    )
+    return RequestBodyLimitMiddleware(EnvelopeGuard(app, security), DEFAULT_MAX_REQUEST_BODY_SIZE)

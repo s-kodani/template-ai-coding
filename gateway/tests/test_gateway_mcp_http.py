@@ -919,3 +919,19 @@ def test_guard_handles_invalid_request_ids_without_crashing(rsa_keys, monkeypatc
     assert response.status_code == 400
     assert 'error' in response.json()
     assert not seen
+
+
+@pytest.mark.parametrize('header,value,status', [
+    ('Origin', 'https://evil.example', 403), ('Host', 'evil.example', 421),
+])
+def test_transport_security_precedes_envelope_guard_errors(rsa_keys, monkeypatch, header, value, status):
+    private_key, _ = rsa_keys
+    seen = {}
+    client = _apps_client(private_key, monkeypatch, seen=seen)
+    body, headers = _modern_request('server/discover')
+    headers['MCP-Protocol-Version'] = '2025-11-25'
+    headers[header] = value
+    response = client.post('/mcp/knowledge', json=body,
+                           headers={**headers, 'Authorization': f'Bearer {_token(private_key)}'})
+    assert response.status_code == status
+    assert not seen

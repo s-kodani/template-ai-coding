@@ -116,7 +116,7 @@ def create_app(
         for server_id, server in registry.items() if server.get("enabled", True)
     }
 
-    guarded_apps = {key: guarded_app(value) for key, value in mcp_apps.items()}
+    guarded_apps = {key: guarded_app(value, settings) for key, value in mcp_apps.items()}
 
     @asynccontextmanager
     async def lifespan(app):
