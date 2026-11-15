@@ -2,10 +2,8 @@
 from __future__ import annotations
 
 import pytest
-from playwright.sync_api import Page
-from test_mcp_app import (
-    test_streaming_text_does_not_repeatedly_reload_the_same_mcp_app as check_streaming,
-)
+from playwright.sync_api import Locator, Page
+from test_mcp_app import _check_streaming_app
 
 
 @pytest.mark.parametrize(
@@ -18,10 +16,11 @@ from test_mcp_app import (
         ("refetch-with-another-app", "resource"),
         ("replace", "App"),
         ("reload", "document"),
+        ("reload-slow-baseline", "document"),
     ],
 )
 def test_streaming_observer_distinguishes_app_lifetimes(
-    page: Page, scenario: str, error: str | None,
+    page: Page, monkeypatch: pytest.MonkeyPatch, scenario: str, error: str | None,
 ) -> None:
     page.route("http://mcp-app-test.invalid/**", lambda route: route.fulfill(body="{}"))
     page.goto("http://mcp-app-test.invalid/")
@@ -64,7 +63,7 @@ def test_streaming_observer_distinguishes_app_lifetimes(
             if (window.scenario === 'initial-apps') mount(reply);
             document.getElementById('stop').style.display = 'block';
             let updates = 0;
-            const timer = setInterval(() => {
+            window.startScenario = () => { const timer = setInterval(() => {
               if (++updates === 1) {
                 if (window.scenario === 'another-app') {
                   mount(document.querySelector('.chat-assistant'));
@@ -79,7 +78,7 @@ def test_streaming_observer_distinguishes_app_lifetimes(
                   // Svelte keeps an exiting frame connected during its outro.
                   frame.parentElement.inert = true;
                   mount(reply);
-                } else if (window.scenario === 'reload') {
+                } else if (window.scenario.startsWith('reload')) {
                   frame.srcdoc = appHtml + '<p>New document</p>';
                 }
               }
@@ -88,14 +87,27 @@ def test_streaming_observer_distinguishes_app_lifetimes(
                 clearInterval(timer);
                 document.getElementById('stop').style.display = 'none';
               }
-            }, 500);
+            }, 500); };
           }
         </script>
     ''')
     page.evaluate("scenario => window.scenario = scenario", scenario)
+    if scenario == "reload-slow-baseline":
+        element_handle = Locator.element_handle
+
+        def delayed_handle(locator: Locator, **kwargs):
+            if locator.evaluate("element => element.tagName") == "HTML":
+                # Deliberately exceed the old scenario's 500ms startup delay.
+                page.wait_for_timeout(800)
+            return element_handle(locator, **kwargs)
+
+        monkeypatch.setattr(Locator, "element_handle", delayed_handle)
+
+    def check_streaming() -> None:
+        _check_streaming_app(page, on_app_ready=lambda: page.evaluate("startScenario()"))
 
     if error is None:
-        check_streaming(page, "unused")
+        check_streaming()
     else:
         with pytest.raises(AssertionError, match=error):
-            check_streaming(page, "unused")
+            check_streaming()

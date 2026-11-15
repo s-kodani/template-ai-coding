@@ -13,7 +13,10 @@ def test_streaming_text_does_not_repeatedly_reload_the_same_mcp_app(
     openai_api_key: str,
 ) -> None:
     del openai_api_key
-    page = logged_in_dev
+    _check_streaming_app(logged_in_dev)
+
+
+def _check_streaming_app(page: Page, *, on_app_ready: Callable[[], None] | None = None) -> None:
     # Establish a saved chat before observing Apps, avoiding the initial route transition.
     send_chat(page, "ツールは使わず、「準備完了」とだけ回答してください。")
     # A binding identifies a server/tool, not an App instance. Each new iframe
@@ -86,6 +89,8 @@ def test_streaming_text_does_not_repeatedly_reload_the_same_mcp_app(
 
     stop = page.get_by_role("button", name=re.compile(r"^(Stop|停止)$"))
     expect(stop).to_be_visible()
+    if on_app_ready is not None:
+        on_app_ready()
     # Require text updates after the App appears; a completed reply cannot cover this regression.
     for _ in range(3):
         initial_text = reply.inner_text()
