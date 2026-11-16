@@ -11,6 +11,11 @@ from playwright.sync_api import Locator, Page
 
 pytestmark = pytest.mark.e2e_brave
 
+# Open WebUI v0.13.1 backend/open_webui/utils/tool_calling.py tool_repetition_error
+OPEN_WEBUI_REPEATED_TOOL_FAILURE = (
+    "Error: the same tool call failed twice. Finish using the available results."
+)
+
 SEARCH_WEB_PROMPT = (
     "search_web ツールで「pytest documentation」を検索し、"
     "見つかった公式ドキュメントの URL を1つだけ答えてください。"
@@ -71,10 +76,16 @@ def _search_web_results(page: Page, reply: Locator) -> list[dict]:
         if item.get("type") == "function_call" and item.get("name") == "web-search_search_web"
     }
     assert call_ids, "search_web was not called in this reply"
-    results = [
-        json.loads("".join(part.get("text", "") for part in item.get("output", [])))
-        for item in output
-        if item.get("type") == "function_call_output" and item.get("call_id") in call_ids
-    ]
-    assert len(results) == len(call_ids), "search_web results missing from this reply"
+    results = []
+    for item in output:
+        if item.get("type") != "function_call_output" or item.get("call_id") not in call_ids:
+            continue
+        text = "".join(part.get("text", "") for part in item.get("output", []))
+        if text == OPEN_WEBUI_REPEATED_TOOL_FAILURE:
+            continue
+        try:
+            results.append(json.loads(text))
+        except json.JSONDecodeError:
+            raise AssertionError(f"search_web output is not JSON: {text!r}") from None
+    assert results, "search_web results missing from this reply"
     return results

@@ -7,6 +7,9 @@ import pytest
 from conftest import reply_contains_url
 from playwright.sync_api import Error, Page
 from test_chat_web_search import (
+    OPEN_WEBUI_REPEATED_TOOL_FAILURE,
+)
+from test_chat_web_search import (
     test_search_web_without_api_key_reports_error as check_missing_key,
 )
 
@@ -32,6 +35,9 @@ def test_reply_url_includes_link_targets(page: Page, content: str, expected: boo
         ("not-called", "search_web was not called"),
         ("other-tool", "search_web was not called"),
         ("missing-output", "search_web results missing"),
+        ("repeated-failure-guard", None),
+        ("guard-only", "search_web results missing"),
+        ("non-json-output", "search_web output is not JSON"),
         ("other-error", "unexpected search_web error"),
         ("success", "unexpected search_web error"),
         ("unavailable", "Cannot read saved chat"),
@@ -53,6 +59,17 @@ def test_missing_key_assertion_uses_current_tool_result(
     ]
     if scenario == "missing-output":
         output = output[:1]
+    elif scenario == "repeated-failure-guard":
+        output.append({
+            "type": "function_call_output",
+            "call_id": "call-1",
+            "status": "completed",
+            "output": [{"type": "input_text", "text": OPEN_WEBUI_REPEATED_TOOL_FAILURE}],
+        })
+    elif scenario == "guard-only":
+        output[1]["output"] = [{"type": "input_text", "text": OPEN_WEBUI_REPEATED_TOOL_FAILURE}]
+    elif scenario == "non-json-output":
+        output[1]["output"] = [{"type": "input_text", "text": "Error: upstream timeout"}]
     body = {"chat": {"history": {"messages": {
         "previous": {"role": "assistant", "done": True, "output": output},
         "current": {"role": "assistant", "done": True,
