@@ -6,7 +6,7 @@ readme = "README.md"
 requires-python = ">=3.12,<3.13"
 dependencies = [
     "asyncpg>=0.30.0",
-    "fastmcp>=3.4.11,<4",
+    "fastmcp>=3.4.11,<5",
     "httpx>=0.28.0",
     "langfuse>=4.15.1,<5",
     "openai>=1.60.0",
