@@ -1,0 +1,8 @@
+scripts:
+  setup: |
+    set -e
+    make -C infra app-ui
+    uv sync --frozen --extra dev
+    uv sync --directory gateway --frozen --extra dev
+
+setupAgentStartupPolicy: wait-for-setup
